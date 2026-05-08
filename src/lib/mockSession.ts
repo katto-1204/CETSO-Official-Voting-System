@@ -1,0 +1,54 @@
+import type { ProgramCode, YearLevel } from '../mocks/mockStudents'
+
+export type MockSession = {
+  role: 'student' | 'admin'
+  studentId: string | null
+  studentName: string | null
+  programCode: ProgramCode | null
+  yearLevel: YearLevel | null
+}
+
+const KEYS = {
+  role: 'cetso_role',
+  studentId: 'cetso_student_id',
+  studentName: 'cetso_student_name',
+  programCode: 'cetso_program_code',
+  yearLevel: 'cetso_year_level',
+} as const
+
+export function getMockSession(): MockSession {
+  const role = (localStorage.getItem(KEYS.role) as MockSession['role'] | null) ?? 'student'
+  const studentId = localStorage.getItem(KEYS.studentId)
+  const studentName = localStorage.getItem(KEYS.studentName)
+  const programCode = localStorage.getItem(KEYS.programCode) as ProgramCode | null
+  const yearLevelRaw = localStorage.getItem(KEYS.yearLevel)
+  const yearLevel = (yearLevelRaw ? (Number(yearLevelRaw) as YearLevel) : null) as YearLevel | null
+
+  return {
+    role,
+    studentId: studentId ?? null,
+    studentName: studentName ?? null,
+    programCode: programCode ?? null,
+    yearLevel,
+  }
+}
+
+export function setMockSession(session: Omit<MockSession, never>) {
+  localStorage.setItem(KEYS.role, session.role)
+  if (session.studentId) localStorage.setItem(KEYS.studentId, session.studentId)
+  else localStorage.removeItem(KEYS.studentId)
+
+  if (session.studentName) localStorage.setItem(KEYS.studentName, session.studentName)
+  else localStorage.removeItem(KEYS.studentName)
+
+  if (session.programCode) localStorage.setItem(KEYS.programCode, session.programCode)
+  else localStorage.removeItem(KEYS.programCode)
+
+  if (session.yearLevel) localStorage.setItem(KEYS.yearLevel, String(session.yearLevel))
+  else localStorage.removeItem(KEYS.yearLevel)
+}
+
+export function clearMockSession() {
+  Object.values(KEYS).forEach((k) => localStorage.removeItem(k))
+}
+

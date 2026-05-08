@@ -1,0 +1,234 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@400;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+@font-face {
+  font-family: 'Raider Crusader';
+  src: url('/raidercrusader.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Raider Crusader Straight';
+  src: url('/raidercrusaderstraight.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root,
+[data-theme="dark"] {
+  --cetso-orange: #ff7a18;
+  --cetso-orange-2: #ffb24a;
+  --cetso-orange-dim: rgba(255, 122, 24, 0.85);
+  --cetso-bg: #07070c;
+  --cetso-surface: rgba(255, 255, 255, 0.055);
+  --cetso-surface-2: rgba(255, 255, 255, 0.09);
+  --cetso-surface-3: rgba(255, 255, 255, 0.13);
+  --cetso-border: rgba(255, 255, 255, 0.10);
+  --cetso-border-2: rgba(255, 255, 255, 0.16);
+  --cetso-border-strong: rgba(255, 122, 24, 0.42);
+  --cetso-border-orange: rgba(255, 122, 24, 0.28);
+  --cetso-text: rgba(234, 234, 242, 0.94);
+  --cetso-text-2: rgba(234, 234, 242, 0.62);
+  --cetso-text-3: rgba(234, 234, 242, 0.42);
+  --cetso-glow: 0 0 40px rgba(255, 122, 24, 0.28), 0 0 80px rgba(255, 122, 24, 0.12);
+  --cetso-glow-sm: 0 0 20px rgba(255, 122, 24, 0.22), 0 0 40px rgba(255, 122, 24, 0.10);
+  --cetso-shadow: 0 32px 80px rgba(0, 0, 0, 0.60), 0 8px 24px rgba(0, 0, 0, 0.40);
+  --cetso-shadow-sm: 0 8px 32px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.30);
+  --cetso-header-bg: rgba(7, 7, 12, 0.82);
+  --cetso-sidebar-bg: rgba(255, 255, 255, 0.04);
+  --cetso-input-bg: rgba(255, 255, 255, 0.04);
+  --cetso-badge-bg: rgba(255,255,255,0.06);
+
+  --font-heading: 'Bebas Neue', 'Anton', system-ui, sans-serif;
+  --font-h1: 'Raider Crusader', 'Bebas Neue', system-ui, sans-serif;
+  --font-h2: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --font-ui: 'Inter', 'Poppins', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+[data-theme="light"] {
+  --cetso-orange: #e06300;
+  --cetso-orange-2: #c85000;
+  --cetso-orange-dim: rgba(224, 99, 0, 0.85);
+  --cetso-bg: #f0f0f5;
+  --cetso-surface: rgba(255, 255, 255, 0.82);
+  --cetso-surface-2: rgba(255, 255, 255, 0.95);
+  --cetso-surface-3: rgba(255, 255, 255, 1);
+  --cetso-border: rgba(0, 0, 0, 0.09);
+  --cetso-border-2: rgba(0, 0, 0, 0.15);
+  --cetso-border-strong: rgba(224, 99, 0, 0.50);
+  --cetso-border-orange: rgba(224, 99, 0, 0.30);
+  --cetso-text: rgba(16, 16, 24, 0.92);
+  --cetso-text-2: rgba(16, 16, 24, 0.58);
+  --cetso-text-3: rgba(16, 16, 24, 0.38);
+  --cetso-glow: 0 0 40px rgba(224, 99, 0, 0.18), 0 0 80px rgba(224, 99, 0, 0.08);
+  --cetso-glow-sm: 0 0 20px rgba(224, 99, 0, 0.14), 0 0 40px rgba(224, 99, 0, 0.07);
+  --cetso-shadow: 0 12px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08);
+  --cetso-shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.09), 0 2px 6px rgba(0, 0, 0, 0.06);
+  --cetso-header-bg: rgba(255, 255, 255, 0.90);
+  --cetso-sidebar-bg: rgba(255, 255, 255, 0.80);
+  --cetso-input-bg: rgba(255, 255, 255, 0.90);
+  --cetso-badge-bg: rgba(0,0,0,0.05);
+}
+
+[data-theme="light"] body {
+  background:
+    radial-gradient(ellipse 1200px 600px at 15% -5%, rgba(255, 140, 40, 0.10), transparent 60%),
+    radial-gradient(ellipse 900px 500px at 90% 10%, rgba(255, 178, 74, 0.07), transparent 55%),
+    #f0f0f5;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: rgba(224, 99, 0, 0.25);
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(224, 99, 0, 0.45);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-ui);
+  background:
+    radial-gradient(ellipse 1400px 700px at 15% -5%, rgba(255, 122, 24, 0.16), transparent 65%),
+    radial-gradient(ellipse 1000px 600px at 90% 10%, rgba(255, 178, 74, 0.10), transparent 60%),
+    radial-gradient(ellipse 800px 500px at 50% 90%, rgba(255, 122, 24, 0.08), transparent 55%),
+    var(--cetso-bg);
+  background-attachment: fixed;
+  color: var(--cetso-text);
+  letter-spacing: 0.1px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 122, 24, 0.30);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 122, 24, 0.55);
+}
+
+:focus-visible {
+  outline: 2px solid var(--cetso-orange);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* Shimmer animation for skeleton/loading */
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+/* Pulse glow for live indicators */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 6px rgba(255,122,24,0.55), 0 0 0 0 rgba(255,122,24,0.35); }
+  50% { box-shadow: 0 0 14px rgba(255,122,24,0.8), 0 0 0 6px rgba(255,122,24,0.0); }
+}
+
+.live-dot {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Fade up utility */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(14px); filter: blur(6px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.45s ease-out both;
+}
+.animate-fade-up-d1 { animation-delay: 0.08s; }
+.animate-fade-up-d2 { animation-delay: 0.16s; }
+.animate-fade-up-d3 { animation-delay: 0.24s; }
+.animate-fade-up-d4 { animation-delay: 0.32s; }
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #ff7a18 0%, #ffb24a 50%, #ff9a44 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Orange divider */
+.divider-orange {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,122,24,0.65), transparent);
+}
+
+/* Glass surface utility */
+.glass {
+  background: var(--cetso-surface);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid var(--cetso-border);
+}
+
+/* Marquee scroll */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 28s linear infinite;
+}
+
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
+/* Tag / badge base */
+.tag-orange {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,122,24,0.32);
+  background: rgba(255,122,24,0.10);
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255,178,74,0.95);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
