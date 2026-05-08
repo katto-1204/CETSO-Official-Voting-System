@@ -1,6 +1,7 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { LayoutDashboard, Users, Vote, FileCheck, UserCircle, LogOut, Sun, Moon } from 'lucide-react'
 import { useTheme } from '../../lib/theme'
+import Footer from './Footer'
 
 const navItems = [
   { to: '/student/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -283,8 +284,10 @@ export default function AppShell() {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 px-4 py-6 pb-24 lg:px-8 lg:pb-10">
+        <main className="flex-1 px-4 py-6 pb-24 lg:px-8 lg:pb-0">
           <Outlet />
+
+          <Footer variant="compact" />
         </main>
       </div>
 

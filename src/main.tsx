@@ -4,12 +4,15 @@ import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App.tsx'
 import { ThemeProvider } from './lib/theme.tsx'
+import { GooeyToaster } from 'goey-toast'
+import 'goey-toast/styles.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
       <ThemeProvider>
         <App />
+        <GooeyToaster position="bottom-right" />
       </ThemeProvider>
     </BrowserRouter>
   </StrictMode>,

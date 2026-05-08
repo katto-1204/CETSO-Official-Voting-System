@@ -7,6 +7,7 @@ type Size = 'sm' | 'md' | 'lg'
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: Variant
   size?: Size
+  loading?: boolean
 }
 
 export default function Button({
@@ -14,13 +15,16 @@ export default function Button({
   size = 'md',
   className,
   type,
+  loading,
+  children,
   ...props
 }: Props) {
   return (
     <button
       type={type ?? 'button'}
+      disabled={loading || props.disabled}
       className={clsx(
-        'inline-flex items-center justify-center gap-2 font-semibold transition-all duration-200 rounded-2xl',
+        'inline-flex items-center justify-center gap-2 font-semibold transition-all duration-200 rounded-2xl relative',
         'focus-visible:outline-none active:scale-[0.97]',
         'disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100',
         size === 'sm' && 'h-9 px-4 text-xs tracking-wide',
@@ -49,9 +53,17 @@ export default function Button({
           'shadow-[0_2px_8px_rgba(0,0,0,0.25)]',
           'hover:bg-[rgba(220,38,38,0.20)] hover:border-[rgba(220,38,38,0.50)] hover:scale-[1.02]',
         ].join(' '),
+        loading && 'text-transparent transition-none',
         className
       )}
       {...props}
-    />
+    >
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+        </div>
+      )}
+      {children}
+    </button>
   )
 }

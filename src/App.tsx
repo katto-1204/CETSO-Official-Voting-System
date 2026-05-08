@@ -2,7 +2,6 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import AppShell from './components/layout/AppShell'
 
-import SplashPage from './pages/SplashPage'
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'

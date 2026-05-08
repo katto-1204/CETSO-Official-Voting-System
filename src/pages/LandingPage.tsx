@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowRight, Clock, ChevronRight, Sun, Moon } from 'lucide-react'
-import { useTheme } from '../lib/theme'
+import { ArrowRight, Clock, ChevronRight } from 'lucide-react'
+import Footer from '../components/layout/Footer'
 
 function formatCountdown(ms: number) {
   const clamped = Math.max(0, ms)
@@ -46,7 +46,6 @@ const TAB_CONTENT: Record<Tab, { headline: string[]; sub: string }> = {
 export default function LandingPage() {
   const [now, setNow] = useState(() => Date.now())
   const [activeTab, setActiveTab] = useState<Tab>('Faith')
-  const { theme, toggle } = useTheme()
 
   useEffect(() => {
     const t = window.setInterval(() => setNow(Date.now()), 1000)
@@ -584,64 +583,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── FOOTER ───────────────────────────────────────── */}
-      <footer
-        className="relative z-10 border-t px-6 py-8 sm:px-10"
-        style={{ borderColor: 'rgba(255,255,255,0.06)' }}
-      >
-        <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 sm:flex-row sm:justify-between">
-          <div className="flex items-center gap-4">
-            {/* Theme toggle */}
-            <button
-              type="button"
-              onClick={toggle}
-              className="grid h-8 w-8 place-items-center rounded-xl border transition hover:border-white"
-              style={{ borderColor: 'rgba(255,255,255,0.15)', color: 'rgba(234,234,242,0.55)' }}
-              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            >
-              {theme === 'dark' ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
-            </button>
-          </div>
-          <div className="flex items-center gap-2.5">
-            <div
-              className="grid h-7 w-7 place-items-center rounded-lg text-xs font-black"
-              style={{ background: 'rgba(255,122,24,0.85)', color: 'white' }}
-            >
-              C
-            </div>
-            <span
-              className="text-sm font-bold uppercase tracking-widest"
-              style={{ color: 'rgba(234,234,242,0.60)', fontFamily: 'var(--font-h2)' }}
-            >
-              CETSO Elections 2026
-            </span>
-          </div>
-          <div
-            className="text-xs font-medium"
-            style={{ color: 'rgba(234,234,242,0.35)', fontFamily: 'var(--font-h2)' }}
-          >
-            © 2026 CETSO — Trust and legitimacy first.
-          </div>
-          <div className="flex items-center gap-4">
-            <Link to="/login">
-              <span
-                className="text-xs font-semibold uppercase tracking-widest transition hover:text-white"
-                style={{ color: 'rgba(255,178,74,0.70)', fontFamily: 'var(--font-h2)' }}
-              >
-                Login
-              </span>
-            </Link>
-            <Link to="/register">
-              <span
-                className="text-xs font-semibold uppercase tracking-widest transition hover:text-white"
-                style={{ color: 'rgba(255,178,74,0.70)', fontFamily: 'var(--font-h2)' }}
-              >
-                Register
-              </span>
-            </Link>
-          </div>
-        </div>
-      </footer>
+      <Footer variant="full" />
     </div>
   )
 }

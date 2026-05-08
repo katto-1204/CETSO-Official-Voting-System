@@ -1,54 +1,72 @@
-import { MOCK_STUDENTS, type MockStudent, type ProgramCode, type YearLevel } from '../mocks/mockStudents'
+import { MOCK_STUDENTS, generatePassword } from '../mocks/mockStudents'
+import type { Student, ProgramCode, YearLevel } from '../mocks/mockStudents'
 
-const STORAGE_KEY = 'cetso_students_registry'
+const REGISTRY_KEY = 'cetso_student_registry'
 
-function readRegistry(): MockStudent[] {
+/** Student ID must start with "598" */
+const ID_PREFIX = '598'
+
+function load(): Student[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = localStorage.getItem(REGISTRY_KEY)
     if (!raw) return [...MOCK_STUDENTS]
-    const parsed = JSON.parse(raw) as MockStudent[]
-    return Array.isArray(parsed) ? parsed : [...MOCK_STUDENTS]
+    const stored = JSON.parse(raw) as Student[]
+    return stored.length ? stored : [...MOCK_STUDENTS]
   } catch {
     return [...MOCK_STUDENTS]
   }
 }
 
-function writeRegistry(students: MockStudent[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(students))
+function save(list: Student[]) {
+  localStorage.setItem(REGISTRY_KEY, JSON.stringify(list))
 }
 
-export function getAllStudents() {
-  return readRegistry().sort((a, b) => a.studentId.localeCompare(b.studentId))
+/** Return all students (mock + manually registered) */
+export function getAllStudents(): Student[] {
+  return load()
 }
 
-export function findStudentById(studentId: string) {
-  const id = studentId.trim()
-  return getAllStudents().find((s) => s.studentId === id) ?? null
+/** Find a student by ID */
+export function findStudentById(studentId: string): Student | undefined {
+  return load().find((s) => s.studentId === studentId)
 }
 
-export function upsertStudent(student: MockStudent) {
-  const all = readRegistry()
-  const idx = all.findIndex((s) => s.studentId === student.studentId)
-  if (idx >= 0) all[idx] = student
-  else all.push(student)
-  writeRegistry(all)
+/** Validate that a student ID starts with the mandatory prefix */
+export function isValidStudentId(studentId: string): boolean {
+  return studentId.startsWith(ID_PREFIX) && studentId.length > ID_PREFIX.length
 }
 
-export function registerStudent(params: {
+/**
+ * Register a new student.
+ * - The ID MUST start with "598".
+ * - Password is auto-generated: digits-after-598 + LASTNAME (uppercase).
+ *   If a manual password is supplied it is ignored in favour of the rule.
+ */
+export function registerStudent(data: {
   studentId: string
   fullName: string
   programCode: ProgramCode
   yearLevel: YearLevel
-  password: string
-}) {
-  const payload: MockStudent = {
-    studentId: params.studentId.trim(),
-    fullName: params.fullName.trim(),
-    programCode: params.programCode,
-    yearLevel: params.yearLevel,
-    password: params.password,
+  password?: string
+}): { ok: boolean; error?: string; generatedPassword?: string } {
+  if (!isValidStudentId(data.studentId)) {
+    return { ok: false, error: `Student ID must start with "${ID_PREFIX}".` }
   }
-  upsertStudent(payload)
-  return payload
-}
 
+  const list = load()
+  if (list.some((s) => s.studentId === data.studentId)) {
+    return { ok: false, error: 'Student ID already exists.' }
+  }
+
+  const autoPassword = generatePassword(data.studentId, data.fullName)
+
+  list.push({
+    studentId: data.studentId,
+    fullName: data.fullName,
+    programCode: data.programCode,
+    yearLevel: data.yearLevel,
+    password: autoPassword,
+  })
+  save(list)
+  return { ok: true, generatedPassword: autoPassword }
+}

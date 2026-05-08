@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import CetsoLogo from '../components/brand/CetsoLogo'
 
 export default function SplashPage() {
   const navigate = useNavigate()

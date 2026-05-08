@@ -18,6 +18,9 @@
   font-display: swap;
 }
 
+/* ═══════════════════════════════════════════════
+   DESIGN TOKENS — DARK (default)
+   ═══════════════════════════════════════════════ */
 :root,
 [data-theme="dark"] {
   --cetso-orange: #ff7a18;
@@ -34,6 +37,7 @@
   --cetso-text: rgba(234, 234, 242, 0.94);
   --cetso-text-2: rgba(234, 234, 242, 0.62);
   --cetso-text-3: rgba(234, 234, 242, 0.42);
+  --cetso-text-inverse: rgba(16, 16, 24, 0.92);
   --cetso-glow: 0 0 40px rgba(255, 122, 24, 0.28), 0 0 80px rgba(255, 122, 24, 0.12);
   --cetso-glow-sm: 0 0 20px rgba(255, 122, 24, 0.22), 0 0 40px rgba(255, 122, 24, 0.10);
   --cetso-shadow: 0 32px 80px rgba(0, 0, 0, 0.60), 0 8px 24px rgba(0, 0, 0, 0.40);
@@ -42,6 +46,17 @@
   --cetso-sidebar-bg: rgba(255, 255, 255, 0.04);
   --cetso-input-bg: rgba(255, 255, 255, 0.04);
   --cetso-badge-bg: rgba(255,255,255,0.06);
+  --cetso-card-bg: #16161e;
+  --cetso-toast-bg: #ffffff;
+  --cetso-toast-text: #111111;
+  --cetso-success: #22c55e;
+  --cetso-success-bg: rgba(34,197,94,0.10);
+  --cetso-success-border: rgba(34,197,94,0.28);
+  --cetso-success-text: rgba(134,239,172,0.90);
+  --cetso-error: #ef4444;
+  --cetso-error-bg: rgba(239,68,68,0.08);
+  --cetso-error-border: rgba(239,68,68,0.25);
+  --cetso-error-text: rgba(252,165,165,0.90);
 
   --font-heading: 'Bebas Neue', 'Anton', system-ui, sans-serif;
   --font-h1: 'Raider Crusader', 'Bebas Neue', system-ui, sans-serif;
@@ -50,13 +65,16 @@
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
+/* ═══════════════════════════════════════════════
+   DESIGN TOKENS — LIGHT
+   ═══════════════════════════════════════════════ */
 [data-theme="light"] {
   --cetso-orange: #e06300;
   --cetso-orange-2: #c85000;
   --cetso-orange-dim: rgba(224, 99, 0, 0.85);
-  --cetso-bg: #f0f0f5;
-  --cetso-surface: rgba(255, 255, 255, 0.82);
-  --cetso-surface-2: rgba(255, 255, 255, 0.95);
+  --cetso-bg: #f4f4f8;
+  --cetso-surface: rgba(255, 255, 255, 0.88);
+  --cetso-surface-2: rgba(255, 255, 255, 0.96);
   --cetso-surface-3: rgba(255, 255, 255, 1);
   --cetso-border: rgba(0, 0, 0, 0.09);
   --cetso-border-2: rgba(0, 0, 0, 0.15);
@@ -65,21 +83,33 @@
   --cetso-text: rgba(16, 16, 24, 0.92);
   --cetso-text-2: rgba(16, 16, 24, 0.58);
   --cetso-text-3: rgba(16, 16, 24, 0.38);
+  --cetso-text-inverse: rgba(234, 234, 242, 0.94);
   --cetso-glow: 0 0 40px rgba(224, 99, 0, 0.18), 0 0 80px rgba(224, 99, 0, 0.08);
   --cetso-glow-sm: 0 0 20px rgba(224, 99, 0, 0.14), 0 0 40px rgba(224, 99, 0, 0.07);
-  --cetso-shadow: 0 12px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08);
-  --cetso-shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.09), 0 2px 6px rgba(0, 0, 0, 0.06);
-  --cetso-header-bg: rgba(255, 255, 255, 0.90);
-  --cetso-sidebar-bg: rgba(255, 255, 255, 0.80);
-  --cetso-input-bg: rgba(255, 255, 255, 0.90);
-  --cetso-badge-bg: rgba(0,0,0,0.05);
+  --cetso-shadow: 0 12px 40px rgba(0, 0, 0, 0.10), 0 4px 12px rgba(0, 0, 0, 0.06);
+  --cetso-shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.07), 0 2px 6px rgba(0, 0, 0, 0.04);
+  --cetso-header-bg: rgba(255, 255, 255, 0.92);
+  --cetso-sidebar-bg: rgba(255, 255, 255, 0.85);
+  --cetso-input-bg: rgba(255, 255, 255, 0.92);
+  --cetso-badge-bg: rgba(0,0,0,0.04);
+  --cetso-card-bg: #ffffff;
+  --cetso-toast-bg: #111111;
+  --cetso-toast-text: #ffffff;
+  --cetso-success: #16a34a;
+  --cetso-success-bg: rgba(34,197,94,0.08);
+  --cetso-success-border: rgba(34,197,94,0.22);
+  --cetso-success-text: #16a34a;
+  --cetso-error: #dc2626;
+  --cetso-error-bg: rgba(239,68,68,0.06);
+  --cetso-error-border: rgba(239,68,68,0.20);
+  --cetso-error-text: #dc2626;
 }
 
 [data-theme="light"] body {
   background:
-    radial-gradient(ellipse 1200px 600px at 15% -5%, rgba(255, 140, 40, 0.10), transparent 60%),
-    radial-gradient(ellipse 900px 500px at 90% 10%, rgba(255, 178, 74, 0.07), transparent 55%),
-    #f0f0f5;
+    radial-gradient(ellipse 1200px 600px at 15% -5%, rgba(255, 140, 40, 0.08), transparent 60%),
+    radial-gradient(ellipse 900px 500px at 90% 10%, rgba(255, 178, 74, 0.05), transparent 55%),
+    #f4f4f8;
 }
 
 [data-theme="light"] ::-webkit-scrollbar-thumb {
@@ -88,6 +118,16 @@
 
 [data-theme="light"] ::-webkit-scrollbar-thumb:hover {
   background: rgba(224, 99, 0, 0.45);
+}
+
+/* Light-mode component overrides */
+[data-theme="light"] .glass {
+  box-shadow: 0 4px 24px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+}
+
+[data-theme="light"] select option {
+  background: #ffffff;
+  color: #111111;
 }
 
 html,
@@ -149,6 +189,10 @@ textarea {
   border-radius: 8px;
 }
 
+/* ═══════════════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════════════ */
+
 /* Shimmer animation for skeleton/loading */
 @keyframes shimmer {
   0% { background-position: -400px 0; }
@@ -178,6 +222,36 @@ textarea {
 .animate-fade-up-d2 { animation-delay: 0.16s; }
 .animate-fade-up-d3 { animation-delay: 0.24s; }
 .animate-fade-up-d4 { animation-delay: 0.32s; }
+
+/* Cyberpunk glitch effect */
+@keyframes glitch {
+  0%, 100% { transform: translateX(0); }
+  10% { transform: translateX(-2px); }
+  20% { transform: translateX(2px); }
+  30% { transform: translateX(-1px); }
+  40% { transform: translateX(1px); }
+  50% { transform: translateX(0); }
+}
+
+.glitch-hover:hover {
+  animation: glitch 0.3s ease-in-out;
+}
+
+/* Scan-line overlay */
+@keyframes scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+.scan-line::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(transparent 50%, rgba(255,255,255,0.02) 50%);
+  background-size: 100% 4px;
+  pointer-events: none;
+  z-index: 1;
+}
 
 /* Gradient text */
 .gradient-text {
@@ -231,4 +305,33 @@ textarea {
   color: rgba(255,178,74,0.95);
   letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+/* ═══════════════════════════════════════════════
+   LOADING SPINNER
+   ═══════════════════════════════════════════════ */
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--cetso-border);
+  border-top-color: var(--cetso-orange);
+  border-radius: 50%;
+  animation: spin-slow 0.8s linear infinite;
+}
+
+/* ═══════════════════════════════════════════════
+   GOOEY TOAST THEME OVERRIDES
+   ═══════════════════════════════════════════════ */
+[data-theme="dark"] .goey-toast {
+  --toast-bg: #ffffff;
+  --toast-text: #111111;
+}
+
+[data-theme="light"] .goey-toast {
+  --toast-bg: #111111;
+  --toast-text: #ffffff;
 }

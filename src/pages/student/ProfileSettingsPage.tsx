@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Camera, ShieldCheck, CheckCircle2, ArrowLeft, User } from 'lucide-react'
+import { Camera, ShieldCheck, CheckCircle2, ArrowLeft } from 'lucide-react'
 import Button from '../../components/ui/Button'
 import GlassCard from '../../components/ui/GlassCard'
 import TextField from '../../components/ui/TextField'

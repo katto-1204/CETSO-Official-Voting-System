@@ -35,34 +35,15 @@ export const PROGRAMS: ProgramCode[] = ['BSIT', 'BLIS', 'BSCpE', 'BSECE']
 const POSITIONS_UNSORTED: Position[] = [
   // Executive
   { positionCode: 'PRESIDENT', title: 'President', positionType: 'executive', sortOrder: 1 },
-  {
-    positionCode: 'EXT_VICE_PRESIDENT',
-    title: 'External Vice President',
-    positionType: 'executive',
-    sortOrder: 2,
-  },
-  {
-    positionCode: 'INT_VICE_PRESIDENT',
-    title: 'Internal Vice President',
-    positionType: 'executive',
-    sortOrder: 3,
-  },
+  { positionCode: 'EXT_VICE_PRESIDENT', title: 'External Vice President', positionType: 'executive', sortOrder: 2 },
+  { positionCode: 'INT_VICE_PRESIDENT', title: 'Internal Vice President', positionType: 'executive', sortOrder: 3 },
   { positionCode: 'SECRETARY', title: 'Secretary', positionType: 'executive', sortOrder: 4 },
-  {
-    positionCode: 'ASSISTANT_SECRETARY',
-    title: 'Assistant Secretary',
-    positionType: 'executive',
-    sortOrder: 5,
-  },
+  { positionCode: 'ASSISTANT_SECRETARY', title: 'Assistant Secretary', positionType: 'executive', sortOrder: 5 },
   { positionCode: 'TREASURER', title: 'Treasurer', positionType: 'executive', sortOrder: 6 },
-  {
-    positionCode: 'ASSISTANT_TREASURER',
-    title: 'Assistant Treasurer',
-    positionType: 'executive',
-    sortOrder: 7,
-  },
+  { positionCode: 'ASSISTANT_TREASURER', title: 'Assistant Treasurer', positionType: 'executive', sortOrder: 7 },
   { positionCode: 'AUDITOR', title: 'Auditor', positionType: 'executive', sortOrder: 8 },
-  { positionCode: 'BUSINESS_MANAGER', title: 'Business Manager', positionType: 'executive', sortOrder: 9 },
+  { positionCode: 'BUSINESS_MANAGER_1', title: 'Business Manager', positionType: 'executive', sortOrder: 9 },
+  { positionCode: 'BUSINESS_MANAGER_2', title: 'Business Manager', positionType: 'executive', sortOrder: 10 },
 
   // PIO (program-restricted)
   {
@@ -70,150 +51,47 @@ const POSITIONS_UNSORTED: Position[] = [
     title: 'Public Information Officer (BSIT)',
     positionType: 'executive',
     eligibility: { programCode: 'BSIT' },
-    sortOrder: 10,
+    sortOrder: 11,
   },
   {
     positionCode: 'PIO_BLIS',
     title: 'Public Information Officer (BLIS)',
     positionType: 'executive',
     eligibility: { programCode: 'BLIS' },
-    sortOrder: 11,
+    sortOrder: 12,
   },
   {
     positionCode: 'PIO_BSCpE',
     title: 'Public Information Officer (BSCpE)',
     positionType: 'executive',
     eligibility: { programCode: 'BSCpE' },
-    sortOrder: 12,
-  },
-  {
-    positionCode: 'PIO_BSECE',
-    title: 'Public Information Officer (BSECE)',
-    positionType: 'executive',
-    eligibility: { programCode: 'BSECE' },
     sortOrder: 13,
   },
 
-  // Year-level Representatives (program + year restricted)
+  // Year-level Representatives
   // BSIT
-  {
-    positionCode: 'BSIT_REP_1',
-    title: 'Representative for BSIT 1',
-    positionType: 'representative',
-    eligibility: { programCode: 'BSIT', yearLevel: 1 },
-    sortOrder: 20,
-  },
-  {
-    positionCode: 'BSIT_REP_2',
-    title: 'Representative for BSIT 2',
-    positionType: 'representative',
-    eligibility: { programCode: 'BSIT', yearLevel: 2 },
-    sortOrder: 21,
-  },
-  {
-    positionCode: 'BSIT_REP_3',
-    title: 'Representative for BSIT 3',
-    positionType: 'representative',
-    eligibility: { programCode: 'BSIT', yearLevel: 3 },
-    sortOrder: 22,
-  },
-  {
-    positionCode: 'BSIT_REP_4',
-    title: 'Representative for BSIT 4',
-    positionType: 'representative',
-    eligibility: { programCode: 'BSIT', yearLevel: 4 },
-    sortOrder: 23,
-  },
+  { positionCode: 'BSIT_REP_1', title: 'Representative for BSIT 1', positionType: 'representative', eligibility: { programCode: 'BSIT', yearLevel: 1 }, sortOrder: 14 },
+  { positionCode: 'BSIT_REP_2', title: 'Representative for BSIT 2', positionType: 'representative', eligibility: { programCode: 'BSIT', yearLevel: 2 }, sortOrder: 15 },
+  { positionCode: 'BSIT_REP_3', title: 'Representative for BSIT 3', positionType: 'representative', eligibility: { programCode: 'BSIT', yearLevel: 3 }, sortOrder: 16 },
+  { positionCode: 'BSIT_REP_4', title: 'Representative for BSIT 4', positionType: 'representative', eligibility: { programCode: 'BSIT', yearLevel: 4 }, sortOrder: 17 },
 
   // BLIS
-  {
-    positionCode: 'BLIS_REP_1',
-    title: 'Representative for BLIS 1',
-    positionType: 'representative',
-    eligibility: { programCode: 'BLIS', yearLevel: 1 },
-    sortOrder: 24,
-  },
-  {
-    positionCode: 'BLIS_REP_2',
-    title: 'Representative for BLIS 2',
-    positionType: 'representative',
-    eligibility: { programCode: 'BLIS', yearLevel: 2 },
-    sortOrder: 25,
-  },
-  {
-    positionCode: 'BLIS_REP_3',
-    title: 'Representative for BLIS 3',
-    positionType: 'representative',
-    eligibility: { programCode: 'BLIS', yearLevel: 3 },
-    sortOrder: 26,
-  },
-  {
-    positionCode: 'BLIS_REP_4',
-    title: 'Representative for BLIS 4',
-    positionType: 'representative',
-    eligibility: { programCode: 'BLIS', yearLevel: 4 },
-    sortOrder: 27,
-  },
+  { positionCode: 'BLIS_REP_1', title: 'Representative for BLIS 1', positionType: 'representative', eligibility: { programCode: 'BLIS', yearLevel: 1 }, sortOrder: 18 },
+  { positionCode: 'BLIS_REP_2', title: 'Representative for BLIS 2', positionType: 'representative', eligibility: { programCode: 'BLIS', yearLevel: 2 }, sortOrder: 19 },
+  { positionCode: 'BLIS_REP_3', title: 'Representative for BLIS 3', positionType: 'representative', eligibility: { programCode: 'BLIS', yearLevel: 3 }, sortOrder: 20 },
+  { positionCode: 'BLIS_REP_4', title: 'Representative for BLIS 4', positionType: 'representative', eligibility: { programCode: 'BLIS', yearLevel: 4 }, sortOrder: 21 },
 
   // BSCpE
-  {
-    positionCode: 'BSCpE_REP_1',
-    title: 'Representative for BSCpE 1',
-    positionType: 'representative',
-    eligibility: { programCode: 'BSCpE', yearLevel: 1 },
-    sortOrder: 28,
-  },
-  {
-    positionCode: 'BSCpE_REP_2',
-    title: 'Representative for BSCpE 2',
-    positionType: 'representative',
-    eligibility: { programCode: 'BSCpE', yearLevel: 2 },
-    sortOrder: 29,
-  },
-  {
-    positionCode: 'BSCpE_REP_3',
-    title: 'Representative for BSCpE 3',
-    positionType: 'representative',
-    eligibility: { programCode: 'BSCpE', yearLevel: 3 },
-    sortOrder: 30,
-  },
-  {
-    positionCode: 'BSCpE_REP_4',
-    title: 'Representative for BSCpE 4',
-    positionType: 'representative',
-    eligibility: { programCode: 'BSCpE', yearLevel: 4 },
-    sortOrder: 31,
-  },
+  { positionCode: 'BSCpE_REP_1', title: 'Representative for BSCpE 1', positionType: 'representative', eligibility: { programCode: 'BSCpE', yearLevel: 1 }, sortOrder: 22 },
+  { positionCode: 'BSCpE_REP_2', title: 'Representative for BSCpE 2', positionType: 'representative', eligibility: { programCode: 'BSCpE', yearLevel: 2 }, sortOrder: 23 },
+  { positionCode: 'BSCpE_REP_3', title: 'Representative for BSCpE 3', positionType: 'representative', eligibility: { programCode: 'BSCpE', yearLevel: 3 }, sortOrder: 24 },
+  { positionCode: 'BSCpE_REP_4', title: 'Representative for BSCpE 4', positionType: 'representative', eligibility: { programCode: 'BSCpE', yearLevel: 4 }, sortOrder: 25 },
 
-  // BSECE
-  {
-    positionCode: 'BSECE_REP_1',
-    title: 'Representative for BSECE 1',
-    positionType: 'representative',
-    eligibility: { programCode: 'BSECE', yearLevel: 1 },
-    sortOrder: 32,
-  },
-  {
-    positionCode: 'BSECE_REP_2',
-    title: 'Representative for BSECE 2',
-    positionType: 'representative',
-    eligibility: { programCode: 'BSECE', yearLevel: 2 },
-    sortOrder: 33,
-  },
-  {
-    positionCode: 'BSECE_REP_3',
-    title: 'Representative for BSECE 3',
-    positionType: 'representative',
-    eligibility: { programCode: 'BSECE', yearLevel: 3 },
-    sortOrder: 34,
-  },
-  {
-    positionCode: 'BSECE_REP_4',
-    title: 'Representative for BSECE 4',
-    positionType: 'representative',
-    eligibility: { programCode: 'BSECE', yearLevel: 4 },
-    sortOrder: 35,
-  },
+  // BSEcE
+  { positionCode: 'BSEcE_REP_1', title: 'Representative for BSEcE 1', positionType: 'representative', eligibility: { programCode: 'BSECE', yearLevel: 1 }, sortOrder: 26 },
+  { positionCode: 'BSEcE_REP_2', title: 'Representative for BSEcE 2', positionType: 'representative', eligibility: { programCode: 'BSECE', yearLevel: 2 }, sortOrder: 27 },
+  { positionCode: 'BSEcE_REP_3', title: 'Representative for BSEcE 3', positionType: 'representative', eligibility: { programCode: 'BSECE', yearLevel: 3 }, sortOrder: 28 },
+  { positionCode: 'BSEcE_REP_4', title: 'Representative for BSEcE 4', positionType: 'representative', eligibility: { programCode: 'BSECE', yearLevel: 4 }, sortOrder: 29 },
 ]
 
 export const POSITIONS = POSITIONS_UNSORTED.slice().sort((a, b) => a.sortOrder - b.sortOrder)
@@ -265,6 +143,10 @@ export const CANDIDATES: Candidate[] = POSITIONS.flatMap((pos) => {
 
 export function getCandidatesForPosition(positionCode: string) {
   return CANDIDATES.filter((c) => c.positionCode === positionCode)
+}
+
+export function getCandidateById(candidateId: string) {
+  return CANDIDATES.find((c) => c.candidateId === candidateId)
 }
 
 export function getFeaturedCandidates() {

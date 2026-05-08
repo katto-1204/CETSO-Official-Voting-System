@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Search, X, Filter } from 'lucide-react'
+import { Search, X, Filter, Shield, Crosshair, Zap } from 'lucide-react'
 import GlassCard from '../../components/ui/GlassCard'
 import TextField from '../../components/ui/TextField'
 import Button from '../../components/ui/Button'
@@ -12,200 +12,202 @@ function initialsOf(name: string) {
   return name.split(' ').filter(Boolean).slice(0, 2).map((p) => p[0]).join('')
 }
 
-const CARD_GRADIENTS = [
-  ['#ff7a18', '#ff4400', '#3d0800'],
-  ['#7c3aed', '#4c1d95', '#0f051f'],
-  ['#0d9488', '#0f766e', '#022c22'],
-  ['#2563eb', '#1e40af', '#0a0d2e'],
-  ['#db2777', '#9d174d', '#2a0018'],
+/* ── Cyberpunk / Valorant-style colour palettes per card ─── */
+const CARD_THEMES = [
+  { accent: '#ff4655', glow: 'rgba(255,70,85,0.5)', gradient: 'linear-gradient(135deg, #ff4655 0%, #0f1923 60%)', bg: '#0f1923' },
+  { accent: '#00e5ff', glow: 'rgba(0,229,255,0.5)', gradient: 'linear-gradient(135deg, #00e5ff 0%, #0a1628 60%)', bg: '#0a1628' },
+  { accent: '#bd00ff', glow: 'rgba(189,0,255,0.5)', gradient: 'linear-gradient(135deg, #bd00ff 0%, #12051f 60%)', bg: '#12051f' },
+  { accent: '#ffe500', glow: 'rgba(255,229,0,0.5)', gradient: 'linear-gradient(135deg, #ffe500 0%, #1a1600 60%)', bg: '#1a1600' },
+  { accent: '#00ff88', glow: 'rgba(0,255,136,0.5)', gradient: 'linear-gradient(135deg, #00ff88 0%, #041f10 60%)', bg: '#041f10' },
 ]
-
-const RARITY_LABELS = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary']
 
 function CandidateCard({ c, index }: { c: Candidate; index: number }) {
   const inits = initialsOf(c.fullName)
-  const [colorA, colorB, colorDark] = CARD_GRADIENTS[index % CARD_GRADIENTS.length]
-  const rarity = RARITY_LABELS[index % RARITY_LABELS.length]
+  const theme = CARD_THEMES[index % CARD_THEMES.length]
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, delay: index * 0.04 }}
-      whileHover={{ y: -4, scale: 1.015 }}
-      className="cursor-default"
-      style={{ perspective: 800 }}
+      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.4, delay: index * 0.05, ease: [0.16, 1, 0.3, 1] }}
+      whileHover={{ y: -6, scale: 1.02 }}
+      className="cursor-default group"
     >
       <div
-        className="rounded-[24px] overflow-hidden"
+        className="relative overflow-hidden rounded-lg"
         style={{
-          background: '#16161e',
-          border: '1px solid rgba(255,255,255,0.10)',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.50)',
+          background: theme.bg,
+          border: `1px solid ${theme.accent}40`,
+          boxShadow: `0 0 20px ${theme.accent}15, 0 20px 60px rgba(0,0,0,0.60)`,
+          clipPath: 'polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))',
         }}
       >
-        {/* ── Image / Avatar area ─────────────────── */}
+        {/* ── Scan-line overlay ───────────────── */}
         <div
-          className="relative h-44 flex items-center justify-center overflow-hidden"
+          className="pointer-events-none absolute inset-0 z-10 opacity-[0.03]"
           style={{
-            background: `radial-gradient(ellipse at 60% 40%, ${colorA}cc, ${colorB}99, ${colorDark})`,
+            backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.1) 2px, rgba(255,255,255,0.1) 4px)',
           }}
+        />
+
+        {/* ── Top accent bar ─────────────────── */}
+        <div
+          className="h-1 w-full"
+          style={{ background: `linear-gradient(90deg, ${theme.accent}, transparent)` }}
+        />
+
+        {/* ── Avatar area ────────────────────── */}
+        <div
+          className="relative flex items-center justify-center py-10 overflow-hidden"
+          style={{ background: theme.gradient }}
         >
-          {/* Rarity badge */}
+          {/* Hex grid decorative bg */}
           <div
-            className="absolute top-3 left-1/2 -translate-x-1/2 rounded-full px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest"
+            className="absolute inset-0 opacity-[0.06]"
             style={{
-              background: 'rgba(0,0,0,0.55)',
-              backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(255,255,255,0.18)',
-              color: 'rgba(255,255,255,0.92)',
-              fontFamily: 'var(--font-h2)',
+              backgroundImage: `radial-gradient(circle, ${theme.accent} 1px, transparent 1px)`,
+              backgroundSize: '20px 20px',
             }}
-          >
-            {rarity}
-          </div>
+          />
 
-          {/* CETSO icon top-right */}
+          {/* Corner accent */}
           <div
-            className="absolute top-3 right-3 grid h-7 w-7 place-items-center rounded-xl text-[10px] font-black text-white"
-            style={{
-              background: 'rgba(0,0,0,0.45)',
-              backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(255,255,255,0.15)',
-            }}
+            className="absolute top-3 right-3 flex items-center gap-1.5"
           >
-            C
-          </div>
-
-          {/* Big initials / avatar */}
-          <div
-            className="relative z-10 grid h-24 w-24 place-items-center rounded-2xl"
-            style={{
-              background: `linear-gradient(135deg, ${colorA}40, ${colorB}30)`,
-              border: `2px solid ${colorA}60`,
-              backdropFilter: 'blur(8px)',
-              boxShadow: `0 0 40px ${colorA}50`,
-            }}
-          >
+            <Crosshair className="h-3 w-3" style={{ color: theme.accent, opacity: 0.7 }} />
             <span
-              style={{
-                fontFamily: 'var(--font-h1)',
-                fontSize: 42,
-                color: 'white',
-                lineHeight: 1,
-                textShadow: `0 0 24px ${colorA}`,
-              }}
+              className="text-[9px] font-bold uppercase tracking-[0.2em] font-mono"
+              style={{ color: `${theme.accent}99` }}
             >
-              {inits}
+              CET-{c.positionCode.slice(0, 4)}
             </span>
           </div>
 
-          {/* Decorative dots */}
-          <div
-            className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5"
-          >
-            {[0, 1, 2].map((d) => (
-              <div
-                key={d}
-                className="h-1.5 w-1.5 rounded-full"
-                style={{ background: d === 0 ? colorA : 'rgba(255,255,255,0.25)' }}
-              />
-            ))}
+          {/* CETSO badge top-left */}
+          <div className="absolute top-3 left-3 flex items-center gap-1.5">
+            <div
+              className="grid h-5 w-5 place-items-center rounded text-[8px] font-black text-black"
+              style={{ background: theme.accent }}
+            >
+              C
+            </div>
+          </div>
+
+          {/* Big initials */}
+          <div className="relative z-10">
+            <div
+              className="grid h-24 w-24 place-items-center rounded-lg"
+              style={{
+                background: `${theme.accent}12`,
+                border: `2px solid ${theme.accent}50`,
+                boxShadow: `0 0 40px ${theme.glow}, inset 0 0 30px ${theme.accent}10`,
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: 'var(--font-h1)',
+                  fontSize: 44,
+                  color: theme.accent,
+                  lineHeight: 1,
+                  textShadow: `0 0 20px ${theme.glow}`,
+                }}
+              >
+                {inits}
+              </span>
+            </div>
+            {/* Glow ring on hover */}
+            <div
+              className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+              style={{
+                boxShadow: `0 0 60px ${theme.glow}, 0 0 120px ${theme.accent}30`,
+              }}
+            />
           </div>
         </div>
 
-        {/* ── Price / position row ─────────────────── */}
-        <div
-          className="flex items-center justify-between px-4 py-3"
-          style={{ background: '#1e1e2a', borderTop: '1px solid rgba(255,255,255,0.06)' }}
-        >
+        {/* ── Divider with accent ────────────── */}
+        <div className="relative h-px" style={{ background: `${theme.accent}30` }}>
           <div
-            className="text-sm font-black text-white"
-            style={{ fontFamily: 'var(--font-h2)' }}
-          >
-            {c.positionCode.replaceAll('_', ' ')}
-          </div>
+            className="absolute left-0 top-0 h-full w-1/3 transition-all duration-500 group-hover:w-2/3"
+            style={{ background: theme.accent, boxShadow: `0 0 12px ${theme.glow}` }}
+          />
+        </div>
+
+        {/* ── Info section ───────────────────── */}
+        <div className="px-5 py-4" style={{ background: `${theme.bg}` }}>
+          {/* Name */}
           <div
-            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest"
+            className="text-lg font-black tracking-wide"
             style={{
-              background: `${colorA}18`,
-              border: `1px solid ${colorA}40`,
-              color: colorA,
               fontFamily: 'var(--font-h2)',
+              color: '#ffffff',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
             }}
-          >
-            {c.partylist.split(' ').slice(0, 2).join(' ')}
-          </div>
-        </div>
-
-        {/* ── Info section ─────────────────────────── */}
-        <div className="px-4 pb-4 pt-2" style={{ background: '#16161e' }}>
-          <div
-            className="text-base font-black text-white"
-            style={{ fontFamily: 'var(--font-h2)', letterSpacing: '-0.01em' }}
           >
             {c.fullName}
           </div>
-          <div
-            className="mt-0.5 flex items-center gap-1.5"
-          >
+
+          {/* Partylist + Position row */}
+          <div className="mt-2 flex items-center gap-2 flex-wrap">
             <div
-              className="grid h-4 w-4 place-items-center rounded-md text-[8px] font-black text-white"
-              style={{ background: colorA }}
+              className="inline-flex items-center gap-1 rounded px-2 py-1 text-[10px] font-bold uppercase tracking-wider"
+              style={{
+                background: `${theme.accent}15`,
+                border: `1px solid ${theme.accent}35`,
+                color: theme.accent,
+              }}
             >
-              {c.partylist[0]}
-            </div>
-            <span
-              className="text-[11px] font-semibold"
-              style={{ color: 'rgba(255,255,255,0.55)', fontFamily: 'var(--font-h2)' }}
-            >
+              <Shield className="h-2.5 w-2.5" />
               {c.partylist}
-            </span>
+            </div>
+            <div
+              className="inline-flex items-center gap-1 rounded px-2 py-1 text-[10px] font-bold uppercase tracking-wider"
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.10)',
+                color: 'rgba(255,255,255,0.5)',
+              }}
+            >
+              <Zap className="h-2.5 w-2.5" />
+              {c.positionCode.replace(/_/g, ' ')}
+            </div>
           </div>
 
           {/* Tagline */}
           <div
-            className="mt-3 text-xs font-medium italic leading-relaxed"
-            style={{ color: 'rgba(255,255,255,0.45)' }}
+            className="mt-3 text-xs font-medium italic leading-relaxed line-clamp-2"
+            style={{ color: `${theme.accent}90` }}
           >
             "{c.tagline}"
           </div>
 
-          {/* Stats row */}
+          {/* Bio */}
           <div
-            className="mt-3 grid grid-cols-2 gap-2"
-            style={{ borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: 12 }}
+            className="mt-2 text-xs font-medium leading-relaxed line-clamp-2"
+            style={{ color: 'rgba(255,255,255,0.35)' }}
           >
-            <div>
-              <div
-                className="text-[9px] font-bold uppercase tracking-widest mb-0.5"
-                style={{ color: 'rgba(255,255,255,0.35)', fontFamily: 'var(--font-h2)' }}
-              >
-                Position
-              </div>
-              <div className="text-xs font-bold" style={{ color: 'rgba(255,255,255,0.75)' }}>
-                {c.positionCode.replace(/_/g, ' ')}
-              </div>
-            </div>
-            <div>
-              <div
-                className="text-[9px] font-bold uppercase tracking-widest mb-0.5 text-right"
-                style={{ color: 'rgba(255,255,255,0.35)', fontFamily: 'var(--font-h2)' }}
-              >
-                Vote Weight
-              </div>
-              <div
-                className="flex items-center justify-end gap-1"
-              >
-                <div className="h-2 w-2 rounded-full" style={{ background: colorA }} />
-                <span className="text-xs font-bold" style={{ color: 'rgba(255,255,255,0.75)' }}>
-                  25%
-                </span>
-                <div className="h-2 w-2 rounded-full" style={{ background: 'rgba(255,255,255,0.20)' }} />
-              </div>
-            </div>
+            {c.bio}
+          </div>
+
+          {/* Bottom accent line */}
+          <div className="mt-4 flex items-center gap-2">
+            <div className="flex-1 h-px" style={{ background: `${theme.accent}20` }} />
+            <span
+              className="text-[8px] font-bold uppercase tracking-[0.3em] font-mono"
+              style={{ color: `${theme.accent}50` }}
+            >
+              CETSO 2026
+            </span>
+            <div className="flex-1 h-px" style={{ background: `${theme.accent}20` }} />
           </div>
         </div>
+
+        {/* ── Bottom accent bar ──────────────── */}
+        <div
+          className="h-0.5 w-full"
+          style={{ background: `linear-gradient(90deg, transparent, ${theme.accent}, transparent)` }}
+        />
       </div>
     </motion.div>
   )
@@ -242,14 +244,15 @@ export default function CandidateListPage() {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <GlassCard className="max-w-md w-full p-8 text-center">
+          <Crosshair className="mx-auto h-10 w-10 text-[var(--cetso-orange)] mb-4" />
           <div
-            className="text-4xl font-black"
+            className="text-3xl font-black uppercase tracking-wider"
             style={{ fontFamily: 'var(--font-h1)', color: 'var(--cetso-text)' }}
           >
-            LOGIN REQUIRED
+            ACCESS DENIED
           </div>
           <div className="mt-2 text-sm font-medium" style={{ color: 'var(--cetso-text-2)' }}>
-            Please log in as a CET student to view eligible candidates.
+            Log in as a CET student to view eligible candidates.
           </div>
         </GlassCard>
       </div>
@@ -285,8 +288,11 @@ export default function CandidateListPage() {
             letterSpacing: '0.01em',
           }}
         >
-          BROWSE & SELECT
+          AGENT SELECT
         </h1>
+        <p className="mt-2 text-sm font-medium" style={{ color: 'var(--cetso-text-2)' }}>
+          Review all candidates running for your eligible positions.
+        </p>
       </motion.div>
 
       {/* Filters */}
@@ -357,9 +363,9 @@ export default function CandidateListPage() {
         {candidates.length === 0 ? (
           <div className="col-span-full">
             <GlassCard className="p-10 text-center">
-              <div className="text-4xl mb-3">🔍</div>
+              <Search className="mx-auto h-10 w-10 text-[var(--cetso-text-3)] mb-3" />
               <div
-                className="text-3xl font-black"
+                className="text-3xl font-black uppercase"
                 style={{ fontFamily: 'var(--font-h1)', color: 'var(--cetso-text)' }}
               >
                 NO RESULTS

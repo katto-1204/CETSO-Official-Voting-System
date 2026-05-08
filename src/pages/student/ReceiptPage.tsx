@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Download, Copy, ImageDown, CheckCircle2, ArrowLeft } from 'lucide-react'
+import { Download, Copy, ImageDown, CheckCircle2, ArrowLeft, ShieldCheck, Terminal, Fingerprint, QrCode, Cpu, Share2 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import html2canvas from 'html2canvas'
 import jsPDF from 'jspdf'
@@ -9,6 +9,8 @@ import Button from '../../components/ui/Button'
 import GlassCard from '../../components/ui/GlassCard'
 import { getStudentContext } from '../../lib/studentContext'
 import { getMockVoteSubmission } from '../../mocks/mockVotes'
+import { CANDIDATES, POSITIONS } from '../../mocks/mockElection'
+import { goeyToast } from 'goey-toast'
 
 export default function ReceiptPage() {
   const navigate = useNavigate()
@@ -21,21 +23,27 @@ export default function ReceiptPage() {
     return getMockVoteSubmission(ctx.studentId)
   }, [ctx])
 
+  const selectedCandidates = useMemo(() => {
+    if (!submission) return []
+    return submission.selections.map(sel => {
+      const candidate = CANDIDATES.find(c => c.candidateId === sel.candidateId)
+      const position = POSITIONS.find(p => p.positionCode === sel.positionCode)
+      return { ...candidate, positionTitle: position?.title }
+    }).filter((candidate): candidate is NonNullable<typeof candidate> => Boolean(candidate?.candidateId))
+  }, [submission])
+
   if (!ctx) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <GlassCard className="max-w-md w-full p-8 text-center">
-          <div
-            className="text-4xl font-black"
-            style={{ fontFamily: 'var(--font-h1)', color: 'var(--cetso-text)' }}
-          >
-            LOGIN REQUIRED
+          <div className="text-4xl font-black italic uppercase tracking-tighter text-white">
+            ACCESS<br /><span className="text-orange-500">DENIED</span>
           </div>
-          <div className="mt-2 text-sm font-medium" style={{ color: 'var(--cetso-text-2)' }}>
-            Please login to view your receipt.
+          <div className="mt-4 text-xs font-black uppercase tracking-widest text-white/40">
+            Authentication node required.
           </div>
-          <Button variant="primary" size="lg" className="mt-6 w-full" onClick={() => navigate('/login')}>
-            Go to Login
+          <Button variant="primary" size="lg" className="mt-8 w-full shadow-orange-500/20" onClick={() => navigate('/login')}>
+            RE-INITIATE SESSION
           </Button>
         </GlassCard>
       </div>
@@ -46,17 +54,14 @@ export default function ReceiptPage() {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <GlassCard className="max-w-md w-full p-8 text-center">
-          <div
-            className="text-4xl font-black"
-            style={{ fontFamily: 'var(--font-h1)', color: 'var(--cetso-text)' }}
-          >
-            NO RECEIPT YET
+          <div className="text-4xl font-black italic uppercase tracking-tighter text-white">
+            NO DATA<br /><span className="text-orange-500">FOUND</span>
           </div>
-          <div className="mt-2 text-sm font-medium" style={{ color: 'var(--cetso-text-2)' }}>
-            Submit your vote first to generate a receipt.
+          <div className="mt-4 text-xs font-black uppercase tracking-widest text-white/40">
+            No active ballot recorded for this identity.
           </div>
-          <Button variant="primary" size="lg" className="mt-6 w-full" onClick={() => navigate('/student/vote')}>
-            Start Voting
+          <Button variant="primary" size="lg" className="mt-8 w-full shadow-orange-500/20" onClick={() => navigate('/student/vote')}>
+            INITIALIZE BALLOT
           </Button>
         </GlassCard>
       </div>
@@ -69,14 +74,22 @@ export default function ReceiptPage() {
     if (busy) return
     setBusy(true)
     try {
-      const el = document.getElementById('receipt-ticket')
+      const el = document.getElementById('tactical-receipt')
       if (!el) throw new Error('Element not found')
-      const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#ffffff' })
+      const canvas = await html2canvas(el, { 
+        scale: 2, 
+        backgroundColor: '#07070c',
+        useCORS: true,
+        logging: false
+      })
       const img = canvas.toDataURL('image/png')
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
-      pdf.addImage(img, 'PNG', 20, 20, 170, 240, undefined, 'FAST')
-      pdf.save(`CETSO_Receipt_${receipt.verificationCode}.pdf`)
-    } catch { alert('Could not generate PDF. Please try again.') }
+      const imgWidth = 210
+      const imgHeight = (canvas.height * imgWidth) / canvas.width
+      pdf.addImage(img, 'PNG', 0, 0, imgWidth, imgHeight, undefined, 'FAST')
+      pdf.save(`CETSO_TACTICAL_RECEIPT_${receipt.verificationCode}.pdf`)
+      goeyToast.success('Tactical PDF generated.')
+    } catch { goeyToast.error('PDF Generation Failed.') }
     finally { setBusy(false) }
   }
 
@@ -84,15 +97,21 @@ export default function ReceiptPage() {
     if (busy) return
     setBusy(true)
     try {
-      const el = document.getElementById('receipt-ticket')
+      const el = document.getElementById('tactical-receipt')
       if (!el) throw new Error('Element not found')
-      const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#ffffff' })
+      const canvas = await html2canvas(el, { 
+        scale: 2, 
+        backgroundColor: '#07070c',
+        useCORS: true,
+        logging: false
+      })
       const url = canvas.toDataURL('image/png')
       const a = document.createElement('a')
       a.href = url
-      a.download = `CETSO_Receipt_${receipt.verificationCode}.png`
+      a.download = `CETSO_RECEIPT_${receipt.verificationCode}.png`
       a.click()
-    } catch { alert('Could not save image.') }
+      goeyToast.success('Encrypted Image Saved.')
+    } catch { goeyToast.error('Image Export Failed.') }
     finally { setBusy(false) }
   }
 
@@ -100,8 +119,9 @@ export default function ReceiptPage() {
     try {
       await navigator.clipboard.writeText(receipt.verificationCode)
       setCopied(true)
+      goeyToast.success('Verification Code Copied.')
       setTimeout(() => setCopied(false), 2000)
-    } catch { alert('Could not copy. Please copy manually.') }
+    } catch { goeyToast.error('Clipboard Access Denied.') }
   }
 
   const ts = new Date(receipt.timestamp)
@@ -109,335 +129,232 @@ export default function ReceiptPage() {
   const timeStr = ts.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-8 max-w-5xl mx-auto pb-20">
 
       {/* Page heading */}
       <motion.div
-        initial={{ opacity: 0, y: 14 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col md:flex-row md:items-end justify-between gap-6"
       >
-        <div
-          className="text-[11px] font-bold uppercase tracking-widest mb-1"
-          style={{ color: 'var(--cetso-text-3)', fontFamily: 'var(--font-h2)' }}
-        >
-          Voting Complete
-        </div>
-        <h1
-          style={{
-            fontFamily: 'var(--font-h1)',
-            fontSize: 'clamp(36px, 6vw, 56px)',
-            lineHeight: 0.95,
-            color: 'var(--cetso-text)',
-            letterSpacing: '0.01em',
-          }}
-        >
-          YOUR RECEIPT
-        </h1>
-      </motion.div>
-
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
-
-        {/* ── Ticket ──────────────────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.06 }}
-          className="lg:col-span-7"
-        >
-          {/* Printable ticket */}
-          <div
-            id="receipt-ticket"
-            className="rounded-[28px] overflow-hidden"
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.8)]" />
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-green-500">Operation: Deployment Successful</span>
+          </div>
+          <h1
+            className="italic uppercase tracking-tighter"
             style={{
-              background: '#ffffff',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
-              maxWidth: 420,
+              fontFamily: 'var(--font-h1)',
+              fontSize: 'clamp(40px, 6vw, 64px)',
+              lineHeight: 0.8,
+              color: 'var(--cetso-text)',
             }}
           >
-            {/* Top section */}
-            <div className="px-8 pt-8 pb-6 text-center">
-              {/* Confetti emoji */}
-              <div className="text-5xl mb-3">🎉</div>
+            TACTICAL<br /><span className="text-orange-500">RECEIPT</span>
+          </h1>
+        </div>
 
-              <div
-                className="text-2xl font-black"
-                style={{ fontFamily: 'var(--font-h2)', color: '#111', letterSpacing: '-0.01em' }}
-              >
-                Vote Submitted!
-              </div>
-              <p className="mt-1 text-sm" style={{ color: '#888', fontFamily: 'var(--font-h2)' }}>
-                Your ballot has been recorded successfully
-              </p>
-            </div>
+        <div className="flex gap-3">
+           <Button variant="secondary" size="lg" className="h-14 px-8 bg-white/5 border-white/10" onClick={() => navigate('/student/dashboard')}>
+              <ArrowLeft className="h-5 w-5" />
+              <span className="italic tracking-tighter uppercase text-[13px]">RETURN TO COMMAND</span>
+           </Button>
+           <Button variant="primary" size="lg" className="h-14 px-8 shadow-orange-500/20" onClick={downloadPDF} loading={busy}>
+              <Download className="h-5 w-5" />
+              <span className="italic tracking-tighter uppercase text-[13px]">DOWNLOAD ARCHIVE</span>
+           </Button>
+        </div>
+      </motion.div>
 
-            {/* Dashed ticket tear */}
-            <div className="relative flex items-center px-0" style={{ margin: '0' }}>
-              {/* Left notch */}
-              <div
-                className="absolute -left-4 h-8 w-8 rounded-full"
-                style={{ background: 'var(--cetso-bg)', zIndex: 2 }}
-              />
-              {/* Right notch */}
-              <div
-                className="absolute -right-4 h-8 w-8 rounded-full"
-                style={{ background: 'var(--cetso-bg)', zIndex: 2 }}
-              />
-              {/* Dashed line */}
-              <div
-                className="w-full"
-                style={{
-                  borderTop: '2px dashed #e0e0e0',
-                  marginLeft: 16,
-                  marginRight: 16,
-                }}
-              />
-            </div>
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
 
-            {/* Body section */}
-            <div className="px-8 pt-6 pb-2 space-y-5">
-
-              {/* Vote ID */}
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <div
-                    className="text-[10px] font-bold uppercase tracking-widest mb-1"
-                    style={{ color: '#aaa', fontFamily: 'var(--font-h2)' }}
-                  >
-                    Vote ID
-                  </div>
-                  <div
-                    className="text-base font-black"
-                    style={{ fontFamily: 'var(--font-mono)', color: '#111', letterSpacing: '0.04em' }}
-                  >
-                    {receipt.verificationCode}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div
-                    className="text-[10px] font-bold uppercase tracking-widest mb-1"
-                    style={{ color: '#aaa', fontFamily: 'var(--font-h2)' }}
-                  >
-                    Status
-                  </div>
-                  <div
-                    className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold"
-                    style={{ background: '#dcfce7', color: '#16a34a' }}
-                  >
-                    <CheckCircle2 className="h-3 w-3" />
-                    Verified
-                  </div>
-                </div>
+        {/* ── Tactical Lineup (Left) ───────────────── */}
+        <div className="xl:col-span-8 space-y-6">
+           <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            id="tactical-receipt"
+            className="rounded-[40px] p-8 md:p-12 relative overflow-hidden"
+            style={{
+              background: '#07070c',
+              border: '1px solid rgba(255,122,24,0.15)',
+              boxShadow: '0 40px 100px rgba(0,0,0,0.8)'
+            }}
+           >
+              {/* Decorative scanline */}
+              <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-[0.03]">
+                 <div className="absolute inset-0" style={{ backgroundImage: 'linear-gradient(rgba(255,122,24,0.1) 1px, transparent 1px)', backgroundSize: '100% 4px' }} />
               </div>
 
-              {/* Date & time */}
-              <div>
-                <div
-                  className="text-[10px] font-bold uppercase tracking-widest mb-1"
-                  style={{ color: '#aaa', fontFamily: 'var(--font-h2)' }}
-                >
-                  Date &amp; Time
-                </div>
-                <div className="text-base font-bold" style={{ color: '#111', fontFamily: 'var(--font-h2)' }}>
-                  {dateStr} • {timeStr}
-                </div>
+              {/* Header Info */}
+              <div className="flex flex-col md:flex-row justify-between gap-8 mb-12 relative z-10">
+                 <div className="flex items-center gap-6">
+                    <div className="h-20 w-20 rounded-3xl bg-orange-500 grid place-items-center shadow-[0_0_30px_rgba(249,115,22,0.4)]">
+                       <ShieldCheck className="h-10 w-10 text-white" />
+                    </div>
+                    <div>
+                       <div className="text-[10px] font-black uppercase tracking-[0.4em] text-orange-500 mb-1">Official Ballot Record</div>
+                       <h2 className="text-3xl font-black italic uppercase tracking-tighter text-white">Secure Verification</h2>
+                       <div className="mt-2 flex items-center gap-4 text-[9px] font-black uppercase tracking-[0.2em] text-white/30">
+                          <span className="flex items-center gap-1.5"><Terminal className="h-3 w-3" /> Core: Nexus_01</span>
+                          <span className="flex items-center gap-1.5"><Fingerprint className="h-3 w-3" /> Encrypted</span>
+                       </div>
+                    </div>
+                 </div>
+                 
+                 <div className="flex md:flex-col items-end justify-between md:justify-center gap-4">
+                    <div className="text-right">
+                       <div className="text-[9px] font-black uppercase tracking-widest text-white/30">Election Year</div>
+                       <div className="text-xl font-black italic text-white leading-none mt-1">{receipt.electionYear}</div>
+                    </div>
+                    <div className="text-right">
+                       <div className="text-[9px] font-black uppercase tracking-widest text-white/30">Node Timestamp</div>
+                       <div className="text-sm font-mono text-orange-500 mt-1">{dateStr} • {timeStr}</div>
+                    </div>
+                 </div>
               </div>
 
-              {/* Student row */}
-              <div
-                className="flex items-center gap-3 rounded-2xl p-4"
-                style={{ background: '#f8f8fb', border: '1px solid #ebebf0' }}
-              >
-                <div
-                  className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-sm font-black"
-                  style={{ background: 'rgba(255,122,24,0.12)', color: '#e06300' }}
-                >
-                  {receipt.studentName.split(' ').slice(0, 2).map((p: string) => p[0]).join('').toUpperCase()}
-                </div>
-                <div>
-                  <div className="font-bold text-sm" style={{ color: '#111', fontFamily: 'var(--font-h2)' }}>
-                    {receipt.studentName}
-                  </div>
-                  <div className="text-[11px]" style={{ color: '#999', fontFamily: 'var(--font-h2)' }}>
-                    {receipt.studentId} &bull; {receipt.programCode}
-                  </div>
-                </div>
-              </div>
-            </div>
+              <div className="h-px w-full bg-white/5 mb-10" />
 
-            {/* Dashed ticket tear bottom */}
-            <div className="relative flex items-center px-0 mt-4">
-              <div
-                className="absolute -left-4 h-8 w-8 rounded-full"
-                style={{ background: 'var(--cetso-bg)', zIndex: 2 }}
-              />
-              <div
-                className="absolute -right-4 h-8 w-8 rounded-full"
-                style={{ background: 'var(--cetso-bg)', zIndex: 2 }}
-              />
-              <div
-                className="w-full"
-                style={{
-                  borderTop: '2px dashed #e0e0e0',
-                  marginLeft: 16,
-                  marginRight: 16,
-                }}
-              />
-            </div>
-
-            {/* Barcode section */}
-            <div className="px-8 py-6 flex flex-col items-center gap-3">
-              <div className="flex items-center justify-center">
-                <div
-                  className="rounded-2xl p-3"
-                  style={{ background: 'white', border: '2px solid #f0f0f0' }}
-                >
-                  <QRCodeSVG
-                    value={receipt.verificationCode}
-                    size={90}
-                    fgColor="#111111"
-                    bgColor="transparent"
-                  />
-                </div>
+              {/* Tactical Lineup Grid */}
+              <div className="mb-12">
+                 <div className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 mb-8 flex items-center gap-4">
+                    <Cpu className="h-4 w-4 text-orange-500" />
+                    Deployed Tactical Lineup
+                    <div className="h-px flex-1 bg-white/5" />
+                 </div>
+                 
+                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {selectedCandidates.map((can, i) => (
+                       <div 
+                        key={i} 
+                        className="rounded-2xl p-4 bg-white/5 border border-white/5 flex flex-col gap-3 relative overflow-hidden group"
+                       >
+                          <div className="absolute -top-2 -right-2 opacity-[0.03] transition-opacity group-hover:opacity-[0.08]">
+                             <Terminal className="h-16 w-16" />
+                          </div>
+                          <div className="text-[8px] font-black uppercase tracking-widest text-orange-500 truncate mb-1">
+                             {can.positionTitle}
+                          </div>
+                          <div className="text-[11px] font-black uppercase italic tracking-tighter text-white leading-tight">
+                             {can.fullName}
+                          </div>
+                          <div className="mt-auto pt-2 border-t border-white/5 flex items-center justify-between">
+                             <div className="text-[8px] font-black text-white/20 uppercase tracking-widest">Confirmed</div>
+                             <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                          </div>
+                       </div>
+                    ))}
+                 </div>
               </div>
 
-              {/* Barcode visual */}
-              <div className="flex items-end gap-px mt-1">
-                {Array.from({ length: 52 }, (_, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      width: i % 3 === 0 ? 3 : i % 5 === 0 ? 2 : 1,
-                      height: i % 4 === 0 ? 36 : i % 3 === 0 ? 28 : 22,
-                      background: '#222',
-                      borderRadius: 1,
-                    }}
-                  />
-                ))}
+              {/* Bottom Footer with QR and Verification */}
+              <div className="flex flex-col md:flex-row items-center gap-10 mt-auto pt-10 border-t border-white/5">
+                 <div className="p-4 rounded-3xl bg-white relative group">
+                    <QRCodeSVG 
+                       value={receipt.verificationCode}
+                       size={140}
+                       fgColor="#000"
+                       bgColor="transparent"
+                       level="H"
+                    />
+                    <div className="absolute inset-0 border-4 border-black/5 rounded-3xl pointer-events-none" />
+                 </div>
+                 
+                 <div className="flex-1 space-y-6">
+                    <div>
+                       <div className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 mb-3">Unique Verification Hash</div>
+                       <div className="p-4 rounded-2xl bg-white/5 border border-white/10 font-mono text-sm font-black text-orange-500 tracking-wider flex items-center justify-between">
+                          {receipt.verificationCode}
+                          <QrCode className="h-5 w-5 opacity-20" />
+                       </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-4">
+                       <div className="flex-1">
+                          <div className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 mb-1">Authenticated Operator</div>
+                          <div className="text-sm font-black text-white italic uppercase tracking-tighter">{receipt.studentName}</div>
+                       </div>
+                       <div className="text-right">
+                          <div className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 mb-1">Status</div>
+                          <div className="px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-500 text-[9px] font-black uppercase tracking-widest">VERIFIED_SECURE</div>
+                       </div>
+                    </div>
+                 </div>
               </div>
-              <div
-                className="text-[11px] tracking-[0.25em] font-mono"
-                style={{ color: '#555' }}
-              >
-                {receipt.verificationCode.replace(/-/g, ' ')}
+              
+              {/* Branding subtle */}
+              <div className="mt-12 text-center text-[8px] font-black uppercase tracking-[0.5em] text-white/10">
+                 Nexus Protocol • CETSO Official Records • Phase 02
               </div>
+           </motion.div>
+        </div>
 
-              {/* CETSO badge */}
-              <div
-                className="mt-1 flex items-center gap-1.5 rounded-full px-3 py-1.5"
-                style={{ background: 'rgba(224,99,0,0.08)', border: '1px solid rgba(224,99,0,0.18)' }}
-              >
-                <div
-                  className="grid h-4 w-4 place-items-center rounded text-[9px] font-black text-white"
-                  style={{ background: '#e06300' }}
-                >
-                  C
-                </div>
-                <span
-                  className="text-[10px] font-bold uppercase tracking-widest"
-                  style={{ color: '#e06300', fontFamily: 'var(--font-h2)' }}
-                >
-                  CETSO Elections {receipt.electionYear}
-                </span>
+        {/* ── Actions sidebar (Right) ───────────────── */}
+        <div className="xl:col-span-4 space-y-6">
+           <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+           >
+              <GlassCard className="p-8 space-y-8">
+                 <div>
+                    <h3 className="text-2xl font-black italic uppercase tracking-tighter text-white mb-2">Node Export</h3>
+                    <p className="text-[11px] font-medium text-white/40 leading-relaxed uppercase tracking-widest">
+                       Secure your ballot record. This document contains your unique verification hash for auditing purposes.
+                    </p>
+                 </div>
+                 
+                 <div className="space-y-3">
+                    <Button variant="primary" size="lg" className="w-full h-14 shadow-orange-500/20" onClick={downloadPDF} loading={busy}>
+                       <Download className="h-5 w-5" />
+                       <span className="italic tracking-tighter uppercase text-[13px]">SAVE AS ARCHIVE (.PDF)</span>
+                    </Button>
+                    <Button variant="secondary" size="lg" className="w-full h-14 bg-white/5 border-white/10" onClick={saveAsImage} loading={busy}>
+                       <ImageDown className="h-5 w-5" />
+                       <span className="italic tracking-tighter uppercase text-[13px]">EXPORT DATA CRYSTAL (.PNG)</span>
+                    </Button>
+                 </div>
+                 
+                 <div className="pt-8 border-t border-white/5">
+                    <div className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 mb-4">Quick Share Hash</div>
+                    <div className="flex items-center gap-2">
+                       <div className="flex-1 p-4 rounded-2xl bg-black/40 border border-white/5 font-mono text-xs font-black text-white/60 overflow-hidden truncate">
+                          {receipt.verificationCode}
+                       </div>
+                       <button 
+                        onClick={copyCode}
+                        className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[var(--cetso-orange)] text-white shadow-lg transition-transform active:scale-90"
+                       >
+                          {copied ? <CheckCircle2 className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
+                       </button>
+                    </div>
+                 </div>
+              </GlassCard>
+           </motion.div>
+           
+           <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 }}
+           >
+              <div className="rounded-3xl p-6 bg-orange-500/5 border border-orange-500/10">
+                 <div className="flex items-center gap-3 mb-4">
+                    <ShieldCheck className="h-5 w-5 text-orange-500" />
+                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-orange-500">Security Protocol</span>
+                 </div>
+                 <p className="text-[11px] font-medium leading-relaxed text-white/40 uppercase tracking-widest">
+                    This receipt does not reveal your specific choices on the official blockchain. It only verifies your participation identity.
+                 </p>
+                 <div className="mt-4 flex items-center gap-3">
+                    <Share2 className="h-3 w-3 text-white/20" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-white/20">Audit-Ready Node</span>
+                 </div>
               </div>
-            </div>
-
-            {/* Scalloped bottom edge */}
-            <div
-              className="flex justify-around pb-1 pt-0"
-              style={{ background: '#f8f8fb' }}
-            >
-              {Array.from({ length: 10 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="h-4 w-8 rounded-b-full"
-                  style={{ background: 'white', marginBottom: -2 }}
-                />
-              ))}
-            </div>
-          </div>
-        </motion.div>
-
-        {/* ── Actions sidebar ──────────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.12 }}
-          className="lg:col-span-5 space-y-4"
-        >
-
-          {/* Copy code */}
-          <GlassCard className="p-5">
-            <div
-              className="text-[10px] font-bold uppercase tracking-widest mb-1"
-              style={{ color: 'var(--cetso-text-3)', fontFamily: 'var(--font-h2)' }}
-            >
-              Verification Code
-            </div>
-            <div className="flex items-center gap-2 mt-2">
-              <div
-                className="flex-1 min-w-0 rounded-xl px-3 py-2 text-xs font-black font-mono"
-                style={{
-                  background: 'rgba(255,122,24,0.08)',
-                  border: '1px solid rgba(255,122,24,0.22)',
-                  color: 'var(--cetso-text)',
-                }}
-              >
-                {receipt.verificationCode}
-              </div>
-              <button
-                type="button"
-                onClick={copyCode}
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-xl transition"
-                style={{
-                  background: 'var(--cetso-badge-bg)',
-                  border: '1px solid var(--cetso-border)',
-                  color: 'var(--cetso-text-2)',
-                }}
-              >
-                {copied
-                  ? <CheckCircle2 className="h-4 w-4" style={{ color: '#4ade80' }} />
-                  : <Copy className="h-4 w-4" />}
-              </button>
-            </div>
-          </GlassCard>
-
-          {/* Download actions */}
-          <GlassCard className="p-5 space-y-3">
-            <h2
-              className="text-xl font-black"
-              style={{ fontFamily: 'var(--font-h2)', color: 'var(--cetso-text)', letterSpacing: '-0.01em' }}
-            >
-              Download &amp; Save
-            </h2>
-            <Button variant="primary" size="lg" className="w-full" onClick={downloadPDF} disabled={busy}>
-              <Download className="h-4 w-4" />
-              Download PDF
-            </Button>
-            <Button variant="secondary" size="lg" className="w-full" onClick={saveAsImage} disabled={busy}>
-              <ImageDown className="h-4 w-4" />
-              Save as Image
-            </Button>
-            <Button variant="ghost" size="lg" className="w-full" onClick={() => navigate('/student/dashboard')}>
-              <ArrowLeft className="h-4 w-4" /> Back to Dashboard
-            </Button>
-          </GlassCard>
-
-          {/* Privacy notice */}
-          <div
-            className="rounded-2xl p-4"
-            style={{ background: 'rgba(255,122,24,0.06)', border: '1px solid rgba(255,122,24,0.18)' }}
-          >
-            <div
-              className="text-[10px] font-bold uppercase tracking-widest mb-2"
-              style={{ color: 'rgba(255,178,74,0.85)', fontFamily: 'var(--font-h2)' }}
-            >
-              Privacy Protected
-            </div>
-            <div className="text-xs font-medium leading-relaxed" style={{ color: 'var(--cetso-text-2)' }}>
-              This receipt does not reveal who you voted for — it provides an auditable verification code only.
-            </div>
-          </div>
-        </motion.div>
+           </motion.div>
+        </div>
       </div>
     </div>
   )
