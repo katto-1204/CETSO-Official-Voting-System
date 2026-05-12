@@ -59,7 +59,7 @@ function StatCard({
           >
             <Icon className="h-5 w-5 text-[var(--cetso-orange)]" />
           </div>
-          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">
+          <div className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: 'var(--cetso-text-3)' }}>
             {label}
           </div>
         </div>
@@ -85,8 +85,8 @@ function StatCard({
         </div>
         
         <div className="mt-4 flex items-center gap-2">
-           <div className="h-px flex-1 bg-white/5" />
-           <div className="text-[9px] font-black uppercase tracking-widest text-white/20">{sub}</div>
+           <div className="h-px flex-1 bg-current opacity-5" />
+           <div className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>{sub}</div>
         </div>
       </GlassCard>
     </motion.div>
@@ -151,19 +151,19 @@ export default function AdminDashboardPage() {
               color: 'var(--cetso-text)',
             }}
           >
-            COMMAND<br /><span className="text-white/20 group-hover:text-[var(--cetso-orange)] transition-colors">DASHBOARD</span>
+            COMMAND<br /><span style={{ color: 'var(--cetso-text-3)' }} className="group-hover:text-[var(--cetso-orange)] transition-colors">DASHBOARD</span>
           </h1>
         </div>
 
         <div className="flex items-center gap-3">
-           <GlassCard className="px-5 py-3 flex items-center gap-4 bg-white/5">
+           <GlassCard className="px-5 py-3 flex items-center gap-4">
               <div className="text-right">
-                 <div className="text-[9px] font-black uppercase tracking-widest text-white/30">System Time</div>
-                 <div className="text-xs font-mono text-white/70">12:44:02 UTC</div>
+                 <div className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>System Time</div>
+                 <div className="text-xs font-mono" style={{ color: 'var(--cetso-text-2)' }}>12:44:02 UTC</div>
               </div>
-              <div className="h-8 w-px bg-white/10" />
+              <div className="h-8 w-px bg-current opacity-10" />
               <div className="text-right">
-                 <div className="text-[9px] font-black uppercase tracking-widest text-white/30">Latency</div>
+                 <div className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>Latency</div>
                  <div className="text-xs font-mono text-green-500">14ms</div>
               </div>
            </GlassCard>
@@ -200,16 +200,16 @@ export default function AdminDashboardPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
                <div>
                   <div className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-500 mb-2">Live Progress</div>
-                  <h3 className="text-3xl font-black italic uppercase tracking-tighter text-white">Participation Node</h3>
+                  <h3 className="text-3xl font-black italic uppercase tracking-tighter" style={{ color: 'var(--cetso-text)' }}>Participation Node</h3>
                </div>
                <div className="flex gap-4">
                   <div className="text-right">
-                     <div className="text-[10px] font-black uppercase tracking-widest text-white/30">Target</div>
-                     <div className="text-xl font-black text-white/50 italic">85.0%</div>
+                     <div className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>Target</div>
+                     <div className="text-xl font-black italic" style={{ color: 'var(--cetso-text-3)' }}>85.0%</div>
                   </div>
-                  <div className="h-10 w-px bg-white/10" />
+                  <div className="h-10 w-px bg-current opacity-10" />
                   <div className="text-right">
-                     <div className="text-[10px] font-black uppercase tracking-widest text-white/30">Status</div>
+                     <div className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>Status</div>
                      <div className="text-xl font-black text-green-500 italic">ON TRACK</div>
                   </div>
                </div>
@@ -231,7 +231,7 @@ export default function AdminDashboardPage() {
               />
             </div>
             
-            <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-white/20">
+            <div className="flex justify-between text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>
                <span>0% Startup</span>
                <span>{stats.participationRate.toFixed(1)}% Current</span>
                <span>100% Completion</span>

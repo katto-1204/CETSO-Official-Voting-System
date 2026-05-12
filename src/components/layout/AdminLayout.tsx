@@ -215,11 +215,11 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
         </div>
 
         {/* Footer Actions */}
-        <div className="px-4 py-6 flex gap-2 border-t border-white/5 bg-black/20">
+        <div className="px-4 py-6 flex gap-2 border-t border-[var(--cetso-border)] bg-[var(--cetso-surface-2)]/50">
           <button
             type="button"
             onClick={toggle}
-            className="flex-1 grid h-12 place-items-center rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group/btn"
+            className="flex-1 grid h-12 place-items-center rounded-2xl bg-[var(--cetso-surface-2)] border border-[var(--cetso-border)] hover:bg-[var(--cetso-surface-3)] transition-colors group/btn"
             title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
           >
             {theme === 'dark' ? <Sun className="h-5 w-5 text-orange-400" /> : <Moon className="h-5 w-5 text-blue-400" />}
@@ -280,7 +280,13 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
         </header>
 
         {/* Tactical Header for Desktop */}
-        <div className="hidden lg:flex items-center justify-between px-8 py-4 border-b border-white/5 bg-black/20 sticky top-0 z-30 backdrop-blur-md">
+        <div 
+          className="hidden lg:flex items-center justify-between px-8 py-4 border-b sticky top-0 z-30 backdrop-blur-md"
+          style={{ 
+            background: 'var(--cetso-header-bg)', 
+            borderColor: 'var(--cetso-border)' 
+          }}
+        >
            <div className="flex items-center gap-6">
               <div className="flex items-center gap-2">
                  <Cpu className="h-4 w-4 text-orange-500" />
@@ -293,9 +299,9 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
               </div>
            </div>
            
-           <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4">
               <div className="text-right">
-                 <div className="text-[10px] font-black uppercase tracking-widest text-white/30">Operator</div>
+                 <div className="text-[10px] font-black uppercase tracking-widest opacity-40" style={{ color: 'var(--cetso-text)' }}>Operator</div>
                  <div className="text-[11px] font-bold text-[var(--cetso-orange)] uppercase italic tracking-tighter">ADMIN_SYSTEM_01</div>
               </div>
               <div className="h-10 w-10 rounded-2xl bg-[var(--cetso-orange)]/10 border border-[var(--cetso-orange)]/20 grid place-items-center">

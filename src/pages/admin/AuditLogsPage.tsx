@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Clock, Shield, ScrollText, Vote, LogIn, Upload, Settings } from 'lucide-react'
-import AdminLayout from '../../components/layout/AdminLayout'
 import GlassCard from '../../components/ui/GlassCard'
 
 type AuditEvent = {
@@ -47,8 +46,7 @@ export default function AuditLogsPage() {
   }, [])
 
   return (
-    <AdminLayout>
-      <div className="space-y-5">
+    <div className="space-y-5">
 
         {/* Header */}
         <motion.div
@@ -223,6 +221,6 @@ export default function AuditLogsPage() {
           </motion.div>
         </div>
       </div>
-    </AdminLayout>
+    </div>
   )
 }

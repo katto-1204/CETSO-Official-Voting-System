@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { BarChart3, PieChart as PieIcon } from 'lucide-react'
-import AdminLayout from '../../components/layout/AdminLayout'
 import GlassCard from '../../components/ui/GlassCard'
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from 'recharts'
 import { getMockVoteSubmission, isVoteAlreadySubmitted } from '../../mocks/mockVotes'
@@ -46,8 +45,7 @@ export default function ResultsAnalyticsPage() {
   const topBreakdown = data.byPosition.slice(0, 8)
 
   return (
-    <AdminLayout>
-      <div className="space-y-5">
+    <div className="space-y-5">
 
         {/* Header */}
         <motion.div
@@ -261,6 +259,6 @@ export default function ResultsAnalyticsPage() {
           </GlassCard>
         </motion.div>
       </div>
-    </AdminLayout>
+    </div>
   )
 }

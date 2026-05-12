@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { CalendarRange, CalendarDays, LockKeyhole, Unlock, Zap, CheckCircle2 } from 'lucide-react'
-import AdminLayout from '../../components/layout/AdminLayout'
 import GlassCard from '../../components/ui/GlassCard'
 import Button from '../../components/ui/Button'
 import { ELECTION } from '../../mocks/mockElection'
@@ -20,19 +19,18 @@ export default function ElectionManagementPage() {
   }
 
   return (
-    <AdminLayout>
-      <div className="space-y-5">
+    <div className="space-y-5">
 
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-[32px] p-6"
+          className="relative overflow-hidden rounded-[32px] p-6 border transition-colors duration-300"
           style={{
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.07)',
+            background: 'var(--cetso-surface-1)',
+            borderColor: 'var(--cetso-border)',
             backdropFilter: 'blur(20px)',
-            boxShadow: '0 24px 64px rgba(0,0,0,0.50)',
+            boxShadow: 'var(--cetso-card-shadow)',
           }}
         >
           <div className="flex items-center gap-4">
@@ -74,7 +72,7 @@ export default function ElectionManagementPage() {
           >
             <GlassCard className="p-5">
               <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)]">Current Election</div>
-              <div className="mt-1.5 text-xl font-black text-white">{ELECTION.name}</div>
+              <div className="mt-1.5 text-xl font-black text-[var(--cetso-text)]">{ELECTION.name}</div>
 
               {/* Status banner */}
               <div
@@ -104,7 +102,7 @@ export default function ElectionManagementPage() {
                     }
                   </div>
                   <div>
-                    <div className="text-sm font-bold text-white">
+                    <div className="text-sm font-bold text-[var(--cetso-text)]">
                       Voting is {enabled ? 'Open' : 'Closed'}
                     </div>
                     <div className="text-xs font-medium text-[var(--cetso-text-2)]">
@@ -157,8 +155,8 @@ export default function ElectionManagementPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                      <td className="p-3 text-sm font-bold text-white">{ELECTION.name}</td>
+                    <tr style={{ borderTop: '1px solid var(--cetso-border)' }}>
+                      <td className="p-3 text-sm font-bold text-[var(--cetso-text)]">{ELECTION.name}</td>
                       <td className="p-3">
                         <span
                           className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold"
@@ -198,11 +196,11 @@ export default function ElectionManagementPage() {
               >
                 <div className="flex items-center gap-2 mb-1.5">
                   <Zap className="h-4 w-4 text-[var(--cetso-orange)]" />
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-[rgba(255,178,74,0.85)]">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-orange)] opacity-80">
                     Program Weighting Rule
                   </div>
                 </div>
-                <div className="text-sm font-bold text-white">
+                <div className="text-sm font-bold text-[var(--cetso-text)]">
                   25% contribution per academic program.
                 </div>
                 <div className="mt-0.5 text-xs font-medium text-[var(--cetso-text-2)]">
@@ -226,7 +224,7 @@ export default function ElectionManagementPage() {
                   Schedule
                 </div>
               </div>
-              <div className="text-xl font-black text-white mb-5">Voting Window</div>
+              <div className="text-xl font-black text-[var(--cetso-text)] mb-5">Voting Window</div>
 
               <div className="space-y-4">
                 <div>
@@ -237,8 +235,8 @@ export default function ElectionManagementPage() {
                     type="datetime-local"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full rounded-2xl border border-[var(--cetso-border)] bg-[rgba(255,255,255,0.04)] px-4 py-3 text-sm text-[var(--cetso-text)] transition focus:border-[var(--cetso-border-strong)] focus:outline-none hover:border-[rgba(255,255,255,0.18)]"
-                    style={{ boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.25)' }}
+                    className="w-full rounded-2xl border border-[var(--cetso-border)] bg-[var(--cetso-surface-2)] px-4 py-3 text-sm text-[var(--cetso-text)] transition focus:border-[var(--cetso-border-strong)] focus:outline-none hover:border-[var(--cetso-border-strong)]"
+                    style={{ boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.1)' }}
                   />
                 </div>
                 <div>
@@ -286,7 +284,6 @@ export default function ElectionManagementPage() {
             </GlassCard>
           </motion.div>
         </div>
-      </div>
-    </AdminLayout>
+    </div>
   )
 }

@@ -60,15 +60,15 @@ export default function CandidateManagementPage() {
               color: 'var(--cetso-text)',
             }}
           >
-            CANDIDATE<br /><span className="text-white/20">REGISTRY</span>
+            CANDIDATE<br /><span style={{ color: 'var(--cetso-text-3)' }}>REGISTRY</span>
           </h1>
         </div>
 
         <div className="flex items-center gap-3">
-           <GlassCard className="px-5 py-3 flex items-center gap-4 bg-white/5 border-white/5">
+           <GlassCard className="px-5 py-3 flex items-center gap-4">
               <div className="text-right">
-                 <div className="text-[9px] font-black uppercase tracking-widest text-white/30">Total Assets</div>
-                 <div className="text-xl font-black italic text-white leading-none mt-1">{CANDIDATES.length}</div>
+                 <div className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>Total Assets</div>
+                 <div className="text-xl font-black italic leading-none mt-1" style={{ color: 'var(--cetso-text)' }}>{CANDIDATES.length}</div>
               </div>
            </GlassCard>
            
@@ -88,7 +88,7 @@ export default function CandidateManagementPage() {
         <GlassCard className="p-6">
            <div className="flex flex-col md:flex-row gap-4 items-center">
               <div className="relative flex-1 group">
-                 <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none transition-colors group-focus-within:text-orange-500 text-white/20">
+                 <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none transition-colors group-focus-within:text-orange-500" style={{ color: 'var(--cetso-text-3)' }}>
                     <Search className="h-5 w-5" />
                  </div>
                  <input 
@@ -96,7 +96,12 @@ export default function CandidateManagementPage() {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="SEARCH REGISTRY (NAME, POSITION, PARTY...)"
-                    className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 pl-12 pr-12 text-sm font-bold uppercase tracking-widest text-white placeholder:text-white/20 focus:outline-none focus:border-orange-500/30 transition-all"
+                    className="w-full border rounded-2xl py-4 pl-12 pr-12 text-sm font-bold uppercase tracking-widest placeholder:opacity-50 focus:outline-none transition-all"
+                    style={{
+                      background: 'var(--cetso-input-bg)',
+                      border: '1px solid var(--cetso-border)',
+                      color: 'var(--cetso-text)'
+                    }}
                  />
                  {query && (
                     <button 

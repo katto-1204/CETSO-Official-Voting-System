@@ -174,7 +174,7 @@ export default function LandingPage() {
                     fontFamily: 'var(--font-h2)',
                   }}
                 >
-                  Learn More
+                  Register Now
                 </button>
               </Link>
             </motion.div>

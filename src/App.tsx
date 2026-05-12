@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import AppShell from './components/layout/AppShell'
+import AdminLayout from './components/layout/AdminLayout'
 
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
@@ -62,22 +63,24 @@ function AnimatedRoutes() {
           </Route>
 
           {/* Admin */}
-          <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-          <Route
-            path="/admin/elections"
-            element={<ElectionManagementPage />}
-          />
-          <Route
-            path="/admin/candidates"
-            element={<CandidateManagementPage />}
-          />
-          <Route path="/admin/students" element={<StudentManagementPage />} />
-          <Route path="/admin/live" element={<LiveVoteMonitoringPage />} />
-          <Route
-            path="/admin/results"
-            element={<ResultsAnalyticsPage />}
-          />
-          <Route path="/admin/audit" element={<AuditLogsPage />} />
+          <Route element={<AdminLayout />}>
+            <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+            <Route
+              path="/admin/elections"
+              element={<ElectionManagementPage />}
+            />
+            <Route
+              path="/admin/candidates"
+              element={<CandidateManagementPage />}
+            />
+            <Route path="/admin/students" element={<StudentManagementPage />} />
+            <Route path="/admin/live" element={<LiveVoteMonitoringPage />} />
+            <Route
+              path="/admin/results"
+              element={<ResultsAnalyticsPage />}
+            />
+            <Route path="/admin/audit" element={<AuditLogsPage />} />
+          </Route>
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/landing" replace />} />

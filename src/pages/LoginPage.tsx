@@ -237,12 +237,21 @@ export default function LoginPage() {
             <div className="flex-1 h-px bg-white/5" />
           </div>
 
-          <div className="flex gap-3">
-             <Link to="/" className="flex-1">
+          <div className="flex flex-col gap-3">
+             <Link to="/" className="w-full">
               <Button variant="ghost" size="sm" className="w-full bg-white/5 border border-white/5 group/home">
                 <ArrowLeft className="h-3 w-3 group-hover/home:-translate-x-1 transition-transform" /> Home
               </Button>
             </Link>
+
+            {!isAdminMode && (
+              <div className="text-center mt-2">
+                <span className="text-[11px] font-medium text-white/40">New student? </span>
+                <Link to="/register" className="text-[11px] font-bold text-[var(--cetso-orange)] hover:underline">
+                  Create an account
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Dynamic Tooltip */}

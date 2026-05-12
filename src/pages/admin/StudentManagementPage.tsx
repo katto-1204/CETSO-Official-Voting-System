@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react'
 import type { ChangeEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { UploadCloud, GraduationCap, Plus, CheckCircle2, Search, X, UserCheck, UserX } from 'lucide-react'
-import AdminLayout from '../../components/layout/AdminLayout'
 import GlassCard from '../../components/ui/GlassCard'
 import Button from '../../components/ui/Button'
 import TextField from '../../components/ui/TextField'
@@ -71,8 +70,7 @@ export default function StudentManagementPage() {
   }
 
   return (
-    <AdminLayout>
-      <div className="space-y-5">
+    <div className="space-y-5">
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
           className="relative overflow-hidden rounded-[32px] p-6"
@@ -96,7 +94,7 @@ export default function StudentManagementPage() {
               { label: 'Voted', value: votedCount, color: '#22c55e' },
               { label: 'Pending', value: students.length - votedCount, color: '#f59e0b' },
             ].map((s) => (
-              <div key={s.label} className="rounded-xl px-3 py-2" style={{ background: 'rgba(0,0,0,0.20)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div key={s.label} className="rounded-xl px-3 py-2" style={{ background: 'var(--cetso-input-bg)', border: '1px solid var(--cetso-border)' }}>
                 <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>{s.label}</div>
                 <div className="text-lg font-black" style={{ color: s.color }}>{s.value}</div>
               </div>
@@ -124,7 +122,7 @@ export default function StudentManagementPage() {
                 <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--cetso-text)' }}>
                   <UploadCloud className="inline h-4 w-4 mr-1.5 opacity-70" /> Upload CSV
                 </label>
-                <div className="relative flex items-center gap-3 rounded-2xl p-4" style={{ background: 'rgba(0,0,0,0.20)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <div className="relative flex items-center gap-3 rounded-2xl p-4" style={{ background: 'var(--cetso-input-bg)', border: '1px solid var(--cetso-border)' }}>
                   <UploadCloud className="h-5 w-5 shrink-0 text-[var(--cetso-orange)]" />
                   <input type="file" accept=".csv,text/csv" onChange={onFileChange} disabled={importing} className="text-xs" style={{ color: 'var(--cetso-text-2)' }} />
                 </div>
@@ -136,7 +134,7 @@ export default function StudentManagementPage() {
                       <span style={{ color: 'var(--cetso-text-2)' }}>Importing…</span>
                       <span className="font-bold" style={{ color: 'var(--cetso-text)' }}>{progress}%</span>
                     </div>
-                    <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
+                    <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: 'var(--cetso-input-bg)', border: '1px solid var(--cetso-border)' }}>
                       <div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #ff7a18, #ffb24a)' }} />
                     </div>
                   </motion.div>
@@ -246,10 +244,10 @@ export default function StudentManagementPage() {
               </div>
 
               {/* Table */}
-              <div className="overflow-x-auto rounded-2xl" style={{ border: '1px solid rgba(255,255,255,0.07)' }}>
+              <div className="overflow-x-auto rounded-2xl" style={{ border: '1px solid var(--cetso-border)' }}>
                 <table className="w-full border-collapse min-w-[540px]">
                   <thead>
-                    <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
+                    <tr style={{ background: 'var(--cetso-input-bg)' }}>
                       {['Student ID', 'Full Name', 'Program', 'Year', 'Vote Status'].map((h) => (
                         <th key={h} className="p-3 text-left text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>{h}</th>
                       ))}
@@ -262,8 +260,8 @@ export default function StudentManagementPage() {
                       return (
                         <motion.tr key={s.studentId} initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: 0.05 + i * 0.02 }}
-                          style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
-                          className="transition hover:bg-[rgba(255,255,255,0.02)]"
+                          style={{ borderTop: '1px solid var(--cetso-border)' }}
+                          className="transition hover:bg-black/5 dark:hover:bg-white/5"
                         >
                           <td className="p-3 font-mono text-xs font-bold" style={{ color: 'var(--cetso-text)' }}>{s.studentId}</td>
                           <td className="p-3">
@@ -304,7 +302,6 @@ export default function StudentManagementPage() {
             </GlassCard>
           </motion.div>
         </div>
-      </div>
-    </AdminLayout>
+    </div>
   )
 }

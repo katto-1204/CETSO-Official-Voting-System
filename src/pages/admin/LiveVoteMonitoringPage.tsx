@@ -2,7 +2,6 @@ import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Activity, TrendingUp, Users, Zap } from 'lucide-react'
 import { Bar, BarChart, Cell, Line, LineChart as ReLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import AdminLayout from '../../components/layout/AdminLayout'
 import GlassCard from '../../components/ui/GlassCard'
 import { MOCK_STUDENTS } from '../../mocks/mockStudents'
 import { POSITIONS, PROGRAMS } from '../../mocks/mockElection'
@@ -54,8 +53,7 @@ export default function LiveVoteMonitoringPage() {
   }, [])
 
   return (
-    <AdminLayout>
-      <div className="space-y-5">
+    <div className="space-y-5">
 
         {/* Header */}
         <motion.div
@@ -245,6 +243,6 @@ export default function LiveVoteMonitoringPage() {
           </GlassCard>
         </motion.div>
       </div>
-    </AdminLayout>
+    </div>
   )
 }
