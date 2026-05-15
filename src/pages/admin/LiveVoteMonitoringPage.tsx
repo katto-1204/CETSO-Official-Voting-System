@@ -88,7 +88,7 @@ export default function LiveVoteMonitoringPage() {
               <h1
                 style={{
                   fontFamily: 'var(--font-h1)',
-                  fontSize: 'clamp(30px, 4vw, 44px)',
+                  fontSize: 'clamp(24px, 4vw, 44px)',
                   lineHeight: 0.93,
                   letterSpacing: '0.01em',
                   color: 'var(--cetso-text)',
@@ -148,7 +148,7 @@ export default function LiveVoteMonitoringPage() {
                   <div
                     style={{
                       fontFamily: 'var(--font-h1)',
-                      fontSize: 'clamp(28px, 3.5vw, 40px)',
+                      fontSize: 'clamp(22px, 3.5vw, 40px)',
                       lineHeight: 0.95,
                       letterSpacing: '0.01em',
                       color: 'var(--cetso-text)',

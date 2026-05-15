@@ -16,20 +16,20 @@ export default function Footer({ variant = 'full' }: FooterProps) {
           <div className="flex items-center gap-3">
             <div className="h-0.5 w-8 bg-white/40" />
             <span className="text-[10px] font-bold uppercase tracking-widest text-white">
-              CETSO Tactical System
+              CETSO Voting System
             </span>
             <div className="h-0.5 w-8 bg-white/40" />
           </div>
 
           <div className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/60">
-            Hash: 0x82C7...A1F2 • Build STABLE
+            Hash: 0x82C7...A1F2 • Version 2.4.0
           </div>
 
           <div className="flex items-center gap-6 text-[10px] font-bold uppercase tracking-widest text-white">
             <span>v2.4.0</span>
             <div className="flex items-center gap-1.5 text-green-500">
               <div className="h-1 w-1 rounded-full bg-current animate-pulse" />
-              Node Active
+              System Active
             </div>
           </div>
         </div>
@@ -102,7 +102,7 @@ export default function Footer({ variant = 'full' }: FooterProps) {
               {[
                 { label: 'Login Terminal', to: '/login' },
                 { label: 'Create Account', to: '/register' },
-                { label: 'Command Center', to: '/admin/dashboard' },
+                { label: 'Admin Dashboard', to: '/admin/dashboard' },
                 { label: 'Voter Dashboard', to: '/student/dashboard' },
               ].map((link) => (
                 <li key={link.label}>
@@ -151,7 +151,7 @@ export default function Footer({ variant = 'full' }: FooterProps) {
                 </div>
                 <div className="flex justify-between text-[11px] font-medium">
                   <span className="text-white/40 italic">Location:</span>
-                  <span className="text-white/80">CET Main Node</span>
+                  <span className="text-white/80">CET Main Server</span>
                 </div>
               </div>
             </div>
@@ -167,7 +167,7 @@ export default function Footer({ variant = 'full' }: FooterProps) {
               className="flex items-center gap-3 px-5 py-2.5 rounded-2xl border border-white/5 bg-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-white/40 hover:border-white/20 hover:text-white transition-all active:scale-95"
             >
               {theme === 'dark' ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
-              {theme === 'dark' ? 'Override Light' : 'Initiate Dark'}
+              {theme === 'dark' ? 'Enable Light Mode' : 'Enable Dark Mode'}
             </button>
           </div>
 
@@ -179,7 +179,7 @@ export default function Footer({ variant = 'full' }: FooterProps) {
             <div className="flex items-center gap-2">
               <div className="h-1 w-1 rounded-full bg-white/20" />
               <span className="text-[10px] font-black uppercase tracking-widest text-white/30">
-                v2.4.0-STABLE
+                v2.4.0
               </span>
             </div>
           </div>

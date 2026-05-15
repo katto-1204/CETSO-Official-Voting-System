@@ -82,7 +82,7 @@ export default function StudentManagementPage() {
             </div>
             <div>
               <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>Admin</div>
-              <h1 style={{ fontFamily: 'var(--font-h1)', fontSize: 'clamp(30px, 4vw, 44px)', lineHeight: 0.93, letterSpacing: '0.01em', color: 'var(--cetso-text)', marginTop: 4 }}>
+              <h1 style={{ fontFamily: 'var(--font-h1)', fontSize: 'clamp(24px, 4vw, 44px)', lineHeight: 0.93, letterSpacing: '0.01em', color: 'var(--cetso-text)', marginTop: 4 }}>
                 STUDENT MANAGEMENT
               </h1>
             </div>

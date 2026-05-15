@@ -284,7 +284,7 @@ export default function AppShell() {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 px-4 py-6 pb-24 lg:px-8 lg:pb-0">
+        <main className="flex-1 px-3 py-4 pb-24 sm:px-4 sm:py-6 lg:px-8 lg:pb-0">
           <Outlet />
 
           <Footer variant="compact" />
@@ -300,7 +300,7 @@ export default function AppShell() {
           backdropFilter: 'blur(28px)',
         }}
       >
-        <div className="flex justify-around px-1 py-1.5">
+        <div className="grid grid-cols-5 gap-1 px-1.5 py-1.5">
           {navItems.map((item) => {
             const active = isActive(pathname, item.to)
             const Icon = item.icon
@@ -308,15 +308,15 @@ export default function AppShell() {
               <Link
                 key={item.to}
                 to={item.to}
-                className="flex flex-col items-center gap-1 rounded-xl px-3 py-2 text-[9px] font-bold uppercase tracking-wide transition-all"
+                className="min-w-0 rounded-xl px-1.5 py-2 text-center text-[8px] font-bold uppercase tracking-normal transition-all min-[380px]:px-2 min-[380px]:text-[9px] min-[380px]:tracking-wide"
                 style={
                   active
                     ? { background: 'rgba(255,122,24,0.12)', border: '1px solid rgba(255,122,24,0.28)', color: 'white' }
                     : { border: '1px solid transparent', color: 'var(--cetso-text-3)' }
                 }
               >
-                <Icon className="h-5 w-5" style={{ color: active ? 'var(--cetso-orange)' : undefined }} />
-                {item.label}
+                <Icon className="mx-auto h-5 w-5" style={{ color: active ? 'var(--cetso-orange)' : undefined }} />
+                <span className="mt-1 block truncate">{item.label}</span>
               </Link>
             )
           })}

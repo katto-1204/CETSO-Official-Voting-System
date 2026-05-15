@@ -45,7 +45,7 @@ export default function ElectionManagementPage() {
               <h1
                 style={{
                   fontFamily: 'var(--font-h1)',
-                  fontSize: 'clamp(30px, 4vw, 44px)',
+                  fontSize: 'clamp(24px, 4vw, 44px)',
                   lineHeight: 0.93,
                   letterSpacing: '0.01em',
                   color: 'var(--cetso-text)',

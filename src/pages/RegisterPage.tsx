@@ -9,6 +9,7 @@ import { findStudentById, registerStudent, isValidStudentId } from '../lib/stude
 import { generatePassword } from '../mocks/mockStudents'
 import type { ProgramCode, YearLevel } from '../mocks/mockStudents'
 import { setMockSession } from '../lib/mockSession'
+import { supabase } from '../lib/supabase'
 
 type Step = 1 | 2 | 3
 
@@ -25,6 +26,7 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [generatedPwd, setGeneratedPwd] = useState('')
+  const [loading, setLoading] = useState(false)
 
   const student = useMemo(() => {
     if (!studentId.trim()) return null
@@ -37,7 +39,7 @@ export default function RegisterPage() {
     return generatePassword(studentId.trim(), fullName.trim())
   }, [studentId, fullName])
 
-  function goNext() {
+  async function goNext() {
     setError(null)
     if (step === 1) {
       if (!studentId.trim()) { setError('Student ID is required.'); return }
@@ -60,23 +62,42 @@ export default function RegisterPage() {
       return
     }
     if (step === 3) {
-      // Password is auto-generated, no user input needed
-      const result = registerStudent({
-        studentId: studentId.trim(),
-        fullName: fullName.trim(),
-        programCode,
-        yearLevel,
+      setLoading(true)
+      const autoPassword = generatePassword(studentId.trim(), fullName.trim())
+
+      // 1. Create user in Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: `${studentId.trim()}@cetso.edu`,
+        password: autoPassword,
+        options: {
+          data: { role: 'student' }
+        }
       })
 
-      if (!result.ok) {
-        setError(result.error ?? 'Registration failed.')
+      if (authError) {
+        setError(authError.message)
+        setLoading(false)
         return
       }
 
-      setGeneratedPwd(result.generatedPassword ?? '')
-      setSuccess(true)
+      // 2. Insert into students table
+      const { error: dbError } = await supabase.from('students').insert({
+        student_id: studentId.trim(),
+        full_name: fullName.trim(),
+        program_code: programCode,
+        year_level: yearLevel
+      })
 
-      // Auto-login after registration
+      if (dbError) {
+        // We log it but continue since auth succeeded
+        console.error('Error inserting student:', dbError)
+      }
+
+      setGeneratedPwd(autoPassword)
+      setSuccess(true)
+      setLoading(false)
+
+      // Auto-login after registration (keeping mock session synced)
       setMockSession({
         role: 'student',
         studentId: studentId.trim(),
@@ -163,7 +184,7 @@ export default function RegisterPage() {
             <h1
               style={{
                 fontFamily: 'var(--font-h1)',
-                fontSize: 'clamp(28px, 5vw, 40px)',
+                fontSize: 'clamp(24px, 5vw, 40px)',
                 lineHeight: 0.95,
                 color: 'var(--cetso-text)',
                 letterSpacing: '0.02em',
@@ -453,7 +474,7 @@ export default function RegisterPage() {
                       </motion.div>
                     )}
 
-                    <Button variant="primary" size="lg" className="w-full" onClick={goNext}>
+                    <Button variant="primary" size="lg" className="w-full" onClick={goNext} loading={loading}>
                       <CheckCircle2 className="h-4 w-4" />
                       Create Account
                     </Button>

@@ -238,7 +238,7 @@ export default function VotingPage() {
       <Modal isOpen={showConfirm} onClose={() => setShowConfirm(false)} title="Final Review" maxWidth="max-w-2xl">
         <div className="space-y-6">
           <div className="text-center">
-            <h4 className="text-lg font-black text-white uppercase italic tracking-tighter">Your Tactical Lineup</h4>
+            <h4 className="text-lg font-black text-white uppercase italic tracking-tighter">Your Selected Candidates</h4>
             <p className="mt-1 text-sm text-[var(--cetso-text-2)]">Review your selections before finalizing your ballot.</p>
           </div>
 
@@ -311,7 +311,7 @@ export default function VotingPage() {
             <div
               style={{
                 fontFamily: 'var(--font-h1)',
-                fontSize: 'clamp(26px, 3.5vw, 38px)',
+                fontSize: 'clamp(22px, 3.5vw, 38px)',
                 lineHeight: 0.95,
                 letterSpacing: '0.01em',
                 color: 'var(--cetso-text)',
@@ -416,7 +416,7 @@ export default function VotingPage() {
               <div className="flex items-center gap-2">
                 <div className="h-1.5 w-6 rounded-full bg-[var(--cetso-orange)]" />
                 <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--cetso-orange)]">
-                  Tactical Selection
+                  Ballot Selection
                 </div>
               </div>
               <div className="mt-2 text-3xl font-black text-white italic tracking-tighter uppercase">{currentPosition?.title}</div>
@@ -456,7 +456,7 @@ export default function VotingPage() {
                       border: '1px solid rgba(255,255,255,0.08)',
                     }}
                   >
-                    {/* Tactical Corners */}
+                    {/* Card Corners */}
                     {selected && (
                       <>
                         <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-[var(--cetso-orange)]" />

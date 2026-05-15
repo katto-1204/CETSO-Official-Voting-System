@@ -49,13 +49,13 @@ export default function CandidateManagementPage() {
         <div>
           <div className="flex items-center gap-3 mb-2">
             <div className="h-2 w-2 rounded-full bg-orange-500 animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.8)]" />
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-500">Operation: Asset Management</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-500">Candidate Management</span>
           </div>
           <h1
             className="italic uppercase tracking-tighter"
             style={{
               fontFamily: 'var(--font-h1)',
-              fontSize: 'clamp(40px, 6vw, 64px)',
+              fontSize: 'clamp(28px, 5vw, 64px)',
               lineHeight: 0.8,
               color: 'var(--cetso-text)',
             }}
@@ -67,14 +67,14 @@ export default function CandidateManagementPage() {
         <div className="flex items-center gap-3">
            <GlassCard className="px-5 py-3 flex items-center gap-4">
               <div className="text-right">
-                 <div className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>Total Assets</div>
+                 <div className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>Total Candidates</div>
                  <div className="text-xl font-black italic leading-none mt-1" style={{ color: 'var(--cetso-text)' }}>{CANDIDATES.length}</div>
               </div>
            </GlassCard>
            
            <Button variant="primary" size="lg" className="h-14 px-8 shadow-orange-500/20" onClick={() => setOpen(true)}>
               <UserPlus className="h-5 w-5" />
-              <span className="italic tracking-tighter uppercase text-[13px]">REGISTER NEW ASSET</span>
+              <span className="italic tracking-tighter uppercase text-[13px]">REGISTER NEW CANDIDATE</span>
            </Button>
         </div>
       </motion.div>
@@ -119,7 +119,7 @@ export default function CandidateManagementPage() {
                  </Button>
                  <div className="h-14 px-5 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-3">
                     <Activity className="h-4 w-4 text-orange-500" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">{filtered.length} NODES FOUND</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">{filtered.length} CANDIDATES FOUND</span>
                  </div>
               </div>
            </div>
@@ -134,7 +134,7 @@ export default function CandidateManagementPage() {
                   <table className="w-full text-left">
                      <thead>
                         <tr className="border-b border-white/5 bg-white/5">
-                           {['Tactical Identity', 'Clearance Level (Position)', 'Combat Group (Party)', 'Actions'].map((h, i) => (
+                           {['Identity', 'Position', 'Party', 'Actions'].map((h, i) => (
                               <th key={i} className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.3em] text-white/30 italic">
                                  {h}
                               </th>
@@ -240,10 +240,10 @@ export default function CandidateManagementPage() {
                   <div>
                      <div className="flex items-center gap-3 mb-2">
                         <div className="h-2 w-2 rounded-full bg-orange-500 animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.8)]" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-500">Node Configuration</span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-500">Candidate Details</span>
                      </div>
                      <Dialog.Title className="text-4xl font-black italic uppercase tracking-tighter text-white">
-                        REGISTER<br /><span className="text-orange-500">NEW ASSET</span>
+                        REGISTER<br /><span className="text-orange-500">NEW CANDIDATE</span>
                      </Dialog.Title>
                   </div>
                   <Dialog.Close asChild>
@@ -277,10 +277,10 @@ export default function CandidateManagementPage() {
 
                   <TextField label="Full Operational Identity (Name)" placeholder="LASTNAME, FIRSTNAME M." />
                   <TextField label="Combat Group (Partylist)" placeholder="e.g. ALPHA_VANGUARD" />
-                  <TextField label="Tactical Tagline" placeholder="Campaign strategy summary..." />
+                  <TextField label="Campaign Tagline" placeholder="Campaign strategy summary..." />
 
                   <div className="space-y-4">
-                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 ml-1">Asset Visualization (Photo)</label>
+                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 ml-1">Candidate Photo</label>
                      <div className="aspect-square w-40 rounded-3xl bg-white/5 border-2 border-dashed border-white/10 flex flex-col items-center justify-center gap-3 hover:border-orange-500/30 transition-colors cursor-pointer group">
                         <div className="h-12 w-12 rounded-2xl bg-white/5 grid place-items-center group-hover:bg-orange-500/10 transition-colors">
                            <User className="h-6 w-6 text-white/20 group-hover:text-orange-500" />
@@ -296,7 +296,7 @@ export default function CandidateManagementPage() {
                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">Protocol Verification</span>
                   </div>
                   <p className="text-[10px] font-medium leading-relaxed text-white/30 uppercase tracking-widest">
-                     Registering a new asset will broadcast a secure update to all node clusters. Ensure identity accuracy before saving.
+                     Registering a new candidate will update the system. Ensure all details are accurate before saving.
                   </p>
                </div>
             </div>
@@ -310,7 +310,7 @@ export default function CandidateManagementPage() {
                   variant="primary" 
                   className="flex-[2] h-14 shadow-orange-500/20 uppercase italic tracking-tighter"
                   onClick={() => {
-                     goeyToast.success('Asset registration initiated.')
+                     goeyToast.success('Candidate registration initiated.')
                      setOpen(false)
                   }}
                >

@@ -5,8 +5,9 @@ import GlassCard from '../../components/ui/GlassCard'
 import TextField from '../../components/ui/TextField'
 import Button from '../../components/ui/Button'
 import { getStudentContext } from '../../lib/studentContext'
-import { getCandidatesForPosition, getEligiblePositions } from '../../mocks/mockElection'
+import { getEligiblePositions } from '../../mocks/mockElection'
 import type { Candidate, Position } from '../../mocks/mockElection'
+import { useCandidates } from '../../lib/queries'
 
 function initialsOf(name: string) {
   return name.split(' ').filter(Boolean).slice(0, 2).map((p) => p[0]).join('')
@@ -223,11 +224,12 @@ export default function CandidateListPage() {
     return getEligiblePositions({ programCode: ctx.programCode, yearLevel: ctx.yearLevel })
   }, [ctx])
 
+  const { data: dbCandidates, isLoading, isError } = useCandidates()
+
   const candidates: Candidate[] = useMemo(() => {
-    if (!ctx) return []
+    if (!ctx || !dbCandidates) return []
     const allowedPositionCodes = new Set(eligiblePositions.map((p) => p.positionCode))
-    const base = eligiblePositions.flatMap((p) => getCandidatesForPosition(p.positionCode))
-    const filtered = base.filter((c) => allowedPositionCodes.has(c.positionCode))
+    const filtered = dbCandidates.filter((c) => allowedPositionCodes.has(c.positionCode))
     const q = query.trim().toLowerCase()
     return filtered.filter((c) => {
       const matchQuery =
@@ -238,7 +240,7 @@ export default function CandidateListPage() {
       const matchPosition = positionCode === 'all' || c.positionCode === positionCode
       return matchQuery && matchPosition
     })
-  }, [ctx, eligiblePositions, positionCode, query])
+  }, [ctx, eligiblePositions, positionCode, query, dbCandidates])
 
   if (!ctx) {
     return (
@@ -264,6 +266,29 @@ export default function CandidateListPage() {
     ...eligiblePositions.map((p) => ({ value: p.positionCode, label: p.title })),
   ]
 
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <GlassCard className="max-w-md w-full p-8 text-center">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-[var(--cetso-orange)] mb-4" />
+          <div className="text-xl font-bold text-[var(--cetso-text)]">Loading candidates...</div>
+        </GlassCard>
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <GlassCard className="max-w-md w-full p-8 text-center border-red-500/50">
+          <X className="mx-auto h-10 w-10 text-red-500 mb-4" />
+          <div className="text-xl font-bold text-red-500">Failed to load candidates</div>
+          <p className="mt-2 text-sm text-[var(--cetso-text-2)]">Please check your database connection.</p>
+        </GlassCard>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
 
@@ -282,7 +307,7 @@ export default function CandidateListPage() {
         <h1
           style={{
             fontFamily: 'var(--font-h1)',
-            fontSize: 'clamp(36px, 6vw, 56px)',
+            fontSize: 'clamp(26px, 5vw, 56px)',
             lineHeight: 0.95,
             color: 'var(--cetso-text)',
             letterSpacing: '0.01em',

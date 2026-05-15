@@ -77,7 +77,7 @@ export default function LandingPage() {
         className="pointer-events-none fixed right-[-8vw] top-[10vh] z-0 select-none"
         style={{
           fontFamily: 'var(--font-h1)',
-          fontSize: 'clamp(260px, 35vw, 520px)',
+          fontSize: 'clamp(100px, 20vw, 520px)',
           color: 'rgba(255,122,24,0.05)',
           lineHeight: 1,
           userSelect: 'none',
@@ -125,7 +125,7 @@ export default function LandingPage() {
               transition={{ duration: 0.55, delay: 0.08 }}
               style={{
                 fontFamily: 'var(--font-h1)',
-                fontSize: 'clamp(88px, 14vw, 160px)',
+                fontSize: 'clamp(44px, 10vw, 160px)',
                 lineHeight: 0.92,
                 letterSpacing: '0.01em',
                 color: 'white',
@@ -222,7 +222,7 @@ export default function LandingPage() {
                   <h2
                     style={{
                       fontFamily: 'var(--font-h2)',
-                      fontSize: 'clamp(32px, 5vw, 42px)',
+                      fontSize: 'clamp(24px, 5vw, 42px)',
                       fontWeight: 700,
                       lineHeight: 1.10,
                       color: 'white',
@@ -385,7 +385,7 @@ export default function LandingPage() {
                   className="mt-2"
                   style={{
                     fontFamily: 'var(--font-h2)',
-                    fontSize: 'clamp(22px, 3vw, 30px)',
+                    fontSize: 'clamp(18px, 3vw, 30px)',
                     fontWeight: 700,
                     color: 'white',
                     lineHeight: 1.2,
@@ -459,7 +459,7 @@ export default function LandingPage() {
                 className="mt-2"
                 style={{
                   fontFamily: 'var(--font-h2)',
-                  fontSize: 'clamp(20px, 2.5vw, 26px)',
+                  fontSize: 'clamp(16px, 2.5vw, 26px)',
                   fontWeight: 700,
                   color: 'white',
                   lineHeight: 1.2,

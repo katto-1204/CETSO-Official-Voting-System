@@ -87,7 +87,7 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
                 style={{ color: 'rgba(255,178,74,0.85)', fontFamily: 'var(--font-h2)' }}
               >
                 <div className="h-1 w-1 rounded-full bg-orange-500 animate-pulse" />
-                Command Center
+                Admin Dashboard
               </div>
             </div>
           </Link>
@@ -114,7 +114,7 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
                   className="text-xs font-black uppercase tracking-widest italic"
                   style={{ color: 'white', fontFamily: 'var(--font-h2)' }}
                 >
-                  Root Access
+                  Admin Access
                 </div>
                 <div className="flex items-center gap-2 mt-1">
                   <div className="flex gap-0.5">
@@ -140,7 +140,7 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
             style={{ color: 'var(--cetso-text-3)', fontFamily: 'var(--font-h2)' }}
           >
             <div className="h-px flex-1 bg-white/5" />
-            Control Nodes
+            Navigation
             <div className="h-px flex-1 bg-white/5" />
           </div>
           
@@ -192,11 +192,11 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
           })}
         </nav>
 
-        {/* Stats Overlay Node */}
+        {/* System Status */ }
         <div className="p-5 mt-auto">
           <div className="rounded-2xl bg-black/40 border border-white/5 p-4 space-y-3">
              <div className="flex justify-between items-end">
-                <div className="text-[9px] font-black uppercase tracking-widest text-white/30">Node Load</div>
+                <div className="text-[9px] font-black uppercase tracking-widest text-white/30">System Load</div>
                 <div className="text-[10px] font-mono text-orange-500">24.2ms</div>
              </div>
              <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
@@ -279,7 +279,7 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
           </div>
         </header>
 
-        {/* Tactical Header for Desktop */}
+        {/* Admin Header for Desktop */}
         <div 
           className="hidden lg:flex items-center justify-between px-8 py-4 border-b sticky top-0 z-30 backdrop-blur-md"
           style={{ 
@@ -290,7 +290,7 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
            <div className="flex items-center gap-6">
               <div className="flex items-center gap-2">
                  <Cpu className="h-4 w-4 text-orange-500" />
-                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50">Core: 02</span>
+                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50">Server 01</span>
               </div>
               <div className="h-4 w-px bg-white/10" />
               <div className="flex items-center gap-2 text-green-500">
@@ -301,8 +301,8 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
            
             <div className="flex items-center gap-4">
               <div className="text-right">
-                 <div className="text-[10px] font-black uppercase tracking-widest opacity-40" style={{ color: 'var(--cetso-text)' }}>Operator</div>
-                 <div className="text-[11px] font-bold text-[var(--cetso-orange)] uppercase italic tracking-tighter">ADMIN_SYSTEM_01</div>
+                 <div className="text-[10px] font-black uppercase tracking-widest opacity-40" style={{ color: 'var(--cetso-text)' }}>Admin</div>
+                 <div className="text-[11px] font-bold text-[var(--cetso-orange)] uppercase italic tracking-tighter">ADMIN</div>
               </div>
               <div className="h-10 w-10 rounded-2xl bg-[var(--cetso-orange)]/10 border border-[var(--cetso-orange)]/20 grid place-items-center">
                  <User className="h-5 w-5 text-[var(--cetso-orange)]" />
@@ -311,10 +311,42 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
         </div>
 
         {/* Page content */}
-        <main className="flex-1 px-4 py-8 lg:px-12 lg:py-10 max-w-[1600px] mx-auto w-full">
+        <main className="flex-1 px-4 py-8 pb-24 lg:px-12 lg:py-10 max-w-[1600px] mx-auto w-full">
           {children ?? <Outlet />}
         </main>
       </div>
+
+      {/* ── Mobile bottom nav ──────────────────────── */}
+      <nav
+        className="fixed inset-x-0 bottom-0 z-50 lg:hidden overflow-x-auto custom-scrollbar"
+        style={{
+          background: 'var(--cetso-header-bg)',
+          borderTop: '1px solid var(--cetso-border)',
+          backdropFilter: 'blur(28px)',
+        }}
+      >
+        <div className="flex gap-1 px-1.5 py-1.5 min-w-max">
+          {navItems.map((item) => {
+            const active = pathname === item.to || pathname.startsWith(item.to + '/')
+            const Icon = item.icon
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                className="flex-1 min-w-[72px] rounded-xl px-1.5 py-2 text-center text-[9px] font-bold uppercase tracking-wide transition-all"
+                style={
+                  active
+                    ? { background: 'rgba(255,122,24,0.12)', border: '1px solid rgba(255,122,24,0.28)', color: 'white' }
+                    : { border: '1px solid transparent', color: 'var(--cetso-text-3)' }
+                }
+              >
+                <Icon className="mx-auto h-5 w-5" style={{ color: active ? 'var(--cetso-orange)' : undefined }} />
+                <span className="mt-1 block truncate">{item.label}</span>
+              </Link>
+            )
+          })}
+        </div>
+      </nav>
     </div>
   )
 }

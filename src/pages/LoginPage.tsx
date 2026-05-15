@@ -5,7 +5,8 @@ import { Eye, EyeOff, LogIn, ShieldCheck, Fingerprint, ArrowLeft, Terminal, Shie
 import Button from '../components/ui/Button'
 import TextField from '../components/ui/TextField'
 import GlassCard from '../components/ui/GlassCard'
-import { login, setSession } from '../lib/mockSession'
+import { setMockSession } from '../lib/mockSession'
+import { supabase } from '../lib/supabase'
 import { goeyToast } from 'goey-toast'
 
 
@@ -17,7 +18,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [isAdminMode, setIsAdminMode] = useState(false)
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
     if (!studentId.trim() || !password.trim()) {
@@ -32,26 +33,50 @@ export default function LoginPage() {
 
     setLoading(true)
 
-    // Simulate network delay
-    setTimeout(() => {
-      const result = login(studentId.trim(), password.trim())
-      if (!result.ok) {
-        goeyToast.error(result.error || 'Authentication failed. Access denied.')
-        setLoading(false)
-        return
-      }
-      
-      setSession(result)
+    // Using Supabase Auth
+    const email = isAdminMode ? `${studentId.trim()}@admin.cetso.edu` : `${studentId.trim()}@cetso.edu`
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password: password.trim()
+    })
+
+    if (error) {
+      goeyToast.error(error.message || 'Authentication failed. Access denied.')
       setLoading(false)
+      return
+    }
+
+    const role = isAdminMode ? 'admin' : 'student'
+
+    if (role === 'student') {
+      // Fetch fresh profile data to populate the app's synchronous context
+      const { data: studentData } = await supabase.from('students').select('*').eq('student_id', studentId.trim()).single()
       
-      goeyToast.success(`Welcome back, ${result.role === 'admin' ? 'Administrator' : 'Voter'}.`)
-      
-      if (result.role === 'admin') {
-        navigate('/admin/dashboard')
-      } else {
-        navigate('/student/dashboard')
-      }
-    }, 1200)
+      setMockSession({
+        role,
+        studentId: studentId.trim(),
+        studentName: studentData?.full_name || studentId.trim(),
+        programCode: studentData?.program_code || 'BSIT',
+        yearLevel: studentData?.year_level || 1
+      })
+    } else {
+      setMockSession({
+        role,
+        studentId: studentId.trim(),
+        studentName: studentId.trim(),
+        programCode: 'BSIT',
+        yearLevel: 1
+      })
+    }
+
+    setLoading(false)
+    goeyToast.success(`Welcome back, ${role === 'admin' ? 'Administrator' : 'Voter'}.`)
+
+    if (role === 'admin') {
+      navigate('/admin/dashboard')
+    } else {
+      navigate('/student/dashboard')
+    }
   }
 
   return (
@@ -144,7 +169,7 @@ export default function LoginPage() {
               className="italic uppercase tracking-tighter"
               style={{
                 fontFamily: 'var(--font-h1)',
-                fontSize: 'clamp(36px, 6vw, 48px)',
+                fontSize: 'clamp(28px, 5vw, 48px)',
                 lineHeight: 0.8,
                 color: 'var(--cetso-text)',
               }}
@@ -271,7 +296,7 @@ export default function LoginPage() {
                   </div>
                 </div>
                 <div className="text-[11px] font-medium text-white/40 leading-relaxed">
-                  Use your registered administrator credentials. Session logs are monitored.
+                  Use your registered administrator credentials.
                 </div>
               </motion.div>
             ) : (

@@ -78,10 +78,10 @@ export default function StudentDashboardPage() {
   ]
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-4 pb-10 sm:space-y-6 sm:pb-12">
       {/* ─── Header Section ──────────────────────── */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between md:gap-6">
+        <div className="min-w-0">
            <div className="flex items-center gap-2 mb-2">
             <div className="h-1.5 w-6 rounded-full bg-[var(--cetso-orange)]" />
             <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--cetso-orange)]">
@@ -89,20 +89,20 @@ export default function StudentDashboardPage() {
             </div>
           </div>
           <h1 
-            className="italic tracking-tighter uppercase"
-            style={{ fontFamily: 'var(--font-h1)', fontSize: 'clamp(40px, 6vw, 64px)', lineHeight: 0.8 }}
+            className="italic tracking-tighter uppercase break-words"
+            style={{ fontFamily: 'var(--font-h1)', fontSize: 'clamp(28px, 8vw, 64px)', lineHeight: 0.9 }}
           >
             STUDENT <span className="text-white/40">PORTAL</span>
           </h1>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
           <div className="text-right hidden sm:block">
             <div className="text-[10px] font-black uppercase tracking-widest text-white/30">Current Time</div>
             <div className="text-sm font-black text-white italic">{new Date().toLocaleTimeString()}</div>
           </div>
           <div className="h-10 w-[1px] bg-white/10 hidden sm:block" />
-          <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl p-2 px-4">
+          <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 sm:px-4">
             <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
             <span className="text-[10px] font-black uppercase tracking-widest text-white/60">System: Online</span>
           </div>
@@ -113,7 +113,7 @@ export default function StudentDashboardPage() {
       <motion.div
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="relative overflow-hidden rounded-[40px] p-8 border border-white/5 shadow-2xl"
+        className="relative overflow-hidden rounded-3xl border border-white/5 p-4 shadow-2xl sm:rounded-[40px] sm:p-8"
         style={{ background: 'rgba(20,20,25,0.4)', backdropFilter: 'blur(30px)' }}
       >
         {/* Animated Background Elements */}
@@ -124,11 +124,11 @@ export default function StudentDashboardPage() {
         <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
         <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
-        <div className="relative flex flex-col lg:flex-row gap-8 items-start lg:items-center justify-between">
-          <div className="flex flex-col sm:flex-row items-center gap-6">
+        <div className="relative flex flex-col items-stretch gap-6 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
+          <div className="flex min-w-0 flex-col items-center gap-4 sm:flex-row sm:gap-6">
             <div className="relative">
               <div
-                className="grid h-24 w-24 place-items-center rounded-[32px] text-3xl font-black rotate-3 transition-transform hover:rotate-6"
+                className="grid h-20 w-20 place-items-center rounded-3xl text-2xl font-black rotate-3 transition-transform hover:rotate-6 sm:h-24 sm:w-24 sm:rounded-[32px] sm:text-3xl"
                 style={{
                   background: 'rgba(255,122,24,0.08)',
                   border: '2px solid rgba(255,122,24,0.4)',
@@ -144,7 +144,7 @@ export default function StudentDashboardPage() {
             </div>
 
             <div className="text-center sm:text-left">
-              <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase">
+              <h2 className="break-words text-2xl font-black italic uppercase tracking-tighter text-white sm:text-3xl">
                 {ctx.studentName}
               </h2>
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-2">
@@ -161,12 +161,12 @@ export default function StudentDashboardPage() {
             </div>
           </div>
 
-          <div className="w-full lg:w-auto grid grid-cols-2 gap-4">
-             <div className="p-4 rounded-3xl bg-white/5 border border-white/10 flex flex-col items-center">
+          <div className="grid w-full grid-cols-2 gap-3 lg:w-auto lg:gap-4">
+             <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center sm:rounded-3xl sm:p-4">
                 <div className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-1">Status</div>
                 <div className="text-sm font-black text-white uppercase italic">Active</div>
              </div>
-             <div className="p-4 rounded-3xl bg-white/5 border border-white/10 flex flex-col items-center">
+             <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center sm:rounded-3xl sm:p-4">
                 <div className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-1">Session</div>
                 <div className="text-sm font-black text-green-500 uppercase italic">Active</div>
              </div>
@@ -179,35 +179,35 @@ export default function StudentDashboardPage() {
         <div className="col-span-12 lg:col-span-8 space-y-6">
           
           {/* Status Monitor Card */}
-          <GlassCard className="p-8 relative group overflow-hidden">
+          <GlassCard className="group relative overflow-hidden p-4 sm:p-8">
              {/* Tactical Decoration */}
              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                 <Activity className="h-24 w-24 text-white" />
              </div>
 
-             <div className="flex items-center justify-between mb-8">
-                <div>
+             <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
                    <h3 className="text-xl font-black text-white italic uppercase tracking-tight">Voting Status</h3>
                    <p className="text-xs font-medium text-white/40">Check if you have voted yet</p>
                 </div>
-                <div className={`flex items-center gap-3 px-4 py-2 rounded-2xl border ${submitted ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-orange-500/10 border-orange-500/30 text-orange-400'}`}>
+                <div className={`flex w-full items-center justify-center gap-2 rounded-2xl border px-3 py-2 sm:w-auto sm:gap-3 sm:px-4 ${submitted ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-orange-500/10 border-orange-500/30 text-orange-400'}`}>
                    {submitted ? <CheckCircle2 className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
-                   <span className="text-[10px] font-black uppercase tracking-[0.2em]">{submitted ? 'VOTED SUCCESSFULLY' : 'VOTE PENDING'}</span>
+                   <span className="text-center text-[10px] font-black uppercase tracking-[0.16em] sm:tracking-[0.2em]">{submitted ? 'VOTED SUCCESSFULLY' : 'VOTE PENDING'}</span>
                 </div>
              </div>
 
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                <div className="p-5 rounded-3xl bg-black/40 border border-white/5 relative group/item">
+             <div className="mb-6 grid grid-cols-1 gap-3 sm:mb-8 md:grid-cols-2 md:gap-4">
+                <div className="group/item relative rounded-2xl border border-white/5 bg-black/40 p-4 sm:rounded-3xl sm:p-5">
                    <div className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-2">Account Hash</div>
                    <div className="text-xs font-mono text-white/60 truncate">0x{ctx.studentId}F92E10B3A4</div>
                 </div>
-                <div className="p-5 rounded-3xl bg-black/40 border border-white/5 relative group/item">
+                <div className="group/item relative rounded-2xl border border-white/5 bg-black/40 p-4 sm:rounded-3xl sm:p-5">
                    <div className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-2">Vote Weight</div>
                    <div className="text-xs font-black text-[var(--cetso-orange)] italic uppercase">25% Program Share</div>
                 </div>
              </div>
 
-             <div className="flex flex-col sm:flex-row gap-4">
+             <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
                 {!submitted ? (
                   <Button 
                     variant="primary" 
@@ -261,11 +261,13 @@ export default function StudentDashboardPage() {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.4 + i * 0.1 }}
-                    className="flex items-center gap-4 p-4 rounded-3xl bg-white/[0.02] border border-white/5 group hover:bg-white/[0.05] transition-colors"
+                    className="group flex flex-col gap-2 rounded-2xl border border-white/5 bg-white/[0.02] p-4 transition-colors hover:bg-white/[0.05] sm:flex-row sm:items-center sm:gap-4 sm:rounded-3xl"
                   >
-                    <div className="text-[9px] font-mono text-white/20 shrink-0">{log.time}</div>
+                    <div className="flex items-center gap-3 sm:contents">
+                    <div className="shrink-0 text-[9px] font-mono text-white/20">{log.time}</div>
                     <div className="h-1 w-1 rounded-full bg-[var(--cetso-orange)]/40" />
-                    <div className="text-[9px] font-black uppercase text-[var(--cetso-orange)]/60 w-16">{log.type}</div>
+                    <div className="w-16 text-[9px] font-black uppercase text-[var(--cetso-orange)]/60">{log.type}</div>
+                    </div>
                     <div className="text-xs font-medium text-white/60">{log.msg}</div>
                   </motion.div>
                 ))}
@@ -279,7 +281,7 @@ export default function StudentDashboardPage() {
           {/* Quick Access Nodes */}
           <div className="space-y-4">
              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 px-2">Quick Links</div>
-             <div className="grid grid-cols-1 gap-3">
+             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
                 {quickActions.map((action, i) => {
                   const Icon = action.icon
                   return (
@@ -289,7 +291,7 @@ export default function StudentDashboardPage() {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.3 + i * 0.05 }}
                       onClick={action.onClick}
-                      className="group relative flex items-center gap-4 p-4 rounded-[28px] text-left transition-all hover:scale-[1.02] active:scale-[0.98] overflow-hidden"
+                      className="group relative flex items-center gap-3 overflow-hidden rounded-3xl p-3 text-left transition-all hover:scale-[1.02] active:scale-[0.98] sm:gap-4 sm:p-4 sm:rounded-[28px]"
                       style={{
                         background: action.highlight ? 'rgba(255,122,24,0.08)' : 'rgba(255,255,255,0.03)',
                         border: action.highlight ? '1.5px solid rgba(255,122,24,0.3)' : '1px solid rgba(255,255,255,0.08)',
@@ -305,7 +307,7 @@ export default function StudentDashboardPage() {
                         style={{
                           background: action.highlight ? 'rgba(255,122,24,0.15)' : 'rgba(255,255,255,0.05)',
                           border: '1px solid rgba(255,255,255,0.1)',
-                          color: action.highlight ? 'var(--cetso-orange)' : 'white/40'
+                          color: action.highlight ? 'var(--cetso-orange)' : 'rgba(255,255,255,0.4)'
                         }}
                       >
                         <Icon className="h-5 w-5" />
@@ -331,7 +333,7 @@ export default function StudentDashboardPage() {
           <GlassCard variant="orange" className="p-6 relative overflow-hidden group">
              <Terminal className="absolute -right-4 -bottom-4 h-24 w-24 text-white/[0.03] -rotate-12" />
              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--cetso-orange)] mb-4">Voting Rules</div>
-             <h4 className="text-lg font-black text-white uppercase italic leading-none mb-3">Weighting Distribution</h4>
+             <h4 className="mb-3 text-base font-black uppercase italic leading-tight text-white sm:text-lg sm:leading-none">Weighting Distribution</h4>
              <div className="space-y-3">
                 {['BSIT', 'BLIS', 'BSCpE', 'BSECE'].map((prog) => (
                   <div key={prog} className="space-y-1.5">

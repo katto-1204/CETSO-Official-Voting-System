@@ -131,7 +131,7 @@ export default function AdminDashboardPage() {
   return (
     <div className="space-y-8">
       
-      {/* Tactical Status Header */}
+      {/* Status Header */}
       <motion.div 
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -146,7 +146,7 @@ export default function AdminDashboardPage() {
             className="italic uppercase tracking-tighter"
             style={{
               fontFamily: 'var(--font-h1)',
-              fontSize: 'clamp(40px, 6vw, 64px)',
+              fontSize: 'clamp(28px, 5vw, 64px)',
               lineHeight: 0.8,
               color: 'var(--cetso-text)',
             }}

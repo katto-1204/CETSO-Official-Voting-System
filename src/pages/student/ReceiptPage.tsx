@@ -74,7 +74,7 @@ export default function ReceiptPage() {
     if (busy) return
     setBusy(true)
     try {
-      const el = document.getElementById('tactical-receipt')
+      const el = document.getElementById('voting-receipt')
       if (!el) throw new Error('Element not found')
       const canvas = await html2canvas(el, { 
         scale: 2, 
@@ -97,7 +97,7 @@ export default function ReceiptPage() {
     if (busy) return
     setBusy(true)
     try {
-      const el = document.getElementById('tactical-receipt')
+      const el = document.getElementById('voting-receipt')
       if (!el) throw new Error('Element not found')
       const canvas = await html2canvas(el, { 
         scale: 2, 
@@ -146,7 +146,7 @@ export default function ReceiptPage() {
             className="italic uppercase tracking-tighter"
             style={{
               fontFamily: 'var(--font-h1)',
-              fontSize: 'clamp(40px, 6vw, 64px)',
+              fontSize: 'clamp(28px, 5vw, 64px)',
               lineHeight: 0.8,
               color: 'var(--cetso-text)',
             }}
@@ -169,13 +169,13 @@ export default function ReceiptPage() {
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
 
-        {/* ── Tactical Lineup (Left) ───────────────── */}
+        {/* ── Selected Candidates (Left) ───────────────── */}
         <div className="xl:col-span-8 space-y-6">
            <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            id="tactical-receipt"
+            id="voting-receipt"
             className="rounded-[40px] p-8 md:p-12 relative overflow-hidden"
             style={{
               background: '#07070c',
@@ -218,7 +218,7 @@ export default function ReceiptPage() {
 
               <div className="h-px w-full bg-white/5 mb-10" />
 
-              {/* Tactical Lineup Grid */}
+              {/* Selected Candidates Grid */}
               <div className="mb-12">
                  <div className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 mb-8 flex items-center gap-4">
                     <Cpu className="h-4 w-4 text-orange-500" />
@@ -274,7 +274,7 @@ export default function ReceiptPage() {
                     
                     <div className="flex items-center gap-4">
                        <div className="flex-1">
-                          <div className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 mb-1">Authenticated Operator</div>
+                          <div className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 mb-1">Authenticated User</div>
                           <div className="text-sm font-black text-white italic uppercase tracking-tighter">{receipt.studentName}</div>
                        </div>
                        <div className="text-right">
