@@ -98,7 +98,7 @@ export default function LiveVoteMonitoringPage() {
                 LIVE VOTE MONITORING
               </h1>
               <div className="mt-0.5 text-sm font-medium text-[var(--cetso-text-2)]">
-                Real-time charts and live counters (MVP demo).
+                Live updates on voter participation and election progress.
               </div>
             </div>
           </div>
@@ -124,8 +124,8 @@ export default function LiveVoteMonitoringPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {[
             { icon: Users, label: 'Total Voters', value: data.totalVoters, sub: 'Registered CET students' },
-            { icon: TrendingUp, label: 'Votes Submitted', value: data.votesSubmitted, sub: 'One vote per student' },
-            { icon: Zap, label: 'Rule', value: '25%', sub: 'Per program weighting' },
+            { icon: TrendingUp, label: 'Votes Cast', value: data.votesSubmitted, sub: 'Voted successfully' },
+            { icon: Zap, label: 'Program Share', value: '25%', sub: 'Weight per program' },
           ].map((item, i) => {
             const Icon = item.icon
             return (
@@ -168,7 +168,7 @@ export default function LiveVoteMonitoringPage() {
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
           <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.20 }} className="lg:col-span-7">
             <GlassCard className="p-5">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)] mb-1">Votes Timeline (Demo)</div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)] mb-1">Voting Timeline</div>
               <div className="text-xl font-black text-white mb-4">Activity over time</div>
               <div className="h-[220px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -192,8 +192,8 @@ export default function LiveVoteMonitoringPage() {
 
           <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="lg:col-span-5">
             <GlassCard className="p-5">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)] mb-1">By Program</div>
-              <div className="text-xl font-black text-white mb-4">Votes distribution</div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)] mb-1">Votes By Program</div>
+              <div className="text-xl font-black text-white mb-4">Program distribution</div>
               <div className="h-[220px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={data.byProgram} margin={{ top: 6, right: 6, bottom: 6, left: -16 }}>
@@ -213,8 +213,8 @@ export default function LiveVoteMonitoringPage() {
         {/* Position grid */}
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.30 }}>
           <GlassCard className="p-5">
-            <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)] mb-1">Position Analytics</div>
-            <div className="text-xl font-black text-white mb-5">Top positions</div>
+            <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)] mb-1">Position Rankings</div>
+            <div className="text-xl font-black text-white mb-5">Positions with most votes</div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {data.byPosition.map((p, i) => (
                 <motion.div
@@ -243,6 +243,5 @@ export default function LiveVoteMonitoringPage() {
           </GlassCard>
         </motion.div>
       </div>
-    </div>
   )
 }

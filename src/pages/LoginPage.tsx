@@ -151,11 +151,11 @@ export default function LoginPage() {
             >
               {isAdminMode ? 'ADMIN' : 'SECURE'}<br />
               <span className={isAdminMode ? 'text-blue-500' : 'text-[var(--cetso-orange)]'}>
-                {isAdminMode ? 'CONSOLE' : 'LOGIN'}
+                {isAdminMode ? 'LOGIN' : 'LOGIN'}
               </span>
             </h1>
             <p className="mt-3 text-[10px] font-black uppercase tracking-[0.3em] text-white/30">
-              Nexus Protocol • Phase 02 Access
+              CETSO Voting System
             </p>
           </div>
 
@@ -178,7 +178,7 @@ export default function LoginPage() {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             <TextField
-              label={isAdminMode ? "Admin Identifier" : "Operator Identity (ID)"}
+              label={isAdminMode ? "Admin Username" : "Student ID"}
               name="studentId"
               value={studentId}
               onChange={(e) => setStudentId(e.target.value)}
@@ -188,7 +188,7 @@ export default function LoginPage() {
 
             <div className="relative">
               <TextField
-                label="Clearance Code"
+                label="Password"
                 name="password"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
@@ -215,7 +215,7 @@ export default function LoginPage() {
             >
               <div className="flex items-center justify-center gap-3">
                 <LogIn className="h-5 w-5" />
-                <span className="italic tracking-tighter">{isAdminMode ? 'AUTHORIZE CONSOLE' : 'INITIATE SESSION'}</span>
+                <span className="italic tracking-tighter">{isAdminMode ? 'ADMIN LOGIN' : 'LOG IN'}</span>
               </div>
               
               {/* Button shimmer */}
@@ -232,7 +232,7 @@ export default function LoginPage() {
           <div className="mt-10 mb-6 flex items-center gap-4">
             <div className="flex-1 h-px bg-white/5" />
             <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/20">
-              Tactical Support
+              Help & Support
             </span>
             <div className="flex-1 h-px bg-white/5" />
           </div>
@@ -267,7 +267,7 @@ export default function LoginPage() {
                 <div className="flex items-center gap-2 mb-2">
                   <ShieldCheck className="h-3 w-3 text-blue-400" />
                   <div className="text-[9px] font-black uppercase tracking-widest text-blue-400">
-                    Admin Protocol
+                    Admin Notice
                   </div>
                 </div>
                 <div className="text-[11px] font-medium text-white/40 leading-relaxed">
@@ -285,7 +285,7 @@ export default function LoginPage() {
                 <div className="flex items-center gap-2 mb-2">
                   <Info className="h-3 w-3 text-[var(--cetso-orange)]" />
                   <div className="text-[9px] font-black uppercase tracking-widest text-[var(--cetso-orange)]">
-                    Identity Retrieval Hint
+                    Password Hint
                   </div>
                 </div>
                 <div className="text-[11px] font-medium text-white/40 leading-relaxed">
@@ -299,7 +299,7 @@ export default function LoginPage() {
         
         {/* Footer legal subtle */}
         <div className="mt-6 text-center text-[9px] font-black uppercase tracking-widest text-white/20 italic">
-          Authorized CETSO Personnel Only • Access Logged • Node: Stable
+          Official CETSO System • All activity is recorded
         </div>
       </motion.div>
     </div>

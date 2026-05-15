@@ -40,10 +40,10 @@ export default function ReceiptPage() {
             ACCESS<br /><span className="text-orange-500">DENIED</span>
           </div>
           <div className="mt-4 text-xs font-black uppercase tracking-widest text-white/40">
-            Authentication node required.
+            Please log in to view this.
           </div>
           <Button variant="primary" size="lg" className="mt-8 w-full shadow-orange-500/20" onClick={() => navigate('/login')}>
-            RE-INITIATE SESSION
+            LOG IN AGAIN
           </Button>
         </GlassCard>
       </div>
@@ -61,7 +61,7 @@ export default function ReceiptPage() {
             No active ballot recorded for this identity.
           </div>
           <Button variant="primary" size="lg" className="mt-8 w-full shadow-orange-500/20" onClick={() => navigate('/student/vote')}>
-            INITIALIZE BALLOT
+            START VOTING
           </Button>
         </GlassCard>
       </div>
@@ -87,8 +87,8 @@ export default function ReceiptPage() {
       const imgWidth = 210
       const imgHeight = (canvas.height * imgWidth) / canvas.width
       pdf.addImage(img, 'PNG', 0, 0, imgWidth, imgHeight, undefined, 'FAST')
-      pdf.save(`CETSO_TACTICAL_RECEIPT_${receipt.verificationCode}.pdf`)
-      goeyToast.success('Tactical PDF generated.')
+      pdf.save(`CETSO_RECEIPT_${receipt.verificationCode}.pdf`)
+      goeyToast.success('PDF Receipt Generated.')
     } catch { goeyToast.error('PDF Generation Failed.') }
     finally { setBusy(false) }
   }
@@ -110,7 +110,7 @@ export default function ReceiptPage() {
       a.href = url
       a.download = `CETSO_RECEIPT_${receipt.verificationCode}.png`
       a.click()
-      goeyToast.success('Encrypted Image Saved.')
+      goeyToast.success('Image Saved.')
     } catch { goeyToast.error('Image Export Failed.') }
     finally { setBusy(false) }
   }
@@ -140,7 +140,7 @@ export default function ReceiptPage() {
         <div>
           <div className="flex items-center gap-3 mb-2">
             <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.8)]" />
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-green-500">Operation: Deployment Successful</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-green-500">Success: Vote Submitted</span>
           </div>
           <h1
             className="italic uppercase tracking-tighter"
@@ -151,18 +151,18 @@ export default function ReceiptPage() {
               color: 'var(--cetso-text)',
             }}
           >
-            TACTICAL<br /><span className="text-orange-500">RECEIPT</span>
+            VOTING<br /><span className="text-orange-500">RECEIPT</span>
           </h1>
         </div>
 
         <div className="flex gap-3">
            <Button variant="secondary" size="lg" className="h-14 px-8 bg-white/5 border-white/10" onClick={() => navigate('/student/dashboard')}>
               <ArrowLeft className="h-5 w-5" />
-              <span className="italic tracking-tighter uppercase text-[13px]">RETURN TO COMMAND</span>
+              <span className="italic tracking-tighter uppercase text-[13px]">BACK TO DASHBOARD</span>
            </Button>
            <Button variant="primary" size="lg" className="h-14 px-8 shadow-orange-500/20" onClick={downloadPDF} loading={busy}>
               <Download className="h-5 w-5" />
-              <span className="italic tracking-tighter uppercase text-[13px]">DOWNLOAD ARCHIVE</span>
+              <span className="italic tracking-tighter uppercase text-[13px]">DOWNLOAD PDF</span>
            </Button>
         </div>
       </motion.div>
@@ -196,10 +196,10 @@ export default function ReceiptPage() {
                     </div>
                     <div>
                        <div className="text-[10px] font-black uppercase tracking-[0.4em] text-orange-500 mb-1">Official Ballot Record</div>
-                       <h2 className="text-3xl font-black italic uppercase tracking-tighter text-white">Secure Verification</h2>
+                       <h2 className="text-3xl font-black italic uppercase tracking-tighter text-white">Your Receipt</h2>
                        <div className="mt-2 flex items-center gap-4 text-[9px] font-black uppercase tracking-[0.2em] text-white/30">
-                          <span className="flex items-center gap-1.5"><Terminal className="h-3 w-3" /> Core: Nexus_01</span>
-                          <span className="flex items-center gap-1.5"><Fingerprint className="h-3 w-3" /> Encrypted</span>
+                          <span className="flex items-center gap-1.5"><Terminal className="h-3 w-3" /> System: CETSO</span>
+                          <span className="flex items-center gap-1.5"><Fingerprint className="h-3 w-3" /> Secured</span>
                        </div>
                     </div>
                  </div>
@@ -210,7 +210,7 @@ export default function ReceiptPage() {
                        <div className="text-xl font-black italic text-white leading-none mt-1">{receipt.electionYear}</div>
                     </div>
                     <div className="text-right">
-                       <div className="text-[9px] font-black uppercase tracking-widest text-white/30">Node Timestamp</div>
+                       <div className="text-[9px] font-black uppercase tracking-widest text-white/30">Date & Time</div>
                        <div className="text-sm font-mono text-orange-500 mt-1">{dateStr} • {timeStr}</div>
                     </div>
                  </div>
@@ -222,7 +222,7 @@ export default function ReceiptPage() {
               <div className="mb-12">
                  <div className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 mb-8 flex items-center gap-4">
                     <Cpu className="h-4 w-4 text-orange-500" />
-                    Deployed Tactical Lineup
+                    Your Candidates
                     <div className="h-px flex-1 bg-white/5" />
                  </div>
                  
@@ -301,9 +301,9 @@ export default function ReceiptPage() {
            >
               <GlassCard className="p-8 space-y-8">
                  <div>
-                    <h3 className="text-2xl font-black italic uppercase tracking-tighter text-white mb-2">Node Export</h3>
+                    <h3 className="text-2xl font-black italic uppercase tracking-tighter text-white mb-2">Save Receipt</h3>
                     <p className="text-[11px] font-medium text-white/40 leading-relaxed uppercase tracking-widest">
-                       Secure your ballot record. This document contains your unique verification hash for auditing purposes.
+                       Keep a copy of your receipt. It contains a unique code to verify your vote.
                     </p>
                  </div>
                  
@@ -314,12 +314,12 @@ export default function ReceiptPage() {
                     </Button>
                     <Button variant="secondary" size="lg" className="w-full h-14 bg-white/5 border-white/10" onClick={saveAsImage} loading={busy}>
                        <ImageDown className="h-5 w-5" />
-                       <span className="italic tracking-tighter uppercase text-[13px]">EXPORT DATA CRYSTAL (.PNG)</span>
+                       <span className="italic tracking-tighter uppercase text-[13px]">SAVE AS IMAGE (.PNG)</span>
                     </Button>
                  </div>
                  
                  <div className="pt-8 border-t border-white/5">
-                    <div className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 mb-4">Quick Share Hash</div>
+                    <div className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 mb-4">Verification Code</div>
                     <div className="flex items-center gap-2">
                        <div className="flex-1 p-4 rounded-2xl bg-black/40 border border-white/5 font-mono text-xs font-black text-white/60 overflow-hidden truncate">
                           {receipt.verificationCode}
@@ -343,14 +343,14 @@ export default function ReceiptPage() {
               <div className="rounded-3xl p-6 bg-orange-500/5 border border-orange-500/10">
                  <div className="flex items-center gap-3 mb-4">
                     <ShieldCheck className="h-5 w-5 text-orange-500" />
-                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-orange-500">Security Protocol</span>
+                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-orange-500">Privacy Notice</span>
                  </div>
                  <p className="text-[11px] font-medium leading-relaxed text-white/40 uppercase tracking-widest">
-                    This receipt does not reveal your specific choices on the official blockchain. It only verifies your participation identity.
+                    Your vote is secret. This receipt only proves that you voted.
                  </p>
                  <div className="mt-4 flex items-center gap-3">
                     <Share2 className="h-3 w-3 text-white/20" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-white/20">Audit-Ready Node</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-white/20">Official Record</span>
                  </div>
               </div>
            </motion.div>

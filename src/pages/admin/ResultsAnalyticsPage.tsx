@@ -81,7 +81,7 @@ export default function ResultsAnalyticsPage() {
                 RESULTS ANALYTICS
               </h1>
               <div className="mt-0.5 text-sm font-medium text-[var(--cetso-text-2)]">
-                Program weighting + position breakdown (MVP demo).
+                Breakdown of election results and student participation.
               </div>
             </div>
           </div>
@@ -100,10 +100,10 @@ export default function ResultsAnalyticsPage() {
           }}
         >
           <div className="text-[10px] font-bold uppercase tracking-widest text-[rgba(255,178,74,0.85)]">
-            Program Weighting Rule
+            Equal Program Share
           </div>
           <div className="mt-1.5 text-xl font-black text-white">
-            Election results based on 25% contribution per academic program.
+            Each academic program contributes equally (25%) to the final election result.
           </div>
           <div className="mt-1 text-sm font-medium text-[var(--cetso-text-2)]">
             {ELECTION.name} • {ELECTION.electionYear}
@@ -122,8 +122,8 @@ export default function ResultsAnalyticsPage() {
             <GlassCard className="p-5">
               <div className="flex items-center justify-between mb-5">
                 <div>
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)]">Positions</div>
-                  <div className="mt-1 text-xl font-black text-white">Votes by Position (Top)</div>
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)]">Top Positions</div>
+                  <div className="mt-1 text-xl font-black text-white">Votes by Position</div>
                 </div>
                 <div
                   className="grid h-9 w-9 place-items-center rounded-xl"
@@ -169,8 +169,8 @@ export default function ResultsAnalyticsPage() {
             <GlassCard className="p-5">
               <div className="flex items-center justify-between mb-5">
                 <div>
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)]">Weighting</div>
-                  <div className="mt-1 text-xl font-black text-white">Program Split (25%)</div>
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)]">Program Share</div>
+                  <div className="mt-1 text-xl font-black text-white">Equal Split (25%)</div>
                 </div>
                 <div
                   className="grid h-9 w-9 place-items-center rounded-xl"
@@ -259,6 +259,5 @@ export default function ResultsAnalyticsPage() {
           </GlassCard>
         </motion.div>
       </div>
-    </div>
   )
 }

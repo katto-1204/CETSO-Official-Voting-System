@@ -30,12 +30,12 @@ export default function StudentDashboardPage() {
           >
             <LockKeyhole className="h-8 w-8 text-[var(--cetso-orange)]" />
           </div>
-          <div className="mt-6 text-2xl font-black text-white italic uppercase tracking-tighter">Clearance Required</div>
+          <div className="mt-6 text-2xl font-black text-white italic uppercase tracking-tighter">Access Required</div>
           <div className="mt-2 text-sm font-medium text-[var(--cetso-text-2)]">
-            Unauthorized access detected. Please authenticate with your student credentials.
+            Please log in with your student credentials to continue.
           </div>
           <Button variant="primary" size="lg" className="mt-8 w-full" onClick={() => navigate('/login')}>
-            <Terminal className="h-4 w-4" /> Initiate Login
+            <Terminal className="h-4 w-4" /> Log In
           </Button>
         </GlassCard>
       </div>
@@ -47,7 +47,7 @@ export default function StudentDashboardPage() {
   const quickActions = [
     {
       icon: Vote,
-      title: 'Active Ballot',
+      title: 'Your Vote',
       sub: submitted ? 'Vote Secured' : 'Action Required',
       onClick: () => navigate('/student/vote'),
       highlight: !submitted,
@@ -55,21 +55,21 @@ export default function StudentDashboardPage() {
     },
     {
       icon: FileText,
-      title: 'Candidate Intel',
-      sub: 'Review profiles & taglines',
+      title: 'Candidates',
+      sub: 'View candidate profiles',
       onClick: () => navigate('/student/candidates'),
       highlight: false,
     },
     {
       icon: User,
-      title: 'Identity Profile',
-      sub: 'Manage access credentials',
+      title: 'My Profile',
+      sub: 'View your account details',
       onClick: () => navigate('/student/profile'),
       highlight: false,
     },
     ...(submitted && receipt ? [{
       icon: Download,
-      title: 'Secure Receipt',
+      title: 'Vote Receipt',
       sub: `ID: ${receipt.receipt.verificationCode}`,
       onClick: () => navigate('/student/receipt'),
       highlight: true,
@@ -85,26 +85,26 @@ export default function StudentDashboardPage() {
            <div className="flex items-center gap-2 mb-2">
             <div className="h-1.5 w-6 rounded-full bg-[var(--cetso-orange)]" />
             <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--cetso-orange)]">
-              Operator Dashboard
+              Student Dashboard
             </div>
           </div>
           <h1 
             className="italic tracking-tighter uppercase"
             style={{ fontFamily: 'var(--font-h1)', fontSize: 'clamp(40px, 6vw, 64px)', lineHeight: 0.8 }}
           >
-            COMMAND <span className="text-white/40">CENTER</span>
+            STUDENT <span className="text-white/40">PORTAL</span>
           </h1>
         </div>
 
         <div className="flex items-center gap-4">
           <div className="text-right hidden sm:block">
-            <div className="text-[10px] font-black uppercase tracking-widest text-white/30">System Time</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-white/30">Current Time</div>
             <div className="text-sm font-black text-white italic">{new Date().toLocaleTimeString()}</div>
           </div>
           <div className="h-10 w-[1px] bg-white/10 hidden sm:block" />
           <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl p-2 px-4">
             <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-white/60">Node: CET-STABLE</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-white/60">System: Online</span>
           </div>
         </div>
       </div>
@@ -163,8 +163,8 @@ export default function StudentDashboardPage() {
 
           <div className="w-full lg:w-auto grid grid-cols-2 gap-4">
              <div className="p-4 rounded-3xl bg-white/5 border border-white/10 flex flex-col items-center">
-                <div className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-1">Clearance</div>
-                <div className="text-sm font-black text-white uppercase italic">Level 02</div>
+                <div className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-1">Status</div>
+                <div className="text-sm font-black text-white uppercase italic">Active</div>
              </div>
              <div className="p-4 rounded-3xl bg-white/5 border border-white/10 flex flex-col items-center">
                 <div className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-1">Session</div>
@@ -187,23 +187,23 @@ export default function StudentDashboardPage() {
 
              <div className="flex items-center justify-between mb-8">
                 <div>
-                   <h3 className="text-xl font-black text-white italic uppercase tracking-tight">Mission Status</h3>
-                   <p className="text-xs font-medium text-white/40">Secure electoral participation protocol</p>
+                   <h3 className="text-xl font-black text-white italic uppercase tracking-tight">Voting Status</h3>
+                   <p className="text-xs font-medium text-white/40">Check if you have voted yet</p>
                 </div>
                 <div className={`flex items-center gap-3 px-4 py-2 rounded-2xl border ${submitted ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-orange-500/10 border-orange-500/30 text-orange-400'}`}>
                    {submitted ? <CheckCircle2 className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
-                   <span className="text-[10px] font-black uppercase tracking-[0.2em]">{submitted ? 'BALLOT SECURED' : 'ACTION PENDING'}</span>
+                   <span className="text-[10px] font-black uppercase tracking-[0.2em]">{submitted ? 'VOTED SUCCESSFULLY' : 'VOTE PENDING'}</span>
                 </div>
              </div>
 
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                 <div className="p-5 rounded-3xl bg-black/40 border border-white/5 relative group/item">
-                   <div className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-2">Integrity Hash</div>
+                   <div className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-2">Account Hash</div>
                    <div className="text-xs font-mono text-white/60 truncate">0x{ctx.studentId}F92E10B3A4</div>
                 </div>
                 <div className="p-5 rounded-3xl bg-black/40 border border-white/5 relative group/item">
                    <div className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-2">Vote Weight</div>
-                   <div className="text-xs font-black text-[var(--cetso-orange)] italic uppercase">25% Academic Contribution</div>
+                   <div className="text-xs font-black text-[var(--cetso-orange)] italic uppercase">25% Program Share</div>
                 </div>
              </div>
 
@@ -216,7 +216,7 @@ export default function StudentDashboardPage() {
                     onClick={() => navigate('/student/vote')}
                   >
                     <Vote className="h-5 w-5 group-hover/btn:rotate-12 transition-transform" /> 
-                    <span className="italic tracking-tighter">INITIATE BALLOT</span>
+                    <span className="italic tracking-tighter">START VOTING</span>
                   </Button>
                 ) : (
                   <Button 
@@ -226,7 +226,7 @@ export default function StudentDashboardPage() {
                     onClick={() => navigate('/student/receipt')}
                   >
                     <Download className="h-5 w-5 group-hover/btn:-translate-y-1 transition-transform" /> 
-                    <span className="italic tracking-tighter">VERIFY RECEIPT</span>
+                    <span className="italic tracking-tighter">VIEW RECEIPT</span>
                   </Button>
                 )}
                 <Button 
@@ -236,7 +236,7 @@ export default function StudentDashboardPage() {
                   onClick={() => navigate('/student/candidates')}
                 >
                   <Users className="h-5 w-5" />
-                  <span className="italic tracking-tighter">CANDIDATE INTELLIGENCE</span>
+                  <span className="italic tracking-tighter">VIEW CANDIDATES</span>
                 </Button>
              </div>
           </GlassCard>
@@ -246,14 +246,14 @@ export default function StudentDashboardPage() {
              <div className="flex items-center justify-between px-2">
                 <div className="flex items-center gap-3">
                    <Bell className="h-4 w-4 text-[var(--cetso-orange)]" />
-                   <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Latest Transmissions</h4>
+                   <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Announcements</h4>
                 </div>
-                <button className="text-[9px] font-black uppercase tracking-widest text-[var(--cetso-orange)] hover:underline">Clear Logs</button>
+                <button className="text-[9px] font-black uppercase tracking-widest text-[var(--cetso-orange)] hover:underline">Clear</button>
              </div>
              
              <div className="space-y-3">
                 {[
-                  { time: '10:42 AM', type: 'System', msg: 'Ballot servers optimized for heavy traffic.' },
+                  { time: '10:42 AM', type: 'System', msg: 'Voting system is running smoothly.' },
                   { time: '09:15 AM', type: 'Election', msg: 'Live counting begins in 72 hours.' },
                 ].map((log, i) => (
                   <motion.div 
@@ -278,7 +278,7 @@ export default function StudentDashboardPage() {
           
           {/* Quick Access Nodes */}
           <div className="space-y-4">
-             <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 px-2">Access Nodes</div>
+             <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 px-2">Quick Links</div>
              <div className="grid grid-cols-1 gap-3">
                 {quickActions.map((action, i) => {
                   const Icon = action.icon
@@ -330,7 +330,7 @@ export default function StudentDashboardPage() {
           {/* Voting Rules Summary */}
           <GlassCard variant="orange" className="p-6 relative overflow-hidden group">
              <Terminal className="absolute -right-4 -bottom-4 h-24 w-24 text-white/[0.03] -rotate-12" />
-             <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--cetso-orange)] mb-4">Ballot Protocol</div>
+             <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--cetso-orange)] mb-4">Voting Rules</div>
              <h4 className="text-lg font-black text-white uppercase italic leading-none mb-3">Weighting Distribution</h4>
              <div className="space-y-3">
                 {['BSIT', 'BLIS', 'BSCpE', 'BSECE'].map((prog) => (
@@ -351,7 +351,7 @@ export default function StudentDashboardPage() {
                 ))}
              </div>
              <p className="mt-6 text-[10px] font-medium text-white/40 leading-relaxed italic">
-               *All programs hold equal authority in final result calculation.
+               *All programs have an equal 25% share in the final result.
              </p>
           </GlassCard>
         </div>

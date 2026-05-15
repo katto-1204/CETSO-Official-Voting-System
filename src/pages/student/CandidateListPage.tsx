@@ -249,7 +249,7 @@ export default function CandidateListPage() {
             className="text-3xl font-black uppercase tracking-wider"
             style={{ fontFamily: 'var(--font-h1)', color: 'var(--cetso-text)' }}
           >
-            ACCESS DENIED
+            PLEASE LOG IN
           </div>
           <div className="mt-2 text-sm font-medium" style={{ color: 'var(--cetso-text-2)' }}>
             Log in as a CET student to view eligible candidates.
@@ -288,7 +288,7 @@ export default function CandidateListPage() {
             letterSpacing: '0.01em',
           }}
         >
-          AGENT SELECT
+          CANDIDATE LIST
         </h1>
         <p className="mt-2 text-sm font-medium" style={{ color: 'var(--cetso-text-2)' }}>
           Review all candidates running for your eligible positions.

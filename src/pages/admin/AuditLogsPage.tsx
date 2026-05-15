@@ -16,10 +16,10 @@ type AuditEvent = {
 }
 
 const EVENT_ICONS: Record<string, { icon: React.ElementType; color: string; borderColor: string; bgColor: string }> = {
-  ELECTION_STATUS_UPDATE: { icon: Settings, color: 'rgba(255,178,74,0.90)', borderColor: 'rgba(255,122,24,0.35)', bgColor: 'rgba(255,122,24,0.12)' },
-  CSV_IMPORT: { icon: Upload, color: 'rgba(96,165,250,0.90)', borderColor: 'rgba(59,130,246,0.35)', bgColor: 'rgba(59,130,246,0.12)' },
+  ELECTION_SETTINGS: { icon: Settings, color: 'rgba(255,178,74,0.90)', borderColor: 'rgba(255,122,24,0.35)', bgColor: 'rgba(255,122,24,0.12)' },
+  STUDENT_IMPORT: { icon: Upload, color: 'rgba(96,165,250,0.90)', borderColor: 'rgba(59,130,246,0.35)', bgColor: 'rgba(59,130,246,0.12)' },
   VOTE_SUBMITTED: { icon: Vote, color: 'rgba(134,239,172,0.90)', borderColor: 'rgba(34,197,94,0.35)', bgColor: 'rgba(34,197,94,0.12)' },
-  LOGIN_SUCCESS: { icon: LogIn, color: 'rgba(167,139,250,0.90)', borderColor: 'rgba(139,92,246,0.35)', bgColor: 'rgba(139,92,246,0.12)' },
+  LOGIN_SUCCESSFUL: { icon: LogIn, color: 'rgba(167,139,250,0.90)', borderColor: 'rgba(139,92,246,0.35)', bgColor: 'rgba(139,92,246,0.12)' },
 }
 
 function timeAgo(isoDate: string) {
@@ -34,10 +34,10 @@ export default function AuditLogsPage() {
   const events: AuditEvent[] = useMemo(() => {
     const now = Date.now()
     const raw = [
-      { at: new Date(now - 1000 * 60 * 30).toISOString(), actor: 'System', eventType: 'ELECTION_STATUS_UPDATE', entity: 'election', detail: 'Voting window toggled (demo).' },
-      { at: new Date(now - 1000 * 60 * 22).toISOString(), actor: 'Admin', eventType: 'CSV_IMPORT', entity: 'student', detail: 'Student CSV processed successfully.' },
-      { at: new Date(now - 1000 * 60 * 12).toISOString(), actor: 'Juan Dela Cruz', eventType: 'VOTE_SUBMITTED', entity: 'vote', detail: 'Vote received and receipt generated.' },
-      { at: new Date(now - 1000 * 60 * 6).toISOString(), actor: 'Maria Santos', eventType: 'LOGIN_SUCCESS', entity: 'auth', detail: 'Student session verified.' },
+      { at: new Date(now - 1000 * 60 * 30).toISOString(), actor: 'System', eventType: 'ELECTION_SETTINGS', entity: 'System', detail: 'Voting period opened.' },
+      { at: new Date(now - 1000 * 60 * 22).toISOString(), actor: 'Admin', eventType: 'STUDENT_IMPORT', entity: 'System', detail: 'Student list added successfully.' },
+      { at: new Date(now - 1000 * 60 * 12).toISOString(), actor: 'Juan Dela Cruz', eventType: 'VOTE_SUBMITTED', entity: 'Student', detail: 'Vote submitted and receipt created.' },
+      { at: new Date(now - 1000 * 60 * 6).toISOString(), actor: 'Maria Santos', eventType: 'LOGIN_SUCCESSFUL', entity: 'Student', detail: 'Student logged in successfully.' },
     ]
     return raw.map((e) => ({
       ...e,
@@ -82,7 +82,7 @@ export default function AuditLogsPage() {
                 AUDIT LOGS
               </h1>
               <div className="mt-0.5 text-sm font-medium text-[var(--cetso-text-2)]">
-                Secure system logs and timeline activity feed.
+                History of all system activities and student logins.
               </div>
             </div>
           </div>
@@ -98,7 +98,7 @@ export default function AuditLogsPage() {
             className="lg:col-span-4"
           >
             <GlassCard className="p-5 h-full">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)]">Security Focus</div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)]">Overview</div>
 
               <div
                 className="mt-4 flex items-start gap-3 rounded-2xl p-4"
@@ -106,15 +106,15 @@ export default function AuditLogsPage() {
               >
                 <Shield className="h-5 w-5 text-[var(--cetso-orange)] shrink-0 mt-0.5" />
                 <div>
-                  <div className="text-sm font-bold text-white">Immutable audit trail</div>
+                  <div className="text-sm font-bold text-white">System Logs</div>
                   <div className="mt-1 text-xs font-medium text-[var(--cetso-text-2)] leading-relaxed">
-                    In production, store insert-only logs in Supabase with Row Level Security.
+                    All actions are recorded to ensure the election is transparent.
                   </div>
                 </div>
               </div>
 
               <div className="mt-5 space-y-2">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)] mb-3">Event Types</div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)] mb-3">Activity Types</div>
                 {Object.entries(EVENT_ICONS).map(([type, config]) => {
                   const Icon = config.icon
                   return (
@@ -138,7 +138,7 @@ export default function AuditLogsPage() {
               </div>
 
               <div className="mt-5 text-xs font-medium text-[var(--cetso-text-3)]">
-                Filters and detail view planned after DB schema + RLS policies.
+                More filters and detailed views coming soon.
               </div>
             </GlassCard>
           </motion.div>
@@ -194,9 +194,9 @@ export default function AuditLogsPage() {
                               {ev.eventType.replaceAll('_', ' ')}
                             </div>
                             <div className="mt-1 text-xs font-medium text-[var(--cetso-text-2)]">
-                              Actor: <span className="font-bold text-white">{ev.actor}</span>
+                              User: <span className="font-bold text-white">{ev.actor}</span>
                               <span className="mx-1.5 text-[var(--cetso-text-3)]">•</span>
-                              Entity: <span className="text-[var(--cetso-text)]">{ev.entity}</span>
+                              Role: <span className="text-[var(--cetso-text)]">{ev.entity}</span>
                             </div>
                             <div className="mt-1 text-xs font-medium text-[var(--cetso-text-2)]">{ev.detail}</div>
                           </div>
@@ -221,6 +221,5 @@ export default function AuditLogsPage() {
           </motion.div>
         </div>
       </div>
-    </div>
   )
 }

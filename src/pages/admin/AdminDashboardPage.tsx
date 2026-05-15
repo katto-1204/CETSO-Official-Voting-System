@@ -140,7 +140,7 @@ export default function AdminDashboardPage() {
         <div>
           <div className="flex items-center gap-3 mb-2">
             <div className="h-2 w-2 rounded-full bg-orange-500 animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.8)]" />
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-500">Operation: Active Voting</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-500">Live Voting Status</span>
           </div>
           <h1
             className="italic uppercase tracking-tighter"
@@ -151,7 +151,7 @@ export default function AdminDashboardPage() {
               color: 'var(--cetso-text)',
             }}
           >
-            COMMAND<br /><span style={{ color: 'var(--cetso-text-3)' }} className="group-hover:text-[var(--cetso-orange)] transition-colors">DASHBOARD</span>
+            ADMIN<br /><span style={{ color: 'var(--cetso-text-3)' }} className="group-hover:text-[var(--cetso-orange)] transition-colors">DASHBOARD</span>
           </h1>
         </div>
 
@@ -170,7 +170,7 @@ export default function AdminDashboardPage() {
            
            <Button variant="primary" size="lg" className="h-14 px-8 shadow-orange-500/20">
               <Activity className="h-5 w-5" />
-              <span className="italic tracking-tighter uppercase">MANAGE SESSIONS</span>
+              <span className="italic tracking-tighter uppercase">MANAGE ELECTION</span>
            </Button>
         </div>
       </motion.div>
@@ -180,9 +180,9 @@ export default function AdminDashboardPage() {
         
         {/* Stat Cards - Top Row */}
         <div className="xl:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <StatCard icon={Users} label="Total Assets" value={stats.totalVoters} sub="Registered Students" trend="+12.4%" delay={0.1} />
-          <StatCard icon={TrendingUp} label="Vote Count" value={stats.votesSubmitted} sub="Ballots Processed" trend="+8.2%" delay={0.2} />
-          <StatCard icon={ActivityIcon} label="Engagement" value={`${stats.participationRate.toFixed(1)}%`} sub="Participation Rate" trend="+2.1%" delay={0.3} />
+          <StatCard icon={Users} label="Total Voters" value={stats.totalVoters} sub="Registered Students" trend="+12.4%" delay={0.1} />
+          <StatCard icon={TrendingUp} label="Votes Cast" value={stats.votesSubmitted} sub="Votes Submitted" trend="+8.2%" delay={0.2} />
+          <StatCard icon={ActivityIcon} label="Participation" value={`${stats.participationRate.toFixed(1)}%`} sub="Participation Rate" trend="+2.1%" delay={0.3} />
         </div>
 
         {/* Participation Visualization */}
@@ -200,7 +200,7 @@ export default function AdminDashboardPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
                <div>
                   <div className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-500 mb-2">Live Progress</div>
-                  <h3 className="text-3xl font-black italic uppercase tracking-tighter" style={{ color: 'var(--cetso-text)' }}>Participation Node</h3>
+                  <h3 className="text-3xl font-black italic uppercase tracking-tighter" style={{ color: 'var(--cetso-text)' }}>Overall Participation</h3>
                </div>
                <div className="flex gap-4">
                   <div className="text-right">
@@ -210,7 +210,7 @@ export default function AdminDashboardPage() {
                   <div className="h-10 w-px bg-current opacity-10" />
                   <div className="text-right">
                      <div className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>Status</div>
-                     <div className="text-xl font-black text-green-500 italic">ON TRACK</div>
+                     <div className="text-xl font-black text-green-500 italic">GOOD</div>
                   </div>
                </div>
             </div>
@@ -251,7 +251,7 @@ export default function AdminDashboardPage() {
                 <div>
                   <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-2 flex items-center gap-2">
                     <BarChart3 className="h-3 w-3 text-orange-500" />
-                    Sector Analysis
+                    Program Breakdown
                   </div>
                   <h3 className="text-2xl font-black italic uppercase tracking-tighter text-white">Votes by Program</h3>
                 </div>
@@ -329,9 +329,9 @@ export default function AdminDashboardPage() {
                  <div>
                     <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-2 flex items-center gap-2">
                        <Terminal className="h-3 w-3 text-orange-500" />
-                       Intelligence Feed
+                       Live Updates
                     </div>
-                    <h3 className="text-2xl font-black italic uppercase tracking-tighter text-white">Priority Rankings</h3>
+                    <h3 className="text-2xl font-black italic uppercase tracking-tighter text-white">Current Leaders</h3>
                  </div>
               </div>
 
@@ -372,8 +372,8 @@ export default function AdminDashboardPage() {
               </div>
               
               <div className="mt-8 pt-6 border-t border-white/5 flex items-center gap-4 text-[9px] font-black uppercase tracking-widest text-white/20">
-                 <div className="flex items-center gap-1.5"><Cpu className="h-3 w-3" /> Core: 02</div>
-                 <div className="flex items-center gap-1.5 text-green-500"><Clock className="h-3 w-3" /> Sync Active</div>
+                 <div className="flex items-center gap-1.5"><Cpu className="h-3 w-3" /> System Active</div>
+                 <div className="flex items-center gap-1.5 text-green-500"><Clock className="h-3 w-3" /> Live Data</div>
               </div>
             </GlassCard>
           </motion.div>

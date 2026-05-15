@@ -61,8 +61,8 @@ export default function VoteConfirmationPage() {
       <div className="flex min-h-[60vh] items-center justify-center">
         <GlassCard className="max-w-md w-full p-8 text-center border-orange-500/20">
           <div className="text-4xl font-black italic uppercase tracking-tighter text-white">ACCESS<br /><span className="text-orange-500">DENIED</span></div>
-          <p className="mt-4 text-xs font-black uppercase tracking-[0.3em] text-white/40">Authentication required for ballot review.</p>
-          <Button variant="primary" size="lg" className="mt-8 w-full shadow-orange-500/20" onClick={() => navigate('/login')}>RE-AUTHENTICATE</Button>
+          <p className="mt-4 text-xs font-black uppercase tracking-[0.3em] text-white/40">Please log in to review your vote.</p>
+          <Button variant="primary" size="lg" className="mt-8 w-full shadow-orange-500/20" onClick={() => navigate('/login')}>LOG IN AGAIN</Button>
         </GlassCard>
       </div>
     )
@@ -73,8 +73,8 @@ export default function VoteConfirmationPage() {
       <div className="flex min-h-[60vh] items-center justify-center">
         <GlassCard className="max-w-md w-full p-8 text-center border-orange-500/20">
           <div className="text-4xl font-black italic uppercase tracking-tighter text-white">EMPTY<br /><span className="text-orange-500">BALLOT</span></div>
-          <p className="mt-4 text-xs font-black uppercase tracking-[0.3em] text-white/40">No draft data found in active session.</p>
-          <Button variant="primary" size="lg" className="mt-8 w-full shadow-orange-500/20" onClick={() => navigate('/student/vote')}>INITIALIZE VOTING</Button>
+          <p className="mt-4 text-xs font-black uppercase tracking-[0.3em] text-white/40">You haven't selected any candidates yet.</p>
+          <Button variant="primary" size="lg" className="mt-8 w-full shadow-orange-500/20" onClick={() => navigate('/student/vote')}>START VOTING</Button>
         </GlassCard>
       </div>
     )
@@ -93,7 +93,7 @@ export default function VoteConfirmationPage() {
         <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-[0.4em] text-white/30 px-4 mb-6">
           <div className="flex items-center gap-3">
             <Activity className="h-3 w-3 text-orange-500" />
-            VOTER_ID: {ctx.studentId}
+            STUDENT ID: {ctx.studentId}
           </div>
           <div className="h-10 w-10 relative">
              <div className="absolute inset-0 bg-orange-500/20 blur-xl rounded-full" />
@@ -103,10 +103,10 @@ export default function VoteConfirmationPage() {
         </div>
 
         <h1 className="text-7xl md:text-9xl font-black italic uppercase tracking-tighter text-white leading-none mb-2 drop-shadow-[0_0_30px_rgba(255,255,255,0.1)]">
-          LEADERBOARD
+          REVIEW VOTE
         </h1>
         <div className="text-xs font-black uppercase tracking-[0.5em] text-orange-500/80 mb-10 italic">
-          1ST TO {getOrdinal(lineup.length).toUpperCase()} POSITION
+          YOUR SELECTIONS
         </div>
 
         {/* Separator Line */}
@@ -160,10 +160,10 @@ export default function VoteConfirmationPage() {
           <div className="pt-10 flex justify-between items-center text-[10px] font-black uppercase tracking-[0.4em] text-white/10">
              <div className="flex items-center gap-2">
                 <Terminal className="h-3 w-3" />
-                BALLOT_HASH: {ctx.studentId.split('').reverse().join('')}
+                VOTE HASH: {ctx.studentId.split('').reverse().join('')}
              </div>
              <div className="flex items-center gap-2 italic">
-                {lineup.length} NODES VERIFIED {">>"}
+                {lineup.length} CANDIDATES SELECTED {">>"}
              </div>
           </div>
         </div>
@@ -180,18 +180,18 @@ export default function VoteConfirmationPage() {
                  <div>
                     <div className="flex items-center gap-3 mb-3">
                        <Fingerprint className="h-5 w-5 text-orange-500" />
-                       <span className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-500">Security Clearance</span>
+                       <span className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-500">Final Step</span>
                     </div>
-                    <h2 className="text-3xl font-black italic uppercase tracking-tighter text-white">FINALIZE<br /><span className="text-orange-500">BALLOT</span></h2>
+                    <h2 className="text-3xl font-black italic uppercase tracking-tighter text-white">SUBMIT<br /><span className="text-orange-500">VOTE</span></h2>
                  </div>
 
                  <div className="p-4 rounded-2xl bg-red-500/5 border border-red-500/10 space-y-3">
                     <div className="flex items-center gap-2">
                        <AlertTriangle className="h-4 w-4 text-red-500" />
-                       <span className="text-[10px] font-black uppercase tracking-widest text-red-500">Warning: Protocol Level 0</span>
+                       <span className="text-[10px] font-black uppercase tracking-widest text-red-500">Important Warning</span>
                     </div>
                     <p className="text-[10px] font-medium leading-relaxed text-white/40 uppercase tracking-widest">
-                       Submitting this ballot is an irreversible action. Ensure all selections are finalized according to your tactical preference.
+                       Once you submit your vote, you cannot change it. Please double-check your selections.
                     </p>
                  </div>
 
@@ -295,7 +295,7 @@ export default function VoteConfirmationPage() {
            <div className="px-6 py-4 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-4 group">
               <ShieldCheck className="h-5 w-5 text-white/20 group-hover:text-orange-500 transition-colors" />
               <div className="text-[9px] font-black uppercase tracking-[0.2em] text-white/20">
-                 Nexus Secure Layer 7.4.1 Active
+                 Secure Connection Active
               </div>
            </div>
         </div>
