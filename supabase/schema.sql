@@ -9,6 +9,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE students (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   student_id VARCHAR(50) UNIQUE NOT NULL,
+  email VARCHAR(255),
   full_name VARCHAR(255) NOT NULL,
   program_code VARCHAR(50) NOT NULL,
   year_level INTEGER NOT NULL,
@@ -27,9 +28,10 @@ CREATE TABLE candidates (
 
 CREATE TABLE votes (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  student_id VARCHAR(50) UNIQUE NOT NULL REFERENCES students(student_id),
+  student_id VARCHAR(50) UNIQUE NOT NULL REFERENCES students(student_id) ON DELETE CASCADE,
   receipt_id VARCHAR(100) UNIQUE NOT NULL,
   program_code VARCHAR(50) NOT NULL, -- Stored here for fast aggregation charts
+  selections JSONB NOT NULL DEFAULT '[]'::jsonb,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -47,6 +49,16 @@ CREATE TABLE audit_logs (
   event_type VARCHAR(100) NOT NULL,
   entity VARCHAR(100) NOT NULL,
   detail TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  auth_uid UUID UNIQUE NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  student_id VARCHAR(50),
+  display_name VARCHAR(255) NOT NULL,
+  role VARCHAR(50) NOT NULL DEFAULT 'student',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -77,6 +89,7 @@ ALTER TABLE candidates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE vote_selections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 
 -- 1. Candidates: Everyone can read candidates
 CREATE POLICY "Anyone can read candidates" 
@@ -84,8 +97,7 @@ ON candidates FOR SELECT
 TO public 
 USING (true);
 
--- 2. Students: Students can only read their own data, Admins can read all (assuming role logic will be implemented later, for now we allow authenticated reads or restrict completely)
--- We will rely on Supabase Auth for student login later. For now, to allow the frontend to query:
+-- 2. Students: Students can only read their own data, Admins can read all
 CREATE POLICY "Anyone can read students" 
 ON students FOR SELECT 
 TO public 
@@ -128,3 +140,14 @@ CREATE POLICY "Anyone can read audit logs"
 ON audit_logs FOR SELECT
 TO public
 USING (true);
+
+-- 6. Users: All users visible in table. Inserts allowed for registration.
+CREATE POLICY "Anyone can read users"
+ON users FOR SELECT
+TO public
+USING (true);
+
+CREATE POLICY "Anyone can insert users"
+ON users FOR INSERT
+TO public
+WITH CHECK (true);

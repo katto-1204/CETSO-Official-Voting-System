@@ -1,21 +1,70 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Download, FileText, LockKeyhole, Vote, CheckCircle2, Clock, User, ShieldAlert, Activity, Bell, Terminal, ChevronRight, Users } from 'lucide-react'
 import Button from '../../components/ui/Button'
 import GlassCard from '../../components/ui/GlassCard'
-import { getMockVoteSubmission, isVoteAlreadySubmitted } from '../../mocks/mockVotes'
 import { getStudentContext } from '../../lib/studentContext'
+import { getVoteSubmission } from '../../lib/voteRecords'
+import type { VoteSubmission } from '../../lib/voteRecords'
+import Modal from '../../components/ui/Modal'
+import { subscribeToElectionConfig, type ElectionConfig } from '../../lib/electionConfig'
 
 export default function StudentDashboardPage() {
   const navigate = useNavigate()
   const ctx = getStudentContext()
+  const [receipt, setReceipt] = useState<VoteSubmission | null>(null)
+  const [time, setTime] = useState(() => new Date())
+  const [electionConfig, setElectionConfig] = useState<ElectionConfig | null>(null)
+  const [showEndedModal, setShowEndedModal] = useState(false)
 
-  const submitted = ctx ? isVoteAlreadySubmitted(ctx.studentId) : false
-  const receipt = useMemo(() => {
-    if (!ctx || !submitted) return null
-    return getMockVoteSubmission(ctx.studentId)
-  }, [ctx, submitted])
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  useEffect(() => {
+    // Subscribe to database changes for real-time sync across tabs/devices
+    const unsubscribe = subscribeToElectionConfig((config) => {
+      setElectionConfig(config)
+    })
+    return () => unsubscribe()
+  }, [])
+
+  const isVotingOpen = useMemo(() => {
+    const enabled = electionConfig ? electionConfig.enabled : (localStorage.getItem('cetso_election_enabled') !== 'false')
+    const startStr = electionConfig ? electionConfig.startDate : localStorage.getItem('cetso_election_start_date')
+    const endStr = electionConfig ? electionConfig.endDate : localStorage.getItem('cetso_election_end_date')
+    
+    const nowMs = time.getTime()
+    const startDate = startStr ? new Date(startStr).getTime() : nowMs
+    const endDate = endStr ? new Date(endStr).getTime() : nowMs + 1000 * 60 * 60 * 24
+    
+    return enabled && nowMs >= startDate && nowMs < endDate
+  }, [electionConfig, time])
+
+  const submitted = Boolean(receipt)
+
+  useEffect(() => {
+    if (electionConfig && !isVotingOpen && !submitted) {
+      setShowEndedModal(true)
+    }
+  }, [isVotingOpen, submitted, electionConfig])
+
+
+  useEffect(() => {
+    let active = true
+    if (!ctx?.studentId) {
+      setReceipt(null)
+      return
+    }
+    getVoteSubmission(ctx.studentId).then((submission) => {
+      if (active) setReceipt(submission)
+    })
+    return () => { active = false }
+  }, [ctx?.studentId])
+
+
 
   if (!ctx) {
     return (
@@ -48,10 +97,10 @@ export default function StudentDashboardPage() {
     {
       icon: Vote,
       title: 'Your Vote',
-      sub: submitted ? 'Vote Secured' : 'Action Required',
+      sub: submitted ? 'Vote Secured' : (!isVotingOpen ? 'Voting Closed' : 'Action Required'),
       onClick: () => navigate('/student/vote'),
-      highlight: !submitted,
-      status: submitted ? 'complete' : 'pending'
+      highlight: !submitted && isVotingOpen,
+      status: submitted ? 'complete' : (!isVotingOpen ? 'closed' : 'pending')
     },
     {
       icon: FileText,
@@ -99,7 +148,7 @@ export default function StudentDashboardPage() {
         <div className="flex flex-wrap items-center gap-3 sm:gap-4">
           <div className="text-right hidden sm:block">
             <div className="text-[10px] font-black uppercase tracking-widest text-white/30">Current Time</div>
-            <div className="text-sm font-black text-white italic">{new Date().toLocaleTimeString()}</div>
+            <div className="text-sm font-black text-white italic">{time.toLocaleTimeString()}</div>
           </div>
           <div className="h-10 w-[1px] bg-white/10 hidden sm:block" />
           <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 sm:px-4">
@@ -190,9 +239,21 @@ export default function StudentDashboardPage() {
                    <h3 className="text-xl font-black text-white italic uppercase tracking-tight">Voting Status</h3>
                    <p className="text-xs font-medium text-white/40">Check if you have voted yet</p>
                 </div>
-                <div className={`flex w-full items-center justify-center gap-2 rounded-2xl border px-3 py-2 sm:w-auto sm:gap-3 sm:px-4 ${submitted ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-orange-500/10 border-orange-500/30 text-orange-400'}`}>
-                   {submitted ? <CheckCircle2 className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
-                   <span className="text-center text-[10px] font-black uppercase tracking-[0.16em] sm:tracking-[0.2em]">{submitted ? 'VOTED SUCCESSFULLY' : 'VOTE PENDING'}</span>
+                <div className={`flex w-full items-center justify-center gap-2 rounded-2xl border px-3 py-2 sm:w-auto sm:gap-3 sm:px-4 ${
+                  submitted 
+                    ? 'bg-green-500/10 border-green-500/30 text-green-400' 
+                    : (!isVotingOpen 
+                        ? 'bg-red-500/10 border-red-500/30 text-red-400' 
+                        : 'bg-orange-500/10 border-orange-500/30 text-orange-400')
+                }`}>
+                   {submitted ? <CheckCircle2 className="h-4 w-4" /> : (!isVotingOpen ? <LockKeyhole className="h-4 w-4" /> : <Clock className="h-4 w-4" />)}
+                   <span className="text-center text-[10px] font-black uppercase tracking-[0.16em] sm:tracking-[0.2em]">{
+                     submitted 
+                       ? 'VOTED SUCCESSFULLY' 
+                       : (!isVotingOpen 
+                           ? 'VOTING IS CLOSED' 
+                           : 'VOTE PENDING')
+                   }</span>
                 </div>
              </div>
 
@@ -210,13 +271,13 @@ export default function StudentDashboardPage() {
              <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
                 {!submitted ? (
                   <Button 
-                    variant="primary" 
+                    variant={isVotingOpen ? "primary" : "secondary"}
                     size="lg" 
                     className="flex-1 group/btn" 
                     onClick={() => navigate('/student/vote')}
                   >
                     <Vote className="h-5 w-5 group-hover/btn:rotate-12 transition-transform" /> 
-                    <span className="italic tracking-tighter">START VOTING</span>
+                    <span className="italic tracking-tighter">{isVotingOpen ? 'START VOTING' : 'VIEW BALLOT STATUS'}</span>
                   </Button>
                 ) : (
                   <Button 
@@ -357,7 +418,58 @@ export default function StudentDashboardPage() {
              </p>
           </GlassCard>
         </div>
-      </div>
+       </div>
+      
+      {/* Election Ended Transition Modal */}
+      <Modal 
+        isOpen={showEndedModal} 
+        onClose={() => setShowEndedModal(false)} 
+        title="BALLOT LOCKOUT DETECTED" 
+        maxWidth="max-w-md"
+        showClose={true}
+      >
+        <div className="space-y-6 text-center">
+          <div
+            className="mx-auto grid h-20 w-20 place-items-center rounded-3xl relative animate-bounce"
+            style={{ 
+              background: 'rgba(239,68,68,0.1)', 
+              border: '2px solid rgba(239,68,68,0.4)',
+              boxShadow: '0 0 40px rgba(239,68,68,0.2)'
+            }}
+          >
+            <LockKeyhole className="h-10 w-10 text-red-500 animate-pulse" />
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="text-xl sm:text-2xl font-black text-red-500 uppercase tracking-tight italic">
+              THE VOTINGS HAS OFFICIALLY ENDED
+            </h3>
+            <p className="text-sm font-semibold text-[var(--cetso-text-2)] leading-relaxed">
+              The administrator has closed the voting window, or the scheduled election time has elapsed. Any unsaved selections or unsubmitted ballots have been locked.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-white/5 bg-white/5 p-4 space-y-2 text-left">
+            <div className="flex justify-between items-center text-xs">
+              <span className="font-bold text-white/40 uppercase">STATUS</span>
+              <span className="font-black text-red-500 uppercase tracking-wider">LOCKED OUT</span>
+            </div>
+            <div className="flex justify-between items-center text-xs">
+              <span className="font-bold text-white/40 uppercase">VOTER HASH</span>
+              <span className="font-mono text-white/60">0x{ctx?.studentId}</span>
+            </div>
+          </div>
+
+          <Button 
+            variant="primary" 
+            size="lg" 
+            className="w-full bg-red-600 hover:bg-red-700 border-red-500 text-white" 
+            onClick={() => setShowEndedModal(false)}
+          >
+            Acknowledge & Exit
+          </Button>
+        </div>
+      </Modal>
     </div>
   )
 }

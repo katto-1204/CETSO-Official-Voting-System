@@ -1,4 +1,4 @@
-import type { ProgramCode, YearLevel } from './mockStudents'
+import type { ProgramCode, YearLevel } from './studentTypes'
 
 export type PositionType = 'executive' | 'representative'
 
@@ -153,4 +153,3 @@ export function getFeaturedCandidates() {
   const featured = ['PRESIDENT', 'SECRETARY', 'PIO_BSIT']
   return CANDIDATES.filter((c) => featured.includes(c.positionCode)).slice(0, 6)
 }
-

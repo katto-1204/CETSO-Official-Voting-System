@@ -1,46 +1,61 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { BarChart3, PieChart as PieIcon } from 'lucide-react'
 import GlassCard from '../../components/ui/GlassCard'
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from 'recharts'
-import { getMockVoteSubmission, isVoteAlreadySubmitted } from '../../mocks/mockVotes'
-import { MOCK_STUDENTS } from '../../mocks/mockStudents'
-import { ELECTION, POSITIONS, PROGRAMS } from '../../mocks/mockElection'
+import { ELECTION, POSITIONS, PROGRAMS } from '../../lib/electionData'
+import { supabase } from '../../lib/supabase'
+import type { VoteSelection } from '../../lib/voteRecords'
 
 const PROGRAM_COLORS = ['#ff7a18', '#a78bfa', '#2dd4bf', '#60a5fa']
 
 const tooltipStyle = {
-  backgroundColor: 'rgba(10,10,18,0.95)',
-  border: '1px solid rgba(255,255,255,0.10)',
+  backgroundColor: 'var(--cetso-surface-1)',
+  border: '1.5px solid var(--cetso-border)',
   borderRadius: 16,
-  color: 'white',
+  color: 'var(--cetso-text)',
   fontFamily: 'var(--font-ui)',
   fontSize: 12,
-  boxShadow: '0 16px 48px rgba(0,0,0,0.60)',
+  boxShadow: 'var(--cetso-card-shadow)',
 }
 
 export default function ResultsAnalyticsPage() {
-  const data = useMemo(() => {
-    const submissions = MOCK_STUDENTS
-      .map((s) => isVoteAlreadySubmitted(s.studentId) ? getMockVoteSubmission(s.studentId) : null)
-      .filter(Boolean)
+  const [submissions, setSubmissions] = useState<Array<{ programCode: string; selections: VoteSelection[] }>>([])
 
+  useEffect(() => {
+    supabase
+      .from('votes')
+      .select('program_code, selections')
+      .then(({ data, error }) => {
+        if (error) {
+          console.error('Error loading results:', error)
+          setSubmissions([])
+          return
+        }
+        setSubmissions((data ?? []).map((row: any) => ({
+          programCode: row.program_code,
+          selections: row.selections ?? [],
+        })))
+      })
+  }, [])
+
+  const data = useMemo(() => {
     const byProgram = PROGRAMS.map((p, i) => ({
       programCode: p,
-      votes: submissions.filter((s) => s!.receipt.programCode === p).length,
+      votes: submissions.filter((s) => s.programCode === p).length,
       color: PROGRAM_COLORS[i],
     }))
 
     const byPosition = POSITIONS.map((pos) => {
       let votes = 0
       for (const sub of submissions) {
-        if (sub!.selections.some((sel) => sel.positionCode === pos.positionCode)) votes++
+        if (sub.selections.some((sel) => sel.positionCode === pos.positionCode)) votes++
       }
       return { positionCode: pos.positionCode, title: pos.title, votes }
     }).sort((a, b) => b.votes - a.votes)
 
     return { submissions, byProgram, byPosition }
-  }, [])
+  }, [submissions])
 
   const topBreakdown = data.byPosition.slice(0, 8)
 
@@ -51,12 +66,12 @@ export default function ResultsAnalyticsPage() {
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-[32px] p-6"
+          className="relative overflow-hidden rounded-[32px] p-6 border transition-colors duration-300"
           style={{
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.07)',
+            background: 'var(--cetso-surface-1)',
+            borderColor: 'var(--cetso-border)',
             backdropFilter: 'blur(20px)',
-            boxShadow: '0 24px 64px rgba(0,0,0,0.50)',
+            boxShadow: 'var(--cetso-card-shadow)',
           }}
         >
           <div className="flex items-center gap-4">
@@ -102,7 +117,7 @@ export default function ResultsAnalyticsPage() {
           <div className="text-[10px] font-bold uppercase tracking-widest text-[rgba(255,178,74,0.85)]">
             Equal Program Share
           </div>
-          <div className="mt-1.5 text-xl font-black text-white">
+          <div className="mt-1.5 text-xl font-black text-[var(--cetso-text)]">
             Each academic program contributes equally (25%) to the final election result.
           </div>
           <div className="mt-1 text-sm font-medium text-[var(--cetso-text-2)]">
@@ -123,7 +138,7 @@ export default function ResultsAnalyticsPage() {
               <div className="flex items-center justify-between mb-5">
                 <div>
                   <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)]">Top Positions</div>
-                  <div className="mt-1 text-xl font-black text-white">Votes by Position</div>
+                  <div className="mt-1 text-xl font-black text-[var(--cetso-text)]">Votes by Position</div>
                 </div>
                 <div
                   className="grid h-9 w-9 place-items-center rounded-xl"
@@ -133,11 +148,11 @@ export default function ResultsAnalyticsPage() {
                 </div>
               </div>
               <div className="h-[280px]">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                   <BarChart data={topBreakdown} margin={{ top: 6, right: 6, bottom: 6, left: -16 }}>
                     <XAxis
                       dataKey="title"
-                      stroke="rgba(234,234,242,0.30)"
+                      stroke="var(--cetso-border)"
                       tick={{ fontSize: 9, fontWeight: 600 }}
                       axisLine={false}
                       tickLine={false}
@@ -146,9 +161,9 @@ export default function ResultsAnalyticsPage() {
                       textAnchor="end"
                       height={50}
                     />
-                    <YAxis stroke="rgba(234,234,242,0.30)" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
-                    <Legend wrapperStyle={{ fontSize: 11, color: 'rgba(234,234,242,0.55)' }} />
+                    <YAxis stroke="var(--cetso-border)" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'var(--cetso-surface-2)' }} />
+                    <Legend wrapperStyle={{ fontSize: 11, color: 'var(--cetso-text-3)' }} />
                     <Bar dataKey="votes" radius={[10, 10, 0, 0]} name="Votes">
                       {topBreakdown.map((_, idx) => (
                         <Cell key={idx} fill={PROGRAM_COLORS[idx % PROGRAM_COLORS.length]} fillOpacity={0.80} />
@@ -170,7 +185,7 @@ export default function ResultsAnalyticsPage() {
               <div className="flex items-center justify-between mb-5">
                 <div>
                   <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)]">Program Share</div>
-                  <div className="mt-1 text-xl font-black text-white">Equal Split (25%)</div>
+                  <div className="mt-1 text-xl font-black text-[var(--cetso-text)]">Equal Split (25%)</div>
                 </div>
                 <div
                   className="grid h-9 w-9 place-items-center rounded-xl"
@@ -180,10 +195,10 @@ export default function ResultsAnalyticsPage() {
                 </div>
               </div>
               <div className="h-[240px]">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                   <PieChart>
                     <Tooltip contentStyle={tooltipStyle} />
-                    <Legend wrapperStyle={{ fontSize: 11, color: 'rgba(234,234,242,0.55)', paddingTop: 8 }} />
+                    <Legend wrapperStyle={{ fontSize: 11, color: 'var(--cetso-text-3)', paddingTop: 8 }} />
                     <Pie
                       data={data.byProgram}
                       dataKey="votes"
@@ -214,7 +229,7 @@ export default function ResultsAnalyticsPage() {
         >
           <GlassCard className="p-5">
             <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)] mb-1">All Positions</div>
-            <div className="text-xl font-black text-white mb-5">Full results breakdown</div>
+            <div className="text-xl font-black text-[var(--cetso-text)] mb-5">Full results breakdown</div>
             <div className="space-y-2.5">
               {data.byPosition.map((p, i) => {
                 const maxVotes = data.byPosition[0]?.votes || 1
@@ -230,7 +245,7 @@ export default function ResultsAnalyticsPage() {
                     <div className="w-6 text-right text-[10px] font-bold text-[var(--cetso-text-3)]">#{i + 1}</div>
                     <div className="min-w-0 flex-1">
                       <div className="mb-1.5 flex items-center justify-between gap-3">
-                        <div className="truncate text-sm font-bold text-white">{p.title}</div>
+                        <div className="truncate text-sm font-bold text-[var(--cetso-text)]">{p.title}</div>
                         <div
                           className="shrink-0 rounded-lg px-2 py-0.5 text-[11px] font-black"
                           style={{
@@ -242,7 +257,7 @@ export default function ResultsAnalyticsPage() {
                           {p.votes}
                         </div>
                       </div>
-                      <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                      <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: 'var(--cetso-surface-3)' }}>
                         <motion.div
                           className="h-full rounded-full"
                           style={{ background: PROGRAM_COLORS[i % PROGRAM_COLORS.length] }}

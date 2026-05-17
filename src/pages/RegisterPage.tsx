@@ -1,15 +1,17 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, CheckCircle2, UserPlus, Shield, Key } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, Shield, Key, UserCheck } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import Button from '../components/ui/Button'
 import GlassCard from '../components/ui/GlassCard'
 import TextField from '../components/ui/TextField'
-import { findStudentById, registerStudent, isValidStudentId } from '../lib/studentRegistry'
-import { generatePassword } from '../mocks/mockStudents'
-import type { ProgramCode, YearLevel } from '../mocks/mockStudents'
+import Modal from '../components/ui/Modal'
+import { generatePassword, isValidStudentId } from '../lib/studentTypes'
+import type { ProgramCode, YearLevel } from '../lib/studentTypes'
 import { setMockSession } from '../lib/mockSession'
 import { supabase } from '../lib/supabase'
+import { expectedHcdcEmailFromName, normalizeHcdcEmail, validateHcdcEmailForName } from '../lib/hcdcEmail'
+import { useTransaction } from '../lib/TransactionContext'
 
 type Step = 1 | 2 | 3
 
@@ -17,21 +19,19 @@ const STEP_LABELS = ['Verify ID', 'Your Info', 'Confirm']
 
 export default function RegisterPage() {
   const navigate = useNavigate()
+  const { runTransaction } = useTransaction()
 
   const [step, setStep] = useState<Step>(1)
   const [studentId, setStudentId] = useState('')
   const [fullName, setFullName] = useState('')
+  const [studentEmail, setStudentEmail] = useState('')
   const [programCode, setProgramCode] = useState<ProgramCode>('BSIT')
   const [yearLevel, setYearLevel] = useState<YearLevel>(1)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [generatedPwd, setGeneratedPwd] = useState('')
   const [loading, setLoading] = useState(false)
-
-  const student = useMemo(() => {
-    if (!studentId.trim()) return null
-    return findStudentById(studentId.trim())
-  }, [studentId])
+  const [alreadyRegisteredOpen, setAlreadyRegisteredOpen] = useState(false)
 
   // Live password preview
   const passwordPreview = useMemo(() => {
@@ -47,67 +47,92 @@ export default function RegisterPage() {
         setError('Student ID must start with "598".')
         return
       }
-      if (student) {
-        // Pre-fill from existing mock data
-        setFullName(student.fullName)
-        setProgramCode(student.programCode)
-        setYearLevel(student.yearLevel)
+      
+      try {
+        const { data: existingStudent, error: lookupError } = await runTransaction(async () => {
+          return await supabase
+            .rpc('get_student_by_id', { p_student_id: studentId.trim() })
+            .maybeSingle()
+        }, 'LOOKING UP STUDENT ID')
+
+        if (lookupError) {
+          setError('Could not verify this student ID. Please try again.')
+          return
+        }
+
+        if (existingStudent) {
+          setAlreadyRegisteredOpen(true)
+          return
+        }
+
+        setFullName('')
+        setStudentEmail('')
+        setStep(2)
+      } catch (err: any) {
+        setError(err.message || 'Verification error')
       }
-      setStep(2)
       return
     }
     if (step === 2) {
       if (!fullName.trim()) { setError('Full name is required.'); return }
+      const emailError = validateHcdcEmailForName(studentEmail, fullName)
+      if (emailError) { setError(emailError); return }
       setStep(3)
       return
     }
     if (step === 3) {
       setLoading(true)
       const autoPassword = generatePassword(studentId.trim(), fullName.trim())
+      const normalizedEmail = normalizeHcdcEmail(studentEmail)
 
-      // 1. Create user in Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: `${studentId.trim()}@cetso.edu`,
-        password: autoPassword,
-        options: {
-          data: { role: 'student' }
-        }
-      })
+      try {
+        await runTransaction(async () => {
+          const { data: existingStudent } = await supabase
+            .rpc('get_student_by_id', { p_student_id: studentId.trim() })
+            .maybeSingle()
 
-      if (authError) {
-        setError(authError.message)
+          if (existingStudent) {
+            setError('This student ID is already registered. Please login instead.')
+            setAlreadyRegisteredOpen(true)
+            return
+          }
+
+          const { error: dbError } = await supabase.from('students').insert({
+            student_id: studentId.trim(),
+            email: normalizedEmail,
+            full_name: fullName.trim(),
+            program_code: programCode,
+            year_level: yearLevel
+          })
+
+          if (dbError) {
+            console.error('Error inserting student:', dbError)
+            setError(dbError.code === '42501'
+              ? 'Supabase blocked registration. Run the database policy fix in supabase/fix-live-database.sql.'
+              : dbError.message || 'Registration failed.')
+            return
+          }
+
+          setGeneratedPwd(autoPassword)
+          setSuccess(true)
+
+          // Auto-login after registration (keeping mock session synced)
+          setMockSession({
+            role: 'student',
+            studentId: studentId.trim(),
+            studentName: fullName.trim(),
+            programCode,
+            yearLevel,
+          })
+        }, 'WRITING REGISTER RECORD')
+
+        // Navigate to dashboard after brief delay
+        setTimeout(() => navigate('/student/dashboard'), 2000)
+      } catch (err: any) {
+        setError(err.message || 'Failed to complete registration')
+      } finally {
         setLoading(false)
-        return
       }
-
-      // 2. Insert into students table
-      const { error: dbError } = await supabase.from('students').insert({
-        student_id: studentId.trim(),
-        full_name: fullName.trim(),
-        program_code: programCode,
-        year_level: yearLevel
-      })
-
-      if (dbError) {
-        // We log it but continue since auth succeeded
-        console.error('Error inserting student:', dbError)
-      }
-
-      setGeneratedPwd(autoPassword)
-      setSuccess(true)
-      setLoading(false)
-
-      // Auto-login after registration (keeping mock session synced)
-      setMockSession({
-        role: 'student',
-        studentId: studentId.trim(),
-        studentName: fullName.trim(),
-        programCode,
-        yearLevel,
-      })
-
-      // Navigate to dashboard after brief delay
-      setTimeout(() => navigate('/student/dashboard'), 2000)
     }
   }
 
@@ -122,6 +147,42 @@ export default function RegisterPage() {
       className="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden"
       style={{ background: 'var(--cetso-bg)' }}
     >
+      <Modal
+        isOpen={alreadyRegisteredOpen}
+        onClose={() => setAlreadyRegisteredOpen(false)}
+        title="Already Registered"
+        maxWidth="max-w-md"
+      >
+        <div className="space-y-6 text-center">
+          <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl border border-orange-500/20 bg-orange-500/10">
+            <UserCheck className="h-8 w-8 text-orange-400" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold leading-relaxed text-white/70">
+              ID <span className="font-mono font-black text-white">{studentId.trim() || 'N/A'}</span> is already registered.
+            </p>
+            <p className="mt-3 text-[11px] font-medium uppercase leading-relaxed tracking-widest text-white/35">
+              Use your student ID and generated password on the login page.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Button variant="secondary" size="lg" onClick={() => setAlreadyRegisteredOpen(false)}>
+              CHECK AGAIN
+            </Button>
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={() => {
+                setAlreadyRegisteredOpen(false)
+                navigate('/login')
+              }}
+            >
+              LOGIN
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
       {/* Background effects */}
       <div
         className="pointer-events-none absolute inset-0"
@@ -172,14 +233,17 @@ export default function RegisterPage() {
           {/* Header */}
           <div className="text-center mb-6">
             <div
-              className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl"
+              className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-2xl overflow-hidden bg-black/20"
               style={{
-                background: 'linear-gradient(135deg, rgba(255,122,24,0.20), rgba(255,178,74,0.10))',
                 border: '1px solid rgba(255,122,24,0.35)',
                 boxShadow: '0 0 40px rgba(255,122,24,0.20)',
               }}
             >
-              <UserPlus className="h-7 w-7 text-[var(--cetso-orange)]" />
+              <img
+                src="/CETSO ELECTION.png"
+                alt="CETSO Election Logo"
+                className="h-14 w-14 object-contain"
+              />
             </div>
             <h1
               style={{
@@ -332,28 +396,30 @@ export default function RegisterPage() {
                 {step === 2 && (
                   <div className="space-y-4">
                     {/* Pre-filled info notice */}
-                    {student && (
-                      <div
-                        className="flex items-center gap-2 rounded-xl p-3"
-                        style={{
-                          background: 'var(--cetso-success-bg)',
-                          border: '1px solid var(--cetso-success-border)',
-                        }}
-                      >
-                        <CheckCircle2 className="h-4 w-4 shrink-0" style={{ color: 'var(--cetso-success-text)' }} />
-                        <span className="text-xs font-semibold" style={{ color: 'var(--cetso-success-text)' }}>
-                          Student record found. Details auto-filled.
-                        </span>
-                      </div>
-                    )}
-
                     <TextField
                       label="Full Name"
                       name="fullName"
                       value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
+                      onChange={(e) => {
+                        const nextFullName = e.target.value
+                        const previousExpectedEmail = expectedHcdcEmailFromName(fullName)
+                        const nextExpectedEmail = expectedHcdcEmailFromName(nextFullName)
+                        setFullName(nextFullName)
+                        setStudentEmail((current) => (!current || current === previousExpectedEmail ? nextExpectedEmail : current))
+                      }}
                       placeholder="e.g. Juan Cruz"
-                      error={error ?? undefined}
+                      error={error?.startsWith('Full name') ? error : undefined}
+                    />
+
+                    <TextField
+                      label="HCDC Email"
+                      name="studentEmail"
+                      type="email"
+                      value={studentEmail}
+                      onChange={(e) => setStudentEmail(e.target.value)}
+                      placeholder="firstname.lastname@hcdc.edu.ph"
+                      hint="For multiple given names, remove spaces before the dot: firstnamesecondname.lastname@hcdc.edu.ph"
+                      error={error && !error.startsWith('Full name') ? error : undefined}
                     />
 
                     <div className="grid grid-cols-2 gap-3">
@@ -439,6 +505,7 @@ export default function RegisterPage() {
                       {[
                         { label: 'Student ID', value: studentId },
                         { label: 'Full Name', value: fullName },
+                        { label: 'HCDC Email', value: normalizeHcdcEmail(studentEmail) },
                         { label: 'Program', value: programCode },
                         { label: 'Year Level', value: `Year ${yearLevel}` },
                         { label: 'Password', value: passwordPreview },

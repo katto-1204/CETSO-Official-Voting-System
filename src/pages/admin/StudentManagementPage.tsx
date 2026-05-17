@@ -1,13 +1,16 @@
-import { useState, useMemo } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import type { ChangeEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { UploadCloud, GraduationCap, Plus, CheckCircle2, Search, X, UserCheck, UserX } from 'lucide-react'
+import { UploadCloud, GraduationCap, Plus, CheckCircle2, Search, X, UserCheck, UserX, Trash2, Loader2 } from 'lucide-react'
+import * as XLSX from 'xlsx'
 import GlassCard from '../../components/ui/GlassCard'
 import Button from '../../components/ui/Button'
 import TextField from '../../components/ui/TextField'
-import { getAllStudents, registerStudent, isValidStudentId } from '../../lib/studentRegistry'
-import { isVoteAlreadySubmitted } from '../../mocks/mockVotes'
-import type { ProgramCode, YearLevel } from '../../mocks/mockStudents'
+import Modal from '../../components/ui/Modal'
+import { supabase } from '../../lib/supabase'
+import { expectedHcdcEmailFromName, isValidHcdcEmail, normalizeHcdcEmail } from '../../lib/hcdcEmail'
+import { isValidStudentId } from '../../lib/studentTypes'
+import type { ProgramCode, YearLevel } from '../../lib/studentTypes'
 
 const PROGRAM_COLORS: Record<string, string> = { BSIT: 'rgba(255,122,24,0.14)', BLIS: 'rgba(167,139,250,0.14)', BSCpE: 'rgba(45,212,191,0.14)', BSECE: 'rgba(96,165,250,0.14)' }
 const PROGRAM_BORDERS: Record<string, string> = { BSIT: 'rgba(255,122,24,0.30)', BLIS: 'rgba(167,139,250,0.30)', BSCpE: 'rgba(45,212,191,0.30)', BSECE: 'rgba(96,165,250,0.30)' }
@@ -15,11 +18,55 @@ const PROGRAM_TEXT: Record<string, string> = { BSIT: '#ff7a18', BLIS: '#a78bfa',
 
 type VoteFilter = 'all' | 'voted' | 'not-voted'
 
+type AdminStudent = {
+  studentId: string
+  email: string
+  fullName: string
+  programCode: ProgramCode
+  yearLevel: YearLevel
+}
+
+function mapDbStudent(row: any): AdminStudent {
+  return {
+    studentId: row.student_id,
+    email: row.email ?? '',
+    fullName: row.full_name,
+    programCode: row.program_code,
+    yearLevel: row.year_level,
+  }
+}
+
 export default function StudentManagementPage() {
   const [importing, setImporting] = useState(false)
   const [progress, setProgress] = useState(0)
   const [message, setMessage] = useState<string | null>(null)
-  const [students, setStudents] = useState(() => getAllStudents())
+  const [students, setStudents] = useState<AdminStudent[]>([])
+  const [votedStudentIds, setVotedStudentIds] = useState<Set<string>>(() => new Set())
+  const [loadingStudents, setLoadingStudents] = useState(true)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    isOpen: boolean
+    type: 'single' | 'bulk' | 'all'
+    title: string
+    message: string
+    confirmText: string
+    doubleConfirmPhrase?: string
+    onConfirm: () => Promise<void>
+  }>({
+    isOpen: false,
+    type: 'single',
+    title: '',
+    message: '',
+    confirmText: 'Purge Record',
+    onConfirm: async () => {},
+  })
+  const [typedPhrase, setTypedPhrase] = useState('')
+  const [pendingFileName, setPendingFileName] = useState('')
+  const [pendingStudents, setPendingStudents] = useState<AdminStudent[]>([])
+  const [loadConfirmOpen, setLoadConfirmOpen] = useState(false)
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [fileLoading, setFileLoading] = useState(false)
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('')
@@ -28,53 +75,660 @@ export default function StudentManagementPage() {
 
   // Manual add
   const [manualId, setManualId] = useState('')
+  const [manualEmail, setManualEmail] = useState('')
   const [manualName, setManualName] = useState('')
   const [manualProgram, setManualProgram] = useState<ProgramCode>('BSIT')
   const [manualYear, setManualYear] = useState<YearLevel>(1)
   const [manualSuccess, setManualSuccess] = useState(false)
   const [manualError, setManualError] = useState<string | null>(null)
 
+  async function loadStudents() {
+    setLoadingStudents(true)
+    setMessage(null)
+
+    // Try with email column first, fall back without it if column doesn't exist
+    let studentRows: any[] | null = null
+    let studentError: any = null
+
+    const result1 = await supabase
+      .from('students')
+      .select('student_id, email, full_name, program_code, year_level')
+      .order('student_id', { ascending: true })
+    studentRows = result1.data
+    studentError = result1.error
+
+    if (studentError?.code === '42703') {
+      // email column doesn't exist — query without it
+      const result2 = await supabase
+        .from('students')
+        .select('student_id, full_name, program_code, year_level')
+        .order('student_id', { ascending: true })
+      studentRows = result2.data
+      studentError = result2.error
+    }
+
+    if (studentError) {
+      console.error('Error loading students:', studentError)
+      setMessage(studentError.code === '42501'
+        ? 'Supabase blocked student roster access. Run supabase/fix-live-database.sql.'
+        : studentError.message)
+      setStudents([])
+      setLoadingStudents(false)
+      return
+    }
+
+    const { data: voteRows, error: voteError } = await supabase
+      .from('votes')
+      .select('student_id')
+
+    if (voteError) {
+      console.error('Error loading votes:', voteError)
+      setVotedStudentIds(new Set())
+    } else {
+      setVotedStudentIds(new Set((voteRows ?? []).map((row) => row.student_id)))
+    }
+
+    setStudents((studentRows ?? []).map(mapDbStudent))
+    setLoadingStudents(false)
+  }
+
+  useEffect(() => {
+    loadStudents()
+  }, [])
+
   const filteredStudents = useMemo(() => {
     const q = searchQuery.trim().toLowerCase()
     return students.filter((s) => {
-      const matchQuery = !q || s.studentId.toLowerCase().includes(q) || s.fullName.toLowerCase().includes(q)
+      const matchQuery = !q || s.studentId.toLowerCase().includes(q) || s.fullName.toLowerCase().includes(q) || s.email.toLowerCase().includes(q)
       const matchProgram = programFilter === 'all' || s.programCode === programFilter
-      const voted = isVoteAlreadySubmitted(s.studentId)
+      const voted = votedStudentIds.has(s.studentId)
       const matchVote = voteFilter === 'all' || (voteFilter === 'voted' && voted) || (voteFilter === 'not-voted' && !voted)
       return matchQuery && matchProgram && matchVote
     })
-  }, [students, searchQuery, programFilter, voteFilter])
+  }, [students, searchQuery, programFilter, voteFilter, votedStudentIds])
 
-  const votedCount = useMemo(() => students.filter((s) => isVoteAlreadySubmitted(s.studentId)).length, [students])
+  const votedCount = useMemo(() => students.filter((s) => votedStudentIds.has(s.studentId)).length, [students, votedStudentIds])
 
-  function onFileChange(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setImporting(true); setProgress(0); setMessage(null)
-    setTimeout(() => setProgress(25), 400)
-    setTimeout(() => setProgress(58), 900)
-    setTimeout(() => setProgress(84), 1300)
-    setTimeout(() => { setProgress(100); setMessage('Import complete.'); setStudents(getAllStudents()); setImporting(false) }, 1800)
+  function normalizeProgram(value: unknown): ProgramCode | null {
+    const raw = String(value ?? '').trim()
+    if (!raw) return null
+    const normalized = raw.replace(/\s+/g, '').toUpperCase()
+    const lower = raw.toLowerCase()
+
+    // Direct abbreviation match
+    if (normalized === 'BSIT') return 'BSIT'
+    if (normalized === 'BLIS') return 'BLIS'
+    if (normalized === 'BSCPE' || normalized === 'BSPE') return 'BSCpE'
+    if (normalized === 'BSECE') return 'BSECE'
+
+    // Full program name keyword match
+    if (lower.includes('information technology')) return 'BSIT'
+    if (lower.includes('library') && lower.includes('information science')) return 'BLIS'
+    if (lower.includes('computer engineering') || lower.includes('computer eng')) return 'BSCpE'
+    if (lower.includes('electronics') && lower.includes('communication')) return 'BSECE'
+    if (lower.includes('electronics engineering')) return 'BSECE'
+
+    // Partial abbreviation match
+    if (normalized.includes('BSIT')) return 'BSIT'
+    if (normalized.includes('BLIS')) return 'BLIS'
+    if (normalized.includes('BSCPE') || normalized.includes('CPE')) return 'BSCpE'
+    if (normalized.includes('BSECE') || normalized.includes('ECE')) return 'BSECE'
+
+    return null
   }
 
-  function addStudentManually() {
+  function normalizeYear(value: unknown): YearLevel | null {
+    const match = String(value ?? '').match(/[1-4]/)
+    if (!match) return null
+    return Number(match[0]) as YearLevel
+  }
+
+  /**
+   * Find the actual column key in headers that matches one of our aliases.
+   * Uses exact normalized match first, then substring containment as fallback.
+   * Returns the ORIGINAL key string (for use with row[key]).
+   */
+  function findColumnKey(headers: string[], ...aliases: string[]): string | null {
+    // Pass 1: exact normalized match
+    for (const alias of aliases) {
+      const aliasNorm = alias.toLowerCase().replace(/[^a-z0-9]/g, '')
+      const found = headers.find((h) => h.toLowerCase().replace(/[^a-z0-9]/g, '') === aliasNorm)
+      if (found) return found
+    }
+    // Pass 2: containment match, only for aliases >= 5 chars and similar-length headers
+    for (const alias of aliases) {
+      const aliasNorm = alias.toLowerCase().replace(/[^a-z0-9]/g, '')
+      if (aliasNorm.length < 5) continue
+      const found = headers.find((h) => {
+        const hNorm = h.toLowerCase().replace(/[^a-z0-9]/g, '')
+        // Only allow containment if lengths are similar (within 2x)
+        const ratio = Math.max(hNorm.length, aliasNorm.length) / Math.max(1, Math.min(hNorm.length, aliasNorm.length))
+        if (ratio > 2) return false
+        return hNorm.includes(aliasNorm) || aliasNorm.includes(hNorm)
+      })
+      if (found) return found
+    }
+    return null
+  }
+
+  /** Read a cell value as a trimmed string, given the original column key */
+  function cellStr(row: Record<string, unknown>, key: string | null): string {
+    if (!key) return ''
+    return String(row[key] ?? '').trim()
+  }
+
+  /** Check if column headers look like student data (at least 2 of 3 field groups present) */
+  function looksLikeStudentRow(cols: string[]): boolean {
+    const joined = cols.map((c) => c.toLowerCase()).join(' ')
+    const hasId = /id|control|number|student/.test(joined)
+    const hasName = /name|first|last|surname/.test(joined)
+    const hasProgram = /program|course|dept/.test(joined)
+    return (hasId ? 1 : 0) + (hasName ? 1 : 0) + (hasProgram ? 1 : 0) >= 2
+  }
+
+  async function parseStudentFile(file: File): Promise<AdminStudent[]> {
+    const buffer = await file.arrayBuffer()
+    const workbook = XLSX.read(buffer, { type: 'array' })
+    const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
+
+    // Auto-detect header row (some files have title/merged rows before the real headers)
+    let rows: Record<string, unknown>[] = []
+    let allHeaders: string[] = []
+
+    for (const skip of [0, 1, 2, 3, 4, 5]) {
+      const range = XLSX.utils.decode_range(firstSheet['!ref'] || 'A1')
+      range.s.r = skip
+      const parsed = XLSX.utils.sheet_to_json<Record<string, unknown>>(firstSheet, { defval: '', range })
+      if (!parsed.length) continue
+
+      const cols = Object.keys(parsed[0])
+      if (looksLikeStudentRow(cols)) {
+        rows = parsed
+        allHeaders = cols
+        break
+      }
+      if (skip === 0) {
+        rows = parsed
+        allHeaders = cols
+      }
+    }
+
+    if (!rows.length) throw new Error('No data rows found in the file.')
+
+    // Filter out __EMPTY columns generated by xlsx for blank headers
+    const headers = allHeaders.filter((h) => !h.startsWith('__EMPTY'))
+
+    console.log('Detected Excel columns:', headers)
+
+    // ── Pre-map columns ONCE ──────────────────────────────────────────
+    const idCol        = findColumnKey(headers, 'ID Number', 'Student ID', 'Student Number', 'ID No', 'Student ID No')
+    const firstNameCol = findColumnKey(headers, 'First Name', '1st Name', 'Given Name')
+    const lastNameCol  = findColumnKey(headers, 'Last Name', 'Surname', 'Family Name')
+    const middleCol    = findColumnKey(headers, 'Middle Name', 'Middle Initial', 'MI', 'M.I.')
+    const fullNameCol  = findColumnKey(headers, 'Full Name', 'Student Name')
+    const emailCol     = findColumnKey(headers, 'HCDC Email', 'Email Address', 'Student Email', 'School Email', 'Email')
+    const programCol   = findColumnKey(headers, 'Program', 'Program Code', 'Course', 'Department')
+    const yearCol      = findColumnKey(headers, 'Year Level', 'Year', 'Yr Level')
+
+    console.log('Column mapping:', { idCol, firstNameCol, lastNameCol, middleCol, fullNameCol, emailCol, programCol, yearCol })
+
+    // ── Parse each row using the pre-mapped keys ─────────────────────
+    return rows.map((row, index) => {
+      const studentId = cellStr(row, idCol)
+
+      // Build full name: prefer "Full Name" column, else combine first + middle + last
+      let fullName = cellStr(row, fullNameCol)
+      if (!fullName) {
+        const first  = cellStr(row, firstNameCol)
+        const middle = cellStr(row, middleCol)
+        const last   = cellStr(row, lastNameCol)
+        fullName = [first, middle, last].filter(Boolean).join(' ')
+      }
+
+      const providedEmail = cellStr(row, emailCol)
+      const programCode   = normalizeProgram(programCol ? row[programCol] : '')
+      const yearLevel     = normalizeYear(yearCol ? row[yearCol] : '')
+
+      // Generate email from name if none provided — but don't require it
+      let email = ''
+      if (providedEmail) {
+        email = normalizeHcdcEmail(providedEmail)
+      } else {
+        const generated = expectedHcdcEmailFromName(fullName)
+        if (generated && isValidHcdcEmail(generated)) email = generated
+      }
+
+      if (!studentId || !fullName || !programCode || !yearLevel) {
+        const missing = [
+          !studentId && 'Student ID',
+          !fullName && 'Name',
+          !programCode && 'Program',
+          !yearLevel && 'Year Level',
+        ].filter(Boolean).join(', ')
+        throw new Error(
+          `Row ${index + 2} is missing: ${missing}.\n\nDetected columns: ${headers.join(', ')}\nMapped → ID: ${idCol ?? '✗'}, Name: ${fullNameCol ?? (firstNameCol ? firstNameCol + '+' : '✗')}, Program: ${programCol ?? '✗'}, Year: ${yearCol ?? '✗'}\n\nRaw row values: ID="${cellStr(row, idCol)}", Program="${cellStr(row, programCol)}", Year="${cellStr(row, yearCol)}"`
+        )
+      }
+      if (!isValidStudentId(studentId)) {
+        throw new Error(`Row ${index + 2} has invalid student ID "${studentId}" (must start with "598").`)
+      }
+
+      return { studentId, email, fullName, programCode, yearLevel }
+    })
+  }
+
+  async function onFileChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadError(null)
+    setMessage(null)
+    setProgress(0)
+    setFileLoading(true)
+    try {
+      const parsed = await parseStudentFile(file)
+      if (!parsed.length) {
+        setUploadError('No student rows found in the selected file.')
+        return
+      }
+      setPendingFileName(file.name)
+      setPendingStudents(parsed)
+      setLoadConfirmOpen(true)
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'Could not read the selected file.')
+    } finally {
+      setFileLoading(false)
+      e.target.value = ''
+    }
+  }
+
+  async function loadPendingStudents() {
+    if (!pendingStudents.length) return
+    setImporting(true)
+    setProgress(25)
+    setUploadError(null)
+
+    const rowsWithEmail = pendingStudents.map((student) => ({
+      student_id: student.studentId,
+      email: student.email || null,
+      full_name: student.fullName,
+      program_code: student.programCode,
+      year_level: student.yearLevel,
+    }))
+
+    setProgress(60)
+    let { error } = await supabase.from('students').upsert(rowsWithEmail, { onConflict: 'student_id' })
+
+    // If email column doesn't exist, retry without it
+    if (error && (error.code === 'PGRST204' || error.code === '42703') && String(error.message).includes('email')) {
+      const rowsNoEmail = pendingStudents.map((student) => ({
+        student_id: student.studentId,
+        full_name: student.fullName,
+        program_code: student.programCode,
+        year_level: student.yearLevel,
+      }))
+      const retry = await supabase.from('students').upsert(rowsNoEmail, { onConflict: 'student_id' })
+      error = retry.error
+    }
+
+    if (error) {
+      console.error('Error loading student file:', error)
+      setUploadError(error.code === '42501'
+        ? 'Supabase blocked student loading. Run supabase/fix-live-database.sql.'
+        : error.message || 'Students could not be loaded.')
+      setImporting(false)
+      return
+    }
+
+    setProgress(100)
+    await loadStudents()
+    setImporting(false)
+    setPreviewOpen(false)
+    setPendingFileName('')
+    setPendingStudents([])
+    setMessage('Students loaded.')
+  }
+
+  async function addStudentManually() {
     setManualError(null)
-    if (!manualId.trim() || !manualName.trim()) { setManualError('ID and name are required.'); return }
+    const email = manualEmail.trim() ? normalizeHcdcEmail(manualEmail) : ''
+    if (!manualId.trim() || !manualName.trim()) { setManualError('Student ID and name are required.'); return }
     if (!isValidStudentId(manualId.trim())) { setManualError('Student ID must start with "598".'); return }
-    const result = registerStudent({ studentId: manualId.trim(), fullName: manualName.trim(), programCode: manualProgram, yearLevel: manualYear })
-    if (!result.ok) { setManualError(result.error ?? 'Failed.'); return }
-    setStudents(getAllStudents())
-    setManualId(''); setManualName(''); setManualProgram('BSIT'); setManualYear(1)
+    if (email && !isValidHcdcEmail(email)) { setManualError('Use a valid HCDC email (firstname.lastname@hcdc.edu.ph) or leave blank.'); return }
+
+    const studentData: Record<string, unknown> = {
+      student_id: manualId.trim(),
+      full_name: manualName.trim(),
+      program_code: manualProgram,
+      year_level: manualYear,
+    }
+    if (email) studentData.email = email
+
+    let { error } = await supabase.from('students').insert(studentData)
+
+    // If email column doesn't exist, retry without it
+    if (error && (error.code === 'PGRST204' || error.code === '42703') && String(error.message).includes('email')) {
+      delete studentData.email
+      const retry = await supabase.from('students').insert(studentData)
+      error = retry.error
+    }
+
+    if (error) {
+      console.error('Error adding student:', error)
+      setManualError(error.code === '42501'
+        ? 'Supabase blocked student creation. Run supabase/fix-live-database.sql.'
+        : error.message || 'Failed.')
+      return
+    }
+
+    await loadStudents()
+    setManualId(''); setManualEmail(''); setManualName(''); setManualProgram('BSIT'); setManualYear(1)
     setManualSuccess(true)
     setTimeout(() => setManualSuccess(false), 3000)
   }
 
+  const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(() => new Set())
+
+  async function executeDeleteSelectedStudents() {
+    const count = selectedStudentIds.size
+    if (count === 0) return
+
+    setDeletingId('bulk')
+    setMessage(null)
+    setUploadError(null)
+
+    const idsArray = Array.from(selectedStudentIds)
+
+    // Delete votes first to avoid foreign key or logical conflicts
+    const { error: voteError } = await supabase
+      .from('votes')
+      .delete()
+      .in('student_id', idsArray)
+
+    if (voteError) {
+      console.error('Error deleting votes:', voteError)
+      setUploadError(voteError.code === '42501'
+        ? 'Supabase blocked vote deletion. Run supabase/fix-live-database.sql.'
+        : 'Failed to delete associated vote records: ' + voteError.message)
+      setDeletingId(null)
+      return
+    }
+
+    const { error: studentError } = await supabase
+      .from('students')
+      .delete()
+      .in('student_id', idsArray)
+
+    if (studentError) {
+      console.error('Error deleting students:', studentError)
+      setUploadError(studentError.code === '42501'
+        ? 'Supabase blocked student deletion. Run supabase/fix-live-database.sql.'
+        : studentError.message)
+      setDeletingId(null)
+      return
+    }
+
+    // Update local state
+    setStudents((current) => current.filter((s) => !selectedStudentIds.has(s.studentId)))
+    setVotedStudentIds((current) => {
+      const next = new Set(current)
+      idsArray.forEach((id) => next.delete(id))
+      return next
+    })
+    setSelectedStudentIds(new Set())
+    setMessage(`Successfully deleted ${count} student(s).`)
+    setDeletingId(null)
+  }
+
+  function deleteSelectedStudents() {
+    const count = selectedStudentIds.size
+    if (count === 0) return
+    setDeleteConfirm({
+      isOpen: true,
+      type: 'bulk',
+      title: 'CONFIRM BULK DELETION',
+      message: `Are you absolutely sure you want to delete the ${count} selected student(s)? This will also purge their vote records. This action is irreversible.`,
+      confirmText: 'Purge Selected',
+      onConfirm: async () => {
+        await executeDeleteSelectedStudents()
+      }
+    })
+  }
+
+  async function executeDeleteAllStudents() {
+    setDeletingId('all')
+    setMessage(null)
+    setUploadError(null)
+
+    // Delete all votes
+    const { error: voteError } = await supabase
+      .from('votes')
+      .delete()
+      .neq('student_id', '')
+
+    if (voteError) {
+      console.error('Error deleting all votes:', voteError)
+      setUploadError(voteError.code === '42501'
+        ? 'Supabase blocked vote deletion. Run supabase/fix-live-database.sql.'
+        : 'Failed to clear vote table: ' + voteError.message)
+      setDeletingId(null)
+      return
+    }
+
+    // Delete all students
+    const { error: studentError } = await supabase
+      .from('students')
+      .delete()
+      .neq('student_id', '')
+
+    if (studentError) {
+      console.error('Error deleting all students:', studentError)
+      setUploadError(studentError.code === '42501'
+        ? 'Supabase blocked student deletion. Run supabase/fix-live-database.sql.'
+        : studentError.message)
+      setDeletingId(null)
+      return
+    }
+
+    setStudents([])
+    setVotedStudentIds(new Set())
+    setSelectedStudentIds(new Set())
+    setMessage('All students and vote records successfully wiped.')
+    setDeletingId(null)
+  }
+
+  function deleteAllStudents() {
+    setDeleteConfirm({
+      isOpen: true,
+      type: 'all',
+      title: 'CRITICAL: PURGE ALL STUDENTS',
+      message: 'WARNING: Are you absolutely sure you want to delete ALL students? This will wipe the entire student registry and all cast votes. This cannot be undone.',
+      confirmText: 'Wipe Roster & Votes',
+      doubleConfirmPhrase: 'DELETE ALL STUDENTS',
+      onConfirm: async () => {
+        await executeDeleteAllStudents()
+      }
+    })
+  }
+
+  async function executeDeleteStudent(student: AdminStudent) {
+    setDeletingId(student.studentId)
+    setMessage(null)
+
+    const { error: voteError } = await supabase
+      .from('votes')
+      .delete()
+      .eq('student_id', student.studentId)
+
+    if (voteError) {
+      console.error('Error deleting student vote:', voteError)
+      setMessage(voteError.code === '42501'
+        ? 'Supabase blocked vote deletion. Run supabase/fix-live-database.sql.'
+        : voteError.message)
+      setDeletingId(null)
+      return
+    }
+
+    const { error: studentError } = await supabase
+      .from('students')
+      .delete()
+      .eq('student_id', student.studentId)
+
+    if (studentError) {
+      console.error('Error deleting student:', studentError)
+      setMessage(studentError.code === '42501'
+        ? 'Supabase blocked student deletion. Run supabase/fix-live-database.sql.'
+        : studentError.message)
+      setDeletingId(null)
+      return
+    }
+
+    setStudents((current) => current.filter((item) => item.studentId !== student.studentId))
+    setVotedStudentIds((current) => {
+      const next = new Set(current)
+      next.delete(student.studentId)
+      return next
+    })
+    setMessage('Student deleted.')
+    setDeletingId(null)
+  }
+
+  function deleteStudent(student: AdminStudent) {
+    setDeleteConfirm({
+      isOpen: true,
+      type: 'single',
+      title: 'DELETE STUDENT RECORD',
+      message: `Delete ${student.fullName} (${student.studentId})? This also removes their vote record if one exists.`,
+      confirmText: 'Purge Student',
+      onConfirm: async () => {
+        await executeDeleteStudent(student)
+      }
+    })
+  }
+
   return (
     <div className="space-y-5">
+        <Modal 
+          isOpen={deleteConfirm.isOpen} 
+          onClose={() => {
+            setDeleteConfirm(prev => ({ ...prev, isOpen: false }))
+            setTypedPhrase('')
+          }} 
+          title={deleteConfirm.title} 
+          maxWidth="max-w-md"
+        >
+          <div className="space-y-6">
+            <div className="flex items-start gap-4 bg-red-500/5 border border-red-500/10 rounded-2xl p-5">
+              <div className="h-10 w-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 shrink-0">
+                <Trash2 className="h-5 w-5" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-sm font-bold uppercase tracking-wider text-red-400">Irreversible Action</h4>
+                <p className="text-xs font-semibold text-white/70 leading-relaxed">
+                  {deleteConfirm.message}
+                </p>
+              </div>
+            </div>
+
+            {deleteConfirm.doubleConfirmPhrase && (
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50 block">
+                  Type "<span className="text-red-400 font-mono select-none">{deleteConfirm.doubleConfirmPhrase}</span>" to confirm:
+                </label>
+                <input
+                  type="text"
+                  value={typedPhrase}
+                  onChange={(e) => setTypedPhrase(e.target.value)}
+                  placeholder="TYPE CONFIRMATION PHRASE..."
+                  className="w-full border rounded-xl py-3 px-4 text-xs font-bold uppercase tracking-widest placeholder:opacity-40 focus:outline-none transition-all"
+                  style={{
+                    background: 'var(--cetso-input-bg)',
+                    border: '1px solid var(--cetso-border)',
+                    color: 'var(--cetso-text)'
+                  }}
+                />
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <Button 
+                variant="secondary" 
+                className="flex-1 h-12" 
+                onClick={() => {
+                  setDeleteConfirm(prev => ({ ...prev, isOpen: false }))
+                  setTypedPhrase('')
+                }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="danger" 
+                className="flex-1 h-12" 
+                disabled={deleteConfirm.doubleConfirmPhrase ? typedPhrase !== deleteConfirm.doubleConfirmPhrase : false}
+                onClick={async () => {
+                  await deleteConfirm.onConfirm()
+                  setDeleteConfirm(prev => ({ ...prev, isOpen: false }))
+                  setTypedPhrase('')
+                }}
+              >
+                {deleteConfirm.confirmText}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+
+        <Modal isOpen={loadConfirmOpen} onClose={() => setLoadConfirmOpen(false)} title="LOAD STUDENTS" maxWidth="max-w-lg">
+          <div className="space-y-5">
+            <div>
+              <p className="text-sm font-semibold text-white">Load students from this file?</p>
+              <p className="mt-2 text-sm text-white/60">{pendingFileName} contains {pendingStudents.length} student{pendingStudents.length === 1 ? '' : 's'} ready for preview.</p>
+            </div>
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <Button variant="secondary" onClick={() => setLoadConfirmOpen(false)}>No</Button>
+              <Button variant="primary" onClick={() => { setLoadConfirmOpen(false); setPreviewOpen(true) }}>Yes</Button>
+            </div>
+          </div>
+        </Modal>
+
+        <Modal isOpen={previewOpen} onClose={() => setPreviewOpen(false)} title="Students Preview" maxWidth="max-w-5xl">
+          <div className="space-y-5">
+            <div className="overflow-x-auto rounded-2xl border border-white/10">
+              <table className="w-full min-w-[760px] border-collapse">
+                <thead>
+                  <tr className="bg-white/5">
+                    {['Control / ID Number', 'HCDC Email', 'Full Name', 'Program', 'Year Level'].map((heading) => (
+                      <th key={heading} className="p-3 text-left text-[10px] font-bold uppercase tracking-widest text-white/50">{heading}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {pendingStudents.map((student) => (
+                    <tr key={student.studentId} className="border-t border-white/10">
+                      <td className="p-3 font-mono text-xs font-bold text-white">{student.studentId}</td>
+                      <td className="p-3 text-xs font-semibold text-white/75">{student.email}</td>
+                      <td className="p-3 text-sm font-semibold text-white">{student.fullName}</td>
+                      <td className="p-3 text-xs font-bold text-white/75">{student.programCode}</td>
+                      <td className="p-3 text-xs font-bold text-white/75">Year {student.yearLevel}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {uploadError && (
+              <div className="rounded-2xl border border-[var(--cetso-error-border)] bg-[var(--cetso-error-bg)] p-3 text-xs font-semibold text-[var(--cetso-error-text)]">
+                {uploadError}
+              </div>
+            )}
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <Button variant="secondary" onClick={() => setPreviewOpen(false)} disabled={importing}>Cancel</Button>
+              <Button variant="primary" onClick={loadPendingStudents} loading={importing}>Load Students</Button>
+            </div>
+          </div>
+        </Modal>
+
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-[32px] p-6"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(20px)', boxShadow: '0 24px 64px rgba(0,0,0,0.50)' }}
+          className="relative overflow-hidden rounded-[32px] p-6 border transition-colors duration-300"
+          style={{ background: 'var(--cetso-surface-1)', borderColor: 'var(--cetso-border)', backdropFilter: 'blur(20px)', boxShadow: 'var(--cetso-card-shadow)' }}
         >
           <div className="flex items-center gap-4">
             <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl" style={{ background: 'rgba(255,122,24,0.12)', border: '1px solid rgba(255,122,24,0.28)' }}>
@@ -105,27 +759,38 @@ export default function StudentManagementPage() {
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
           {/* Left: Import + Manual add */}
           <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }} className="lg:col-span-4 space-y-4">
-            {/* CSV Import */}
+            {/* Student file import */}
             <GlassCard className="p-5">
-              <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>CSV Import</div>
+              <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>Excel / CSV Import</div>
               <div className="mt-1.5 text-xl font-black" style={{ color: 'var(--cetso-text)' }}>Bulk Upload</div>
               <div className="mt-4 rounded-2xl p-4" style={{ background: 'rgba(255,122,24,0.06)', border: '1px solid rgba(255,122,24,0.20)' }}>
                 <div className="text-[10px] font-bold uppercase tracking-widest text-[rgba(255,178,74,0.80)] mb-2">Required Columns</div>
                 <div className="text-xs font-medium" style={{ color: 'var(--cetso-text-2)' }}>
-                  <span className="font-bold" style={{ color: 'var(--cetso-text)' }}>Student ID</span>,{' '}
-                  <span className="font-bold" style={{ color: 'var(--cetso-text)' }}>Full Name</span>,{' '}
+                  <span className="font-bold" style={{ color: 'var(--cetso-text)' }}>ID Number</span>{' / Control Number, '}
+                  <span className="font-bold" style={{ color: 'var(--cetso-text)' }}>Full Name</span>{' (or 1st Name + Last Name + Middle Name), '}
                   <span className="font-bold" style={{ color: 'var(--cetso-text)' }}>Program</span>,{' '}
                   <span className="font-bold" style={{ color: 'var(--cetso-text)' }}>Year Level</span>
                 </div>
+                <div className="text-[10px] font-medium mt-1" style={{ color: 'var(--cetso-text-3)' }}>Optional: HCDC Email</div>
               </div>
               <div className="mt-4">
                 <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--cetso-text)' }}>
-                  <UploadCloud className="inline h-4 w-4 mr-1.5 opacity-70" /> Upload CSV
+                  <UploadCloud className="inline h-4 w-4 mr-1.5 opacity-70" /> Upload Excel / CSV
                 </label>
                 <div className="relative flex items-center gap-3 rounded-2xl p-4" style={{ background: 'var(--cetso-input-bg)', border: '1px solid var(--cetso-border)' }}>
-                  <UploadCloud className="h-5 w-5 shrink-0 text-[var(--cetso-orange)]" />
-                  <input type="file" accept=".csv,text/csv" onChange={onFileChange} disabled={importing} className="text-xs" style={{ color: 'var(--cetso-text-2)' }} />
+                  {fileLoading ? (
+                    <Loader2 className="h-5 w-5 shrink-0 text-[var(--cetso-orange)] animate-spin" />
+                  ) : (
+                    <UploadCloud className="h-5 w-5 shrink-0 text-[var(--cetso-orange)]" />
+                  )}
+                  <input type="file" accept=".xlsx,.xls,.csv,text/csv" onChange={onFileChange} disabled={importing || fileLoading} className="text-xs" style={{ color: 'var(--cetso-text-2)' }} />
                 </div>
+                {fileLoading && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--cetso-orange)]" />
+                    <span className="text-xs font-semibold" style={{ color: 'var(--cetso-text-2)' }}>Reading file…</span>
+                  </div>
+                )}
               </div>
               <AnimatePresence>
                 {importing && (
@@ -148,6 +813,14 @@ export default function StudentManagementPage() {
                     <div className="text-xs font-semibold" style={{ color: 'var(--cetso-success-text)' }}>{message}</div>
                   </motion.div>
                 )}
+                {!importing && uploadError && (
+                  <motion.div key="upload-error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="mt-4 rounded-2xl p-3"
+                    style={{ background: 'var(--cetso-error-bg)', border: '1px solid var(--cetso-error-border)' }}
+                  >
+                    <div className="text-xs font-semibold" style={{ color: 'var(--cetso-error-text)' }}>{uploadError}</div>
+                  </motion.div>
+                )}
               </AnimatePresence>
             </GlassCard>
 
@@ -157,6 +830,7 @@ export default function StudentManagementPage() {
               <div className="mt-1.5 text-xl font-black" style={{ color: 'var(--cetso-text)' }}>Add Student</div>
               <div className="mt-4 space-y-3">
                 <TextField label="Student ID" value={manualId} onChange={(e) => setManualId(e.target.value)} placeholder="598XXXXX" error={manualError && manualError.includes('ID') ? manualError : undefined} />
+                <TextField label="HCDC Email" type="email" value={manualEmail} onChange={(e) => setManualEmail(e.target.value)} placeholder="firstname.lastname@hcdc.edu.ph" error={manualError && manualError.includes('email') ? manualError : undefined} />
                 <TextField label="Full Name" value={manualName} onChange={(e) => setManualName(e.target.value)} placeholder="e.g. Jose Rizal" />
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -210,14 +884,14 @@ export default function StudentManagementPage() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>Roster</div>
-                  <div className="mt-1 text-xl font-black" style={{ color: 'var(--cetso-text)' }}>Students ({filteredStudents.length})</div>
+              <div className="mt-1 text-xl font-black" style={{ color: 'var(--cetso-text)' }}>{loadingStudents ? 'Loading students...' : `Students (${filteredStudents.length})`}</div>
                 </div>
               </div>
 
               {/* Search & Filters */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                 <div className="relative">
-                  <TextField name="search" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search ID or name…" />
+                  <TextField name="search" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search ID, email, or name..." />
                   {searchQuery ? (
                     <button type="button" onClick={() => setSearchQuery('')} className="absolute right-3 top-[10px]" style={{ color: 'var(--cetso-text-2)' }}>
                       <X className="h-4 w-4" />
@@ -243,12 +917,90 @@ export default function StudentManagementPage() {
                 </select>
               </div>
 
+              {/* Bulk Actions Panel */}
+              <AnimatePresence>
+                {(selectedStudentIds.size > 0 || students.length > 0) && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mb-4 overflow-hidden"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl border"
+                      style={{
+                        background: 'rgba(239, 68, 68, 0.03)',
+                        borderColor: 'rgba(239, 68, 68, 0.12)'
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+                        <span className="text-xs font-bold uppercase tracking-widest text-red-400">
+                          {selectedStudentIds.size > 0 
+                            ? `${selectedStudentIds.size} student(s) selected` 
+                            : 'Bulk Management System'}
+                        </span>
+                      </div>
+                      <div className="flex gap-2">
+                        {selectedStudentIds.size > 0 && (
+                          <>
+                            <Button 
+                              variant="secondary" 
+                              size="sm" 
+                              onClick={() => setSelectedStudentIds(new Set())}
+                            >
+                              Clear Selection
+                            </Button>
+                            <Button 
+                              variant="danger" 
+                              size="sm" 
+                              onClick={deleteSelectedStudents}
+                              loading={deletingId === 'bulk'}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Delete Selected
+                            </Button>
+                          </>
+                        )}
+                        {students.length > 0 && selectedStudentIds.size === 0 && (
+                          <Button 
+                            variant="danger" 
+                            size="sm" 
+                            className="border-dashed"
+                            onClick={deleteAllStudents}
+                            loading={deletingId === 'all'}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            Purge All Students ({students.length})
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               {/* Table */}
               <div className="overflow-x-auto rounded-2xl" style={{ border: '1px solid var(--cetso-border)' }}>
-                <table className="w-full border-collapse min-w-[540px]">
+                <table className="w-full border-collapse min-w-[720px]">
                   <thead>
                     <tr style={{ background: 'var(--cetso-input-bg)' }}>
-                      {['Student ID', 'Full Name', 'Program', 'Year', 'Vote Status'].map((h) => (
+                      <th className="p-3 text-left w-10">
+                        <input
+                          type="checkbox"
+                          checked={filteredStudents.length > 0 && filteredStudents.every((s) => selectedStudentIds.has(s.studentId))}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedStudentIds(new Set([...selectedStudentIds, ...filteredStudents.map((s) => s.studentId)]))
+                            } else {
+                              const next = new Set(selectedStudentIds)
+                              filteredStudents.forEach((s) => next.delete(s.studentId))
+                              setSelectedStudentIds(next)
+                            }
+                          }}
+                          className="h-4 w-4 rounded border-white/15 bg-white/5 text-orange-500 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-orange-500"
+                        />
+                      </th>
+                      {['Student ID', 'Full Name', 'Email', 'Program', 'Year', 'Vote Status', 'Actions'].map((h) => (
                         <th key={h} className="p-3 text-left text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>{h}</th>
                       ))}
                     </tr>
@@ -256,22 +1008,39 @@ export default function StudentManagementPage() {
                   <tbody>
                     {filteredStudents.map((s, i) => {
                       const inits = s.fullName.split(' ').slice(0, 2).map((p) => p[0]).join('')
-                      const voted = isVoteAlreadySubmitted(s.studentId)
+                      const voted = votedStudentIds.has(s.studentId)
                       return (
                         <motion.tr key={s.studentId} initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: 0.05 + i * 0.02 }}
                           style={{ borderTop: '1px solid var(--cetso-border)' }}
-                          className="transition hover:bg-black/5 dark:hover:bg-white/5"
+                          className={`transition hover:bg-black/5 dark:hover:bg-white/5 ${selectedStudentIds.has(s.studentId) ? 'bg-orange-500/5 hover:bg-orange-500/10' : ''}`}
                         >
+                          <td className="p-3 w-10">
+                            <input
+                              type="checkbox"
+                              checked={selectedStudentIds.has(s.studentId)}
+                              onChange={(e) => {
+                                const next = new Set(selectedStudentIds)
+                                if (e.target.checked) {
+                                  next.add(s.studentId)
+                                } else {
+                                  next.delete(s.studentId)
+                                }
+                                setSelectedStudentIds(next)
+                              }}
+                              className="h-4 w-4 rounded border-white/15 bg-white/5 text-orange-500 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-orange-500"
+                            />
+                          </td>
                           <td className="p-3 font-mono text-xs font-bold" style={{ color: 'var(--cetso-text)' }}>{s.studentId}</td>
                           <td className="p-3">
                             <div className="flex items-center gap-2.5">
                               <div className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[10px] font-black"
-                                style={{ background: PROGRAM_COLORS[s.programCode] ?? 'rgba(255,255,255,0.06)', border: `1px solid ${PROGRAM_BORDERS[s.programCode] ?? 'rgba(255,255,255,0.12)'}`, color: PROGRAM_TEXT[s.programCode] ?? 'white' }}
+                                style={{ background: PROGRAM_COLORS[s.programCode] ?? 'var(--cetso-surface-3)', border: `1px solid ${PROGRAM_BORDERS[s.programCode] ?? 'var(--cetso-border)'}`, color: PROGRAM_TEXT[s.programCode] ?? 'var(--cetso-text)' }}
                               >{inits}</div>
                               <span className="text-sm font-semibold" style={{ color: 'var(--cetso-text)' }}>{s.fullName}</span>
                             </div>
                           </td>
+                          <td className="p-3 text-xs font-semibold" style={{ color: 'var(--cetso-text-2)' }}>{s.email}</td>
                           <td className="p-3">
                             <span className="rounded-lg px-2.5 py-1 text-[10px] font-bold"
                               style={{ background: PROGRAM_COLORS[s.programCode], border: `1px solid ${PROGRAM_BORDERS[s.programCode]}`, color: PROGRAM_TEXT[s.programCode] }}
@@ -289,6 +1058,17 @@ export default function StudentManagementPage() {
                               {voted ? <UserCheck className="h-3 w-3" /> : <UserX className="h-3 w-3" />}
                               {voted ? 'Voted' : 'Pending'}
                             </span>
+                          </td>
+                          <td className="p-3">
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              onClick={() => deleteStudent(s)}
+                              loading={deletingId === s.studentId}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Delete
+                            </Button>
                           </td>
                         </motion.tr>
                       )

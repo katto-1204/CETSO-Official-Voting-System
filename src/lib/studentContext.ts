@@ -1,5 +1,5 @@
 import { getMockSession } from './mockSession'
-import type { ProgramCode, YearLevel } from '../mocks/mockStudents'
+import type { ProgramCode, YearLevel } from './studentTypes'
 
 export type StudentContext = {
   studentId: string
@@ -21,4 +21,3 @@ export function getStudentContext(): StudentContext | null {
     yearLevel: session.yearLevel,
   }
 }
-

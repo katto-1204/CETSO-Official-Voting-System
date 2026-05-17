@@ -1,7 +1,9 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import { LayoutDashboard, Users, Vote, FileCheck, UserCircle, LogOut, Sun, Moon } from 'lucide-react'
 import { useTheme } from '../../lib/theme'
 import Footer from './Footer'
+import { goeyToast } from 'goey-toast'
 
 const navItems = [
   { to: '/student/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -20,6 +22,20 @@ export default function AppShell() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const { theme, toggle } = useTheme()
+
+  const role = localStorage.getItem('cetso_role')
+  const studentId = localStorage.getItem('cetso_student_id')
+
+  useEffect(() => {
+    if (role !== 'student' || !studentId) {
+      goeyToast.error('Access Denied: Student clearance required.')
+      navigate('/login', { replace: true })
+    }
+  }, [role, studentId, navigate])
+
+  if (role !== 'student' || !studentId) {
+    return null
+  }
 
   const studentName = localStorage.getItem('cetso_student_name') ?? 'Student'
   const programCode = localStorage.getItem('cetso_program_code') ?? ''
@@ -54,7 +70,11 @@ export default function AppShell() {
               className="grid h-9 w-9 place-items-center rounded-xl font-black text-white text-sm"
               style={{ background: 'var(--cetso-orange)', boxShadow: '0 0 20px rgba(255,122,24,0.35)' }}
             >
-              C
+              <img
+                src="/CETLOGO.png"
+                alt="CET Logo"
+                className="h-6 w-6 object-contain"
+              />
             </div>
             <div>
               <div
@@ -219,7 +239,11 @@ export default function AppShell() {
               className="grid h-8 w-8 place-items-center rounded-lg font-black text-white text-xs"
               style={{ background: 'var(--cetso-orange)' }}
             >
-              C
+              <img
+                src="/CETLOGO.png"
+                alt="CET Logo"
+                className="h-5 w-5 object-contain"
+              />
             </div>
             <span
               className="font-black uppercase tracking-widest text-xs"

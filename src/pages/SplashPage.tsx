@@ -77,17 +77,11 @@ export default function SplashPage() {
                 boxShadow: '0 0 60px rgba(255,122,24,0.35), 0 0 120px rgba(255,122,24,0.15), 0 8px 32px rgba(0,0,0,0.40)',
               }}
             >
-              <span
-                className="text-4xl font-black"
-                style={{
-                  background: 'linear-gradient(135deg, #ff7a18, #ffb24a)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}
-              >
-                C
-              </span>
+              <img
+                src="/CETLOGO.png"
+                alt="CET Logo"
+                className="h-12 w-12 object-contain"
+              />
             </div>
           </motion.div>
 

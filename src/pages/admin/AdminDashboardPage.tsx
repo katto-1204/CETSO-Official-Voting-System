@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { BarChart3, TrendingUp, Users, Activity, Zap, Terminal, ArrowUpRight, Cpu, Clock, Activity as ActivityIcon } from 'lucide-react'
 import {
@@ -12,16 +12,9 @@ import {
 } from 'recharts'
 import GlassCard from '../../components/ui/GlassCard'
 import Button from '../../components/ui/Button'
-import { MOCK_STUDENTS } from '../../mocks/mockStudents'
-import { PROGRAMS, POSITIONS } from '../../mocks/mockElection'
-import { getMockVoteSubmission, isVoteAlreadySubmitted } from '../../mocks/mockVotes'
-
-function getSubmissions() {
-  return MOCK_STUDENTS.map((s) => {
-    if (!isVoteAlreadySubmitted(s.studentId)) return null
-    return getMockVoteSubmission(s.studentId)
-  }).filter(Boolean)
-}
+import { PROGRAMS, POSITIONS } from '../../lib/electionData'
+import { supabase } from '../../lib/supabase'
+import type { VoteSelection } from '../../lib/voteRecords'
 
 const PROGRAM_COLORS = ['#ff7a18', '#a78bfa', '#2dd4bf', '#60a5fa']
 
@@ -94,15 +87,34 @@ function StatCard({
 }
 
 export default function AdminDashboardPage() {
+  const [totalVoters, setTotalVoters] = useState(0)
+  const [submissions, setSubmissions] = useState<Array<{ programCode: string; selections: VoteSelection[] }>>([])
+
+  useEffect(() => {
+    supabase.from('students').select('student_id', { count: 'exact', head: true }).then(({ count, error }) => {
+      if (error) console.error('Error loading student count:', error)
+      setTotalVoters(count ?? 0)
+    })
+    supabase.from('votes').select('program_code, selections').then(({ data, error }) => {
+      if (error) {
+        console.error('Error loading vote data:', error)
+        setSubmissions([])
+        return
+      }
+      setSubmissions((data ?? []).map((row: any) => ({
+        programCode: row.program_code,
+        selections: row.selections ?? [],
+      })))
+    })
+  }, [])
+
   const stats = useMemo(() => {
-    const totalVoters = MOCK_STUDENTS.length
-    const submissions = getSubmissions()
     const votesSubmitted = submissions.length
     const participationRate = totalVoters ? (votesSubmitted / totalVoters) * 100 : 0
 
     const byProgram = PROGRAMS.map((p, i) => ({
       programCode: p,
-      votes: submissions.filter((sub) => sub!.receipt.programCode === p).length,
+      votes: submissions.filter((sub) => sub.programCode === p).length,
       color: PROGRAM_COLORS[i % PROGRAM_COLORS.length],
     }))
 
@@ -111,7 +123,7 @@ export default function AdminDashboardPage() {
       return acc
     }, {})
     for (const sub of submissions) {
-      for (const sel of sub!.selections) {
+      for (const sel of sub.selections) {
         byPosition[sel.positionCode] = (byPosition[sel.positionCode] ?? 0) + 1
       }
     }
@@ -126,7 +138,7 @@ export default function AdminDashboardPage() {
       }))
 
     return { totalVoters, votesSubmitted, participationRate, byProgram, topPositions }
-  }, [])
+  }, [submissions, totalVoters])
 
   return (
     <div className="space-y-8">
@@ -215,7 +227,7 @@ export default function AdminDashboardPage() {
                </div>
             </div>
 
-            <div className="relative h-4 w-full bg-white/5 rounded-full overflow-hidden mb-4 border border-white/5">
+            <div className="relative h-4 w-full bg-[var(--cetso-surface-2)] rounded-full overflow-hidden mb-4 border border-[var(--cetso-border)]">
               <motion.div
                 className="absolute inset-y-0 left-0 bg-gradient-to-r from-orange-600 to-orange-400"
                 style={{ boxShadow: '0 0 30px rgba(249,115,22,0.4)' }}
@@ -249,20 +261,20 @@ export default function AdminDashboardPage() {
             <GlassCard className="p-8">
               <div className="flex items-center justify-between mb-10">
                 <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-2 flex items-center gap-2">
+                  <div className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 flex items-center gap-2" style={{ color: 'var(--cetso-text-3)' }}>
                     <BarChart3 className="h-3 w-3 text-orange-500" />
                     Program Breakdown
                   </div>
-                  <h3 className="text-2xl font-black italic uppercase tracking-tighter text-white">Votes by Program</h3>
+                  <h3 className="text-2xl font-black italic uppercase tracking-tighter" style={{ color: 'var(--cetso-text)' }}>Votes by Program</h3>
                 </div>
                 <div className="flex gap-2">
-                   <Button variant="ghost" size="sm" className="bg-white/5 h-8 px-3 text-[9px] font-black uppercase tracking-widest">Day</Button>
+                   <Button variant="ghost" size="sm" className="h-8 px-3 text-[9px] font-black uppercase tracking-widest" style={{ background: 'var(--cetso-surface-2)', border: '1px solid var(--cetso-border)', color: 'var(--cetso-text)' }}>Day</Button>
                    <Button variant="ghost" size="sm" className="bg-orange-500/10 border-orange-500/20 text-orange-500 h-8 px-3 text-[9px] font-black uppercase tracking-widest">Total</Button>
                 </div>
               </div>
 
               <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                   <BarChart data={stats.byProgram} margin={{ top: 20, right: 20, bottom: 20, left: 0 }}>
                     <defs>
                        {stats.byProgram.map((entry, idx) => (
@@ -274,30 +286,30 @@ export default function AdminDashboardPage() {
                     </defs>
                     <XAxis
                       dataKey="programCode"
-                      stroke="rgba(255,255,255,0.2)"
-                      tick={{ fontSize: 10, fontWeight: 900, fill: 'rgba(255,255,255,0.4)' }}
+                      stroke="var(--cetso-border)"
+                      tick={{ fontSize: 10, fontWeight: 900, fill: 'var(--cetso-text-3)' }}
                       axisLine={false}
                       tickLine={false}
                       dy={10}
                     />
                     <YAxis
-                      stroke="rgba(255,255,255,0.2)"
-                      tick={{ fontSize: 10, fontWeight: 900, fill: 'rgba(255,255,255,0.4)' }}
+                      stroke="var(--cetso-border)"
+                      tick={{ fontSize: 10, fontWeight: 900, fill: 'var(--cetso-text-3)' }}
                       axisLine={false}
                       tickLine={false}
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: 'rgba(10,10,18,0.95)',
-                        border: '1px solid rgba(255,255,255,0.10)',
+                        backgroundColor: 'var(--cetso-surface-1)',
+                        border: '1px solid var(--cetso-border)',
                         borderRadius: 16,
-                        color: 'white',
+                        color: 'var(--cetso-text)',
                         fontFamily: 'var(--font-h2)',
                         fontSize: 10,
-                        boxShadow: '0 16px 48px rgba(0,0,0,0.60)',
+                        boxShadow: 'var(--cetso-card-shadow)',
                       }}
                       itemStyle={{ color: 'var(--cetso-orange)', fontWeight: 900, textTransform: 'uppercase' }}
-                      cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                      cursor={{ fill: 'var(--cetso-surface-2)' }}
                     />
                     <Bar dataKey="votes" radius={[8, 8, 0, 0]} barSize={40}>
                       {stats.byProgram.map((entry, idx) => (
@@ -327,11 +339,11 @@ export default function AdminDashboardPage() {
             <GlassCard className="p-8 h-full flex flex-col">
               <div className="flex items-center justify-between mb-8">
                  <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-2 flex items-center gap-2">
+                    <div className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 flex items-center gap-2" style={{ color: 'var(--cetso-text-3)' }}>
                        <Terminal className="h-3 w-3 text-orange-500" />
                        Live Updates
                     </div>
-                    <h3 className="text-2xl font-black italic uppercase tracking-tighter text-white">Current Leaders</h3>
+                    <h3 className="text-2xl font-black italic uppercase tracking-tighter" style={{ color: 'var(--cetso-text)' }}>Current Leaders</h3>
                  </div>
               </div>
 
@@ -342,23 +354,23 @@ export default function AdminDashboardPage() {
                     return (
                        <div 
                         key={p.positionCode}
-                        className="group/item rounded-2xl p-4 bg-white/5 border border-white/5 hover:border-orange-500/30 transition-all duration-300"
+                        className="group/item rounded-2xl p-4 bg-[var(--cetso-surface-2)] border border-[var(--cetso-border)] hover:border-orange-500/30 transition-all duration-300"
                        >
                           <div className="flex items-start justify-between mb-3">
                              <div className="flex items-center gap-3">
                                 <div className="text-[10px] font-black text-orange-500/50 italic">0{i+1}</div>
                                 <div>
-                                   <div className="text-sm font-black uppercase italic tracking-tighter text-white group-hover/item:text-orange-500 transition-colors">{p.title}</div>
-                                   <div className="text-[9px] font-black text-white/20 uppercase tracking-widest">{p.positionCode}</div>
+                                   <div className="text-sm font-black uppercase italic tracking-tighter group-hover/item:text-orange-500 transition-colors" style={{ color: 'var(--cetso-text)' }}>{p.title}</div>
+                                   <div className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>{p.positionCode}</div>
                                 </div>
                              </div>
                              <div className="text-right">
-                                <div className="text-xl font-black italic text-white leading-none">{p.count}</div>
-                                <div className="text-[9px] font-black text-white/20 uppercase tracking-widest mt-1">Votes</div>
+                                <div className="text-xl font-black italic leading-none font-sans" style={{ color: 'var(--cetso-text)' }}>{p.count}</div>
+                                <div className="text-[9px] font-black uppercase tracking-widest mt-1" style={{ color: 'var(--cetso-text-3)' }}>Votes</div>
                              </div>
                           </div>
                           
-                          <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                          <div className="h-1 w-full bg-[var(--cetso-surface-3)] rounded-full overflow-hidden">
                              <motion.div 
                                 className="h-full bg-orange-500/40"
                                 initial={{ width: 0 }}
@@ -371,7 +383,7 @@ export default function AdminDashboardPage() {
                  })}
               </div>
               
-              <div className="mt-8 pt-6 border-t border-white/5 flex items-center gap-4 text-[9px] font-black uppercase tracking-widest text-white/20">
+              <div className="mt-8 pt-6 border-t border-[var(--cetso-border)] flex items-center gap-4 text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>
                  <div className="flex items-center gap-1.5"><Cpu className="h-3 w-3" /> System Active</div>
                  <div className="flex items-center gap-1.5 text-green-500"><Clock className="h-3 w-3" /> Live Data</div>
               </div>

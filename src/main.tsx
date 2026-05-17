@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './index.css'
 import App from './App.tsx'
 import { ThemeProvider } from './lib/theme.tsx'
+import { TransactionProvider } from './lib/TransactionContext.tsx'
 import { GooeyToaster } from 'goey-toast'
 import 'goey-toast/styles.css'
 
@@ -15,8 +16,10 @@ createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <ThemeProvider>
-          <App />
-          <GooeyToaster position="bottom-right" />
+          <TransactionProvider>
+            <App />
+            <GooeyToaster position="top-center" />
+          </TransactionProvider>
         </ThemeProvider>
       </BrowserRouter>
     </QueryClientProvider>

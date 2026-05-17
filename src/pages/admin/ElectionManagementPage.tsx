@@ -1,22 +1,49 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { CalendarRange, CalendarDays, LockKeyhole, Unlock, Zap, CheckCircle2 } from 'lucide-react'
 import GlassCard from '../../components/ui/GlassCard'
 import Button from '../../components/ui/Button'
-import { ELECTION } from '../../mocks/mockElection'
+import { ELECTION } from '../../lib/electionData'
+import { updateElectionConfig, subscribeToElectionConfig } from '../../lib/electionConfig'
 
 export default function ElectionManagementPage() {
-  const [enabled, setEnabled] = useState(true)
-  const [startDate, setStartDate] = useState(() => new Date().toISOString().slice(0, 16))
+  const [enabled, setEnabled] = useState(() => localStorage.getItem('cetso_election_enabled') !== 'false')
+  const [startDate, setStartDate] = useState(() => localStorage.getItem('cetso_election_start_date') || new Date().toISOString().slice(0, 16))
   const [endDate, setEndDate] = useState(() =>
-    new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString().slice(0, 16)
+    localStorage.getItem('cetso_election_end_date') || new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString().slice(0, 16)
   )
   const [saved, setSaved] = useState(false)
 
-  function saveSchedule() {
+  useEffect(() => {
+    // Subscribe to database changes for real-time admin sync across tabs/devices
+    const unsubscribe = subscribeToElectionConfig((config) => {
+      setEnabled(config.enabled)
+      setStartDate(config.startDate)
+      setEndDate(config.endDate)
+    })
+    return () => unsubscribe()
+  }, [])
+
+  async function handleToggleEnabled() {
+    const nextVal = !enabled
+    setEnabled(nextVal)
+    await updateElectionConfig({ enabled: nextVal })
+  }
+
+  async function saveSchedule() {
+    await updateElectionConfig({ startDate, endDate })
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
   }
+
+  async function resetSchedule() {
+    const defaultStart = new Date().toISOString().slice(0, 16)
+    const defaultEnd = new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString().slice(0, 16)
+    setStartDate(defaultStart)
+    setEndDate(defaultEnd)
+    await updateElectionConfig({ startDate: defaultStart, endDate: defaultEnd })
+  }
+
 
   return (
     <div className="space-y-5">
@@ -114,7 +141,7 @@ export default function ElectionManagementPage() {
                 {/* Toggle */}
                 <button
                   type="button"
-                  onClick={() => setEnabled((e) => !e)}
+                  onClick={handleToggleEnabled}
                   className="relative flex items-center"
                   aria-label={enabled ? 'Close voting' : 'Open voting'}
                 >
@@ -124,13 +151,13 @@ export default function ElectionManagementPage() {
                       background: 'rgba(34,197,94,0.25)',
                       borderColor: 'rgba(34,197,94,0.50)',
                     } : {
-                      background: 'rgba(255,255,255,0.06)',
-                      borderColor: 'rgba(255,255,255,0.14)',
+                      background: 'var(--cetso-surface-3)',
+                      borderColor: 'var(--cetso-border)',
                     }}
                   >
                     <div
-                      className="absolute top-1 h-5 w-5 rounded-full bg-white transition-all duration-300"
-                      style={{ left: enabled ? '26px' : '2px', boxShadow: '0 1px 4px rgba(0,0,0,0.30)' }}
+                      className="absolute top-1 h-5 w-5 rounded-full transition-all duration-300"
+                      style={{ left: enabled ? '26px' : '2px', background: 'var(--cetso-text)', boxShadow: '0 1px 4px rgba(0,0,0,0.30)' }}
                     />
                   </div>
                 </button>
@@ -139,11 +166,11 @@ export default function ElectionManagementPage() {
               {/* Info table */}
               <div
                 className="mt-4 overflow-hidden rounded-2xl"
-                style={{ border: '1px solid rgba(255,255,255,0.07)' }}
+                style={{ border: '1px solid var(--cetso-border)' }}
               >
                 <table className="w-full border-collapse">
                   <thead>
-                    <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
+                    <tr style={{ background: 'var(--cetso-surface-2)' }}>
                       {['Election', 'Status', 'Toggle Voting'].map((h) => (
                         <th
                           key={h}
@@ -178,7 +205,7 @@ export default function ElectionManagementPage() {
                         <Button
                           variant={enabled ? 'danger' : 'primary'}
                           size="sm"
-                          onClick={() => setEnabled((e) => !e)}
+                          onClick={handleToggleEnabled}
                         >
                           {enabled ? <LockKeyhole className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
                           {enabled ? 'Close' : 'Open'} Voting
@@ -247,8 +274,8 @@ export default function ElectionManagementPage() {
                     type="datetime-local"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full rounded-2xl border border-[var(--cetso-border)] bg-[rgba(255,255,255,0.04)] px-4 py-3 text-sm text-[var(--cetso-text)] transition focus:border-[var(--cetso-border-strong)] focus:outline-none hover:border-[rgba(255,255,255,0.18)]"
-                    style={{ boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.25)' }}
+                    className="w-full rounded-2xl border border-[var(--cetso-border)] bg-[var(--cetso-surface-2)] px-4 py-3 text-sm text-[var(--cetso-text)] transition focus:border-[var(--cetso-border-strong)] focus:outline-none hover:border-[var(--cetso-border-strong)]"
+                    style={{ boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.1)' }}
                   />
                 </div>
 
@@ -256,7 +283,7 @@ export default function ElectionManagementPage() {
                   <Button variant="primary" size="lg" className="flex-1" onClick={saveSchedule}>
                     Save Schedule
                   </Button>
-                  <Button variant="secondary" size="lg" className="flex-1" onClick={() => {}}>
+                  <Button variant="secondary" size="lg" className="flex-1" onClick={resetSchedule}>
                     Reset
                   </Button>
                 </div>
@@ -271,14 +298,15 @@ export default function ElectionManagementPage() {
                   >
                     <CheckCircle2 className="h-4 w-4 text-[rgba(134,239,172,0.90)]" />
                     <div className="text-xs font-semibold text-[rgba(134,239,172,0.90)]">
-                      Schedule saved (demo).
+                      Schedule saved and synced with database!
                     </div>
                   </motion.div>
                 ) : null}
 
                 <div className="divider-orange" />
-                <div className="text-xs font-medium text-[var(--cetso-text-3)]">
-                  Connect Supabase to persist and enforce voting availability across all sessions.
+                <div className="text-xs font-medium text-[rgba(134,239,172,0.90)] flex items-center gap-1.5 justify-center">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Synced with Supabase Live Production config.
                 </div>
               </div>
             </GlassCard>

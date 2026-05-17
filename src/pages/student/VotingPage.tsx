@@ -6,12 +6,16 @@ import Button from '../../components/ui/Button'
 import GlassCard from '../../components/ui/GlassCard'
 import Modal from '../../components/ui/Modal'
 import { getStudentContext } from '../../lib/studentContext'
-import { getCandidatesForPosition, getEligiblePositions, getCandidateById } from '../../mocks/mockElection'
-import { getMockVoteSubmission, isVoteAlreadySubmitted, submitMockVote } from '../../mocks/mockVotes'
-import type { VoteSelection } from '../../mocks/mockVotes'
-import type { Candidate, Position } from '../../mocks/mockElection'
-import { ELECTION } from '../../mocks/mockElection'
+import { supabase } from '../../lib/supabase'
+import { getEligiblePositions } from '../../lib/electionData'
+import { buildVoteSubmission, getVoteSubmission, hasVoteSubmission } from '../../lib/voteRecords'
+import type { VoteSelection } from '../../lib/voteRecords'
+import type { Candidate, Position } from '../../lib/electionData'
+import { ELECTION, CANDIDATES } from '../../lib/electionData'
 import { goeyToast } from 'goey-toast'
+import { useCandidates } from '../../lib/queries'
+import { useTransaction } from '../../lib/TransactionContext'
+import { subscribeToElectionConfig, type ElectionConfig } from '../../lib/electionConfig'
 
 const DRAFT_KEY = 'cetso_vote_draft'
 
@@ -41,6 +45,79 @@ const AVATAR_COLORS = [
 export default function VotingPage() {
   const navigate = useNavigate()
   const ctx = getStudentContext()
+  const { runTransaction } = useTransaction()
+  const [time, setTime] = useState(() => new Date())
+  const [dbConfig, setDbConfig] = useState<ElectionConfig | null>(null)
+
+  const [storageTrigger, setStorageTrigger] = useState(0)
+  const [showEndedModal, setShowEndedModal] = useState(() => {
+    const enabled = localStorage.getItem('cetso_election_enabled') !== 'false'
+    const endStr = localStorage.getItem('cetso_election_end_date')
+    const now = Date.now()
+    const endDate = endStr ? new Date(endStr).getTime() : now + 1000 * 60 * 60 * 24
+    
+    const isClosed = !enabled || now >= endDate
+    return isClosed
+  })
+
+  useEffect(() => {
+    const handleStorage = () => {
+      setStorageTrigger((prev) => prev + 1)
+    }
+    window.addEventListener('storage', handleStorage)
+    return () => window.removeEventListener('storage', handleStorage)
+  }, [])
+
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  useEffect(() => {
+    // Subscribe to election config changes in real-time
+    const unsubscribe = subscribeToElectionConfig((config) => {
+      setDbConfig(config)
+    })
+    return () => unsubscribe()
+  }, [])
+
+  const electionConfig = useMemo(() => {
+    const enabled = dbConfig ? dbConfig.enabled : (localStorage.getItem('cetso_election_enabled') !== 'false')
+    const startStr = dbConfig ? dbConfig.startDate : localStorage.getItem('cetso_election_start_date')
+    const endStr = dbConfig ? dbConfig.endDate : localStorage.getItem('cetso_election_end_date')
+    
+    const nowMs = time.getTime()
+    const startDate = startStr ? new Date(startStr).getTime() : nowMs
+    const endDate = endStr ? new Date(endStr).getTime() : nowMs + 1000 * 60 * 60 * 24
+    
+    return { enabled, startDate, endDate }
+  }, [dbConfig, time, storageTrigger])
+
+  const isVotingClosed = useMemo(() => {
+    const nowMs = time.getTime()
+    return !electionConfig.enabled || nowMs < electionConfig.startDate || nowMs >= electionConfig.endDate
+  }, [electionConfig, time])
+
+  const [lastElectionState, setLastElectionState] = useState(() => {
+    const enabled = localStorage.getItem('cetso_election_enabled') !== 'false'
+    const startStr = localStorage.getItem('cetso_election_start_date')
+    const endStr = localStorage.getItem('cetso_election_end_date')
+    const now = Date.now()
+    const startDate = startStr ? new Date(startStr).getTime() : now
+    const endDate = endStr ? new Date(endStr).getTime() : now
+    return enabled && now >= startDate && now < endDate
+  })
+
+  useEffect(() => {
+    const currentOpenState = !isVotingClosed
+    if (lastElectionState && !currentOpenState) {
+      setShowEndedModal(true)
+      setShowConfirm(false)
+      setShowIntro(false)
+    }
+    setLastElectionState(currentOpenState)
+  }, [isVotingClosed, lastElectionState])
+
 
   const eligiblePositions: Position[] = useMemo(() => {
     if (!ctx) return []
@@ -52,12 +129,22 @@ export default function VotingPage() {
   const [submitting, setSubmitting] = useState(false)
   const [showIntro, setShowIntro] = useState(true)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [existingSubmission, setExistingSubmission] = useState<any>(null)
 
-  const alreadySubmitted = ctx ? isVoteAlreadySubmitted(ctx.studentId) : false
-  const existingSubmission = useMemo(() => {
-    if (!ctx || !alreadySubmitted) return null
-    return getMockVoteSubmission(ctx.studentId)
-  }, [ctx?.studentId, alreadySubmitted])
+  const alreadySubmitted = Boolean(existingSubmission)
+
+  useEffect(() => {
+    let active = true
+    if (!ctx?.studentId) {
+      setExistingSubmission(null)
+      return
+    }
+    getVoteSubmission(ctx.studentId).then((submission) => {
+      if (!active) return
+      setExistingSubmission(submission)
+    })
+    return () => { active = false }
+  }, [ctx?.studentId])
 
   useEffect(() => {
     if (!ctx?.studentId) return
@@ -75,11 +162,14 @@ export default function VotingPage() {
 
   useEffect(() => { setActiveIdx(0) }, [ctx?.studentId])
 
+  const { data: dbCandidates } = useCandidates()
+
   const currentPosition = eligiblePositions[activeIdx]
   const candidates: Candidate[] = useMemo(() => {
     if (!currentPosition) return []
-    return getCandidatesForPosition(currentPosition.positionCode)
-  }, [currentPosition])
+    const sourceCandidates = (dbCandidates && dbCandidates.length > 0) ? dbCandidates : CANDIDATES
+    return sourceCandidates.filter((c) => c.positionCode === currentPosition.positionCode)
+  }, [currentPosition, dbCandidates])
 
   const isComplete = useMemo(() => {
     if (!eligiblePositions.length) return false
@@ -122,23 +212,40 @@ export default function VotingPage() {
         candidateId: selectionsByPosition[p.positionCode],
       }))
       
-      const res = submitMockVote({
-        studentName: ctx.studentName,
-        studentId: ctx.studentId,
-        programCode: ctx.programCode,
-        yearLevel: ctx.yearLevel,
-        selections,
-      })
-      if (res.ok) {
+      await runTransaction(async () => {
+        if (await hasVoteSubmission(ctx.studentId)) {
+          throw new Error('Your vote was already submitted.')
+        }
+
+        const submission = buildVoteSubmission({
+          studentName: ctx.studentName,
+          studentId: ctx.studentId,
+          programCode: ctx.programCode,
+          yearLevel: ctx.yearLevel,
+          selections,
+        })
+
+        const { error: voteError } = await supabase.from('votes').insert({
+          student_id: ctx.studentId,
+          receipt_id: submission.receipt.verificationCode,
+          program_code: ctx.programCode,
+          selections,
+        })
+
+        if (voteError) {
+          throw new Error(voteError.code === '42501'
+            ? 'Supabase blocked vote saving. Run supabase/fix-live-database.sql.'
+            : voteError.message || 'Vote could not be saved to Supabase.')
+        }
+
         localStorage.removeItem(DRAFT_KEY)
-        goeyToast.success('Vote submitted successfully! Redirecting to receipt...')
-        setTimeout(() => navigate('/student/receipt'), 2000)
-      } else {
-        goeyToast.error(res.reason === 'already_submitted' ? 'Your vote was already submitted.' : 'Submission failed.')
-        setSubmitting(false)
-      }
-    } catch {
-      goeyToast.error('A system error occurred.')
+      }, 'COMMITTING SECURE ENCRYPTED BALLOT TO LEDGER')
+
+      goeyToast.success('Vote submitted successfully! Redirecting to receipt...')
+      setTimeout(() => navigate('/student/receipt'), 1200)
+    } catch (err: any) {
+      goeyToast.error(err.message || 'A system error occurred.')
+    } finally {
       setSubmitting(false)
     }
   }
@@ -151,6 +258,126 @@ export default function VotingPage() {
           <div className="mt-2 text-sm font-medium text-[var(--cetso-text-2)]">Please login as a CET student to vote.</div>
           <Button variant="primary" size="lg" className="mt-6 w-full" onClick={() => navigate('/login')}>Go to Login</Button>
         </GlassCard>
+      </div>
+    )
+  }
+
+  if (isVotingClosed) {
+    const isSuspended = !electionConfig.enabled
+    const hasNotStarted = time.getTime() < electionConfig.startDate
+    
+    let reason = "Voting window is currently closed"
+    if (isSuspended) {
+      reason = "ELECTION SUSPENDED BY ADMINISTRATOR"
+    } else if (hasNotStarted) {
+      reason = "ELECTION HAS NOT STARTED YET"
+    } else {
+      reason = "ELECTION HAS ENDED"
+    }
+
+    return (
+      <div className="flex min-h-[70vh] items-center justify-center py-10 px-4">
+        <GlassCard className="max-w-xl w-full p-6 sm:p-10 text-center relative overflow-hidden group">
+          {/* Holographic scanner effect */}
+          <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-red-500/50 to-transparent animate-pulse" />
+          <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-red-500/5 blur-[120px] pointer-events-none" />
+          
+          <div
+            className="mx-auto grid h-20 w-20 place-items-center rounded-3xl mb-6 relative"
+            style={{ 
+              background: 'rgba(239,68,68,0.08)', 
+              border: '2px solid rgba(239,68,68,0.3)',
+              boxShadow: '0 0 40px rgba(239,68,68,0.1)'
+            }}
+          >
+            <LockKeyhole className="h-10 w-10 text-red-500 animate-pulse" />
+          </div>
+
+          <h2 className="text-2xl sm:text-3xl font-black text-white italic uppercase tracking-tighter">
+            Ballot System Locked
+          </h2>
+          <p className="mt-3 text-xs font-black uppercase tracking-[0.2em] text-red-500/80 max-w-md mx-auto">
+            {reason}
+          </p>
+
+          <div className="mt-8 border border-white/5 bg-black/40 rounded-2xl p-5 text-left space-y-4">
+            <div className="flex justify-between items-center text-xs border-b border-white/5 pb-3">
+              <span className="font-bold text-white/40 uppercase tracking-wider">Current Time</span>
+              <span className="font-black text-white italic">{time.toLocaleTimeString()}</span>
+            </div>
+            <div className="flex justify-between items-center text-xs border-b border-white/5 pb-3">
+              <span className="font-bold text-white/40 uppercase tracking-wider">Start Time</span>
+              <span className="font-black text-white">{new Date(electionConfig.startDate).toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between items-center text-xs pb-1">
+              <span className="font-bold text-white/40 uppercase tracking-wider">End Time</span>
+              <span className="font-black text-white">{new Date(electionConfig.endDate).toLocaleString()}</span>
+            </div>
+          </div>
+
+          <div className="mt-8 flex flex-col sm:flex-row gap-3">
+            <Button variant="secondary" size="lg" className="w-full" onClick={() => navigate('/student/dashboard')}>
+              Back to Dashboard
+            </Button>
+          </div>
+        </GlassCard>
+
+        {/* Election Ended Transition Modal (Shown on mount/refresh if closed) */}
+        <Modal 
+          isOpen={showEndedModal} 
+          onClose={() => {
+            setShowEndedModal(false)
+            navigate('/student/dashboard')
+          }} 
+          title="BALLOT LOCKOUT DETECTED" 
+          maxWidth="max-w-md"
+          showClose={false}
+        >
+          <div className="space-y-6 text-center">
+            <div
+              className="mx-auto grid h-20 w-20 place-items-center rounded-3xl relative animate-bounce"
+              style={{ 
+                background: 'rgba(239,68,68,0.1)', 
+                border: '2px solid rgba(239,68,68,0.4)',
+                boxShadow: '0 0 40px rgba(239,68,68,0.2)'
+              }}
+            >
+              <LockKeyhole className="h-10 w-10 text-red-500 animate-pulse" />
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-xl sm:text-2xl font-black text-red-500 uppercase tracking-tight italic">
+                THE VOTINGS HAS OFFICIALLY ENDED
+              </h3>
+              <p className="text-sm font-semibold text-[var(--cetso-text-2)] leading-relaxed">
+                The administrator has closed the voting window, or the scheduled election time has elapsed. Any unsaved selections or unsubmitted ballots have been locked.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/5 bg-white/5 p-4 space-y-2 text-left">
+              <div className="flex justify-between items-center text-xs">
+                <span className="font-bold text-white/40 uppercase">STATUS</span>
+                <span className="font-black text-red-500 uppercase tracking-wider">LOCKED OUT</span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="font-bold text-white/40 uppercase">VOTER HASH</span>
+                <span className="font-mono text-white/60">0x{ctx?.studentId}</span>
+              </div>
+            </div>
+
+            <Button 
+              variant="primary" 
+              size="lg" 
+              className="w-full bg-red-600 hover:bg-red-700 border-red-500 text-white" 
+              onClick={() => {
+                setShowEndedModal(false)
+                navigate('/student/dashboard')
+              }}
+            >
+              Acknowledge & Exit
+            </Button>
+          </div>
+        </Modal>
       </div>
     )
   }
@@ -220,6 +447,36 @@ export default function VotingPage() {
               </div>
             </div>
 
+            <div className="rounded-2xl border border-orange-500/20 bg-orange-500/10 p-4">
+              <div className="flex gap-4">
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-orange-500/20 bg-orange-500/10">
+                  <Vote className="h-5 w-5 text-[var(--cetso-orange)]" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h4 className="text-sm font-black uppercase tracking-tight text-white">Program Voting Weight</h4>
+                  <p className="mt-1 text-xs font-semibold leading-relaxed text-orange-100/80">
+                    Election results shall be based on a 25% voting weight per program, ensuring equal representation across all CET programs.
+                  </p>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    {[
+                      ['BSIT', '25%'],
+                      ['BLIS', '25%'],
+                      ['BSpE', '25%'],
+                      ['BSECE', '25%'],
+                    ].map(([program, weight]) => (
+                      <div
+                        key={program}
+                        className="flex items-center justify-between rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs"
+                      >
+                        <span className="font-black text-white">{program}</span>
+                        <span className="font-black text-[var(--cetso-orange)]">{weight}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="flex gap-4 p-4 rounded-2xl bg-orange-500/10 border border-orange-500/20">
               <AlertCircle className="h-5 w-5 text-[var(--cetso-orange)]" />
               <p className="text-xs font-bold text-orange-200 leading-relaxed">
@@ -245,7 +502,7 @@ export default function VotingPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
             {eligiblePositions.map((p) => {
               const candId = selectionsByPosition[p.positionCode]
-              const candidate = candId ? getCandidateById(candId) : null
+              const candidate = candId ? ((dbCandidates && dbCandidates.length > 0 ? dbCandidates : CANDIDATES).find(c => c.candidateId === candId) || null) : null
               return (
                 <div key={p.positionCode} className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/10 transition-all hover:bg-white/[0.08]">
                   <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/5 border border-white/10">
@@ -274,6 +531,63 @@ export default function VotingPage() {
               Confirm & Submit
             </Button>
           </div>
+        </div>
+      </Modal>
+
+      {/* Election Ended Transition Modal */}
+      <Modal 
+        isOpen={showEndedModal} 
+        onClose={() => {
+          setShowEndedModal(false)
+          navigate('/student/dashboard')
+        }} 
+        title="BALLOT LOCKOUT DETECTED" 
+        maxWidth="max-w-md"
+        showClose={false}
+      >
+        <div className="space-y-6 text-center">
+          <div
+            className="mx-auto grid h-20 w-20 place-items-center rounded-3xl relative animate-bounce"
+            style={{ 
+              background: 'rgba(239,68,68,0.1)', 
+              border: '2px solid rgba(239,68,68,0.4)',
+              boxShadow: '0 0 40px rgba(239,68,68,0.2)'
+            }}
+          >
+            <LockKeyhole className="h-10 w-10 text-red-500 animate-pulse" />
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="text-xl sm:text-2xl font-black text-red-500 uppercase tracking-tight italic">
+              THE VOTINGS HAS OFFICIALLY ENDED
+            </h3>
+            <p className="text-sm font-semibold text-[var(--cetso-text-2)] leading-relaxed">
+              The administrator has closed the voting window, or the scheduled election time has elapsed. Any unsaved selections or unsubmitted ballots have been locked.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-white/5 bg-white/5 p-4 space-y-2 text-left">
+            <div className="flex justify-between items-center text-xs">
+              <span className="font-bold text-white/40 uppercase">STATUS</span>
+              <span className="font-black text-red-500 uppercase tracking-wider">LOCKED OUT</span>
+            </div>
+            <div className="flex justify-between items-center text-xs">
+              <span className="font-bold text-white/40 uppercase">VOTER HASH</span>
+              <span className="font-mono text-white/60">0x{ctx?.studentId}</span>
+            </div>
+          </div>
+
+          <Button 
+            variant="primary" 
+            size="lg" 
+            className="w-full bg-red-600 hover:bg-red-700 border-red-500 text-white" 
+            onClick={() => {
+              setShowEndedModal(false)
+              navigate('/student/dashboard')
+            }}
+          >
+            Acknowledge & Exit
+          </Button>
         </div>
       </Modal>
 
@@ -485,21 +799,10 @@ export default function VotingPage() {
                         <div className={`text-base font-black uppercase italic tracking-tight transition-colors ${selected ? 'text-white' : 'text-white/80'}`}>
                           {c.fullName}
                         </div>
-                        <div className="mt-1 flex flex-wrap gap-2">
-                          <span className="inline-flex items-center gap-1 rounded-md bg-white/5 border border-white/10 px-2 py-0.5 text-[10px] font-black text-white/60 uppercase">
-                            {c.partylist}
-                          </span>
-                        </div>
                       </div>
                     </div>
 
                     <div className="mt-4 space-y-3">
-                      <div className="relative">
-                        <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-[var(--cetso-orange)]/30 rounded-full" />
-                        <p className="pl-3 text-xs font-medium italic text-white/50 leading-relaxed line-clamp-2">
-                          "{c.tagline}"
-                        </p>
-                      </div>
                       <p className="text-[11px] font-medium text-white/40 leading-relaxed line-clamp-3">
                         {c.bio}
                       </p>

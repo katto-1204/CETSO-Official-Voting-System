@@ -10,17 +10,11 @@ export default function CetsoLogo({ compact = false }: { compact?: boolean }) {
           boxShadow: '0 0 0 1px rgba(255,122,24,0.12), 0 0 32px rgba(255,122,24,0.28), 0 4px 16px rgba(0,0,0,0.35)',
         }}
       >
-        <span
-          className="text-lg font-black"
-          style={{
-            background: 'linear-gradient(135deg, #ff7a18, #ffb24a)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-          }}
-        >
-          C
-        </span>
+        <img
+          src="/CETLOGO.png"
+          alt="CET Logo"
+          className="h-7 w-7 object-contain relative z-10"
+        />
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 rounded-2xl"

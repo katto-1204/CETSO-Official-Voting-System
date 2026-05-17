@@ -1,37 +1,53 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Activity, TrendingUp, Users, Zap } from 'lucide-react'
 import { Bar, BarChart, Cell, Line, LineChart as ReLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import GlassCard from '../../components/ui/GlassCard'
-import { MOCK_STUDENTS } from '../../mocks/mockStudents'
-import { POSITIONS, PROGRAMS } from '../../mocks/mockElection'
-import { getMockVoteSubmission, isVoteAlreadySubmitted } from '../../mocks/mockVotes'
+import { POSITIONS, PROGRAMS } from '../../lib/electionData'
+import { supabase } from '../../lib/supabase'
+import type { VoteSelection } from '../../lib/voteRecords'
 
 const PROGRAM_COLORS = ['#ff7a18', '#a78bfa', '#2dd4bf', '#60a5fa']
 
 const tooltipStyle = {
-  backgroundColor: 'rgba(10,10,18,0.95)',
-  border: '1px solid rgba(255,255,255,0.10)',
+  backgroundColor: 'var(--cetso-surface-1)',
+  border: '1.5px solid var(--cetso-border)',
   borderRadius: 16,
-  color: 'white',
+  color: 'var(--cetso-text)',
   fontFamily: 'var(--font-ui)',
   fontSize: 12,
-  boxShadow: '0 16px 48px rgba(0,0,0,0.60)',
+  boxShadow: 'var(--cetso-card-shadow)',
 }
 
 export default function LiveVoteMonitoringPage() {
-  const data = useMemo(() => {
-    const submissions = MOCK_STUDENTS
-      .map((s) => (isVoteAlreadySubmitted(s.studentId) ? getMockVoteSubmission(s.studentId) : null))
-      .filter(Boolean)
+  const [totalVoters, setTotalVoters] = useState(0)
+  const [submissions, setSubmissions] = useState<Array<{ programCode: string; selections: VoteSelection[] }>>([])
 
-    const totalVoters = MOCK_STUDENTS.length
+  useEffect(() => {
+    supabase.from('students').select('student_id', { count: 'exact', head: true }).then(({ count, error }) => {
+      if (error) console.error('Error loading student count:', error)
+      setTotalVoters(count ?? 0)
+    })
+    supabase.from('votes').select('program_code, selections').then(({ data, error }) => {
+      if (error) {
+        console.error('Error loading live votes:', error)
+        setSubmissions([])
+        return
+      }
+      setSubmissions((data ?? []).map((row: any) => ({
+        programCode: row.program_code,
+        selections: row.selections ?? [],
+      })))
+    })
+  }, [])
+
+  const data = useMemo(() => {
     const votesSubmitted = submissions.length
     const participationRate = totalVoters ? (votesSubmitted / totalVoters) * 100 : 0
 
     const byProgram = PROGRAMS.map((p, i) => ({
       programCode: p,
-      votes: submissions.filter((s) => s!.receipt.programCode === p).length,
+      votes: submissions.filter((s) => s.programCode === p).length,
       color: PROGRAM_COLORS[i % PROGRAM_COLORS.length],
     }))
 
@@ -44,13 +60,13 @@ export default function LiveVoteMonitoringPage() {
     const byPosition = POSITIONS.map((pos) => {
       let count = 0
       for (const sub of submissions) {
-        if (sub!.selections.some((sel) => sel.positionCode === pos.positionCode)) count++
+        if (sub.selections.some((sel) => sel.positionCode === pos.positionCode)) count++
       }
       return { position: pos.title, votes: count }
     }).sort((a, b) => b.votes - a.votes).slice(0, 8)
 
     return { submissions, totalVoters, votesSubmitted, participationRate, byProgram, timeline, byPosition }
-  }, [])
+  }, [submissions, totalVoters])
 
   return (
     <div className="space-y-5">
@@ -106,9 +122,9 @@ export default function LiveVoteMonitoringPage() {
           <div className="mt-5">
             <div className="mb-2 flex items-center justify-between text-xs font-semibold">
               <span className="text-[var(--cetso-text-2)]">Participation</span>
-              <span className="font-bold text-white">{data.participationRate.toFixed(1)}%</span>
+              <span className="font-bold text-[var(--cetso-text)]">{data.participationRate.toFixed(1)}%</span>
             </div>
-            <div className="h-2 w-full rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
+            <div className="h-2 w-full rounded-full overflow-hidden" style={{ background: 'var(--cetso-surface-3)' }}>
               <motion.div
                 className="h-full rounded-full"
                 style={{ background: 'linear-gradient(90deg, #ff7a18, #ffb24a)', boxShadow: '0 0 14px rgba(255,122,24,0.50)' }}
@@ -169,13 +185,13 @@ export default function LiveVoteMonitoringPage() {
           <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.20 }} className="lg:col-span-7">
             <GlassCard className="p-5">
               <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)] mb-1">Voting Timeline</div>
-              <div className="text-xl font-black text-white mb-4">Activity over time</div>
+              <div className="text-xl font-black text-[var(--cetso-text)] mb-4">Activity over time</div>
               <div className="h-[220px]">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                   <ReLine data={data.timeline}>
-                    <XAxis dataKey="t" stroke="rgba(234,234,242,0.30)" tick={{ fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} />
-                    <YAxis stroke="rgba(234,234,242,0.30)" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: 'rgba(255,122,24,0.20)', strokeWidth: 1 }} />
+                    <XAxis dataKey="t" stroke="var(--cetso-border)" tick={{ fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} />
+                    <YAxis stroke="var(--cetso-border)" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: 'rgba(255,122,24,0.35)', strokeWidth: 1 }} />
                     <Line
                       type="monotone"
                       dataKey="v"
@@ -193,13 +209,13 @@ export default function LiveVoteMonitoringPage() {
           <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="lg:col-span-5">
             <GlassCard className="p-5">
               <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)] mb-1">Votes By Program</div>
-              <div className="text-xl font-black text-white mb-4">Program distribution</div>
+              <div className="text-xl font-black text-[var(--cetso-text)] mb-4">Program distribution</div>
               <div className="h-[220px]">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                   <BarChart data={data.byProgram} margin={{ top: 6, right: 6, bottom: 6, left: -16 }}>
-                    <XAxis dataKey="programCode" stroke="rgba(234,234,242,0.30)" tick={{ fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} />
-                    <YAxis stroke="rgba(234,234,242,0.30)" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+                    <XAxis dataKey="programCode" stroke="var(--cetso-border)" tick={{ fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} />
+                    <YAxis stroke="var(--cetso-border)" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'var(--cetso-surface-2)' }} />
                     <Bar dataKey="votes" radius={[10, 10, 0, 0]}>
                       {data.byProgram.map((entry, idx) => <Cell key={idx} fill={entry.color} fillOpacity={0.80} />)}
                     </Bar>
@@ -214,7 +230,7 @@ export default function LiveVoteMonitoringPage() {
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.30 }}>
           <GlassCard className="p-5">
             <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)] mb-1">Position Rankings</div>
-            <div className="text-xl font-black text-white mb-5">Positions with most votes</div>
+            <div className="text-xl font-black text-[var(--cetso-text)] mb-5">Positions with most votes</div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {data.byPosition.map((p, i) => (
                 <motion.div
@@ -222,13 +238,13 @@ export default function LiveVoteMonitoringPage() {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.30 + i * 0.04 }}
-                  className="rounded-2xl p-4"
-                  style={{ background: 'rgba(0,0,0,0.22)', border: '1px solid rgba(255,255,255,0.07)' }}
+                  className="rounded-2xl p-4 border transition-colors duration-300"
+                  style={{ background: 'var(--cetso-surface-2)', borderColor: 'var(--cetso-border)' }}
                 >
                   <div
                     className="font-[var(--font-heading)] text-3xl tracking-wide"
                     style={{
-                      background: 'linear-gradient(135deg, #ffffff, rgba(255,255,255,0.70))',
+                      background: 'linear-gradient(135deg, var(--cetso-text), var(--cetso-text-2))',
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
                       backgroundClip: 'text',

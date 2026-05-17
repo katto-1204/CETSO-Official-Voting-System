@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Search, X, Filter, Shield, Crosshair, Zap } from 'lucide-react'
+import { Search, X, Filter, Crosshair, Zap } from 'lucide-react'
 import GlassCard from '../../components/ui/GlassCard'
 import TextField from '../../components/ui/TextField'
 import Button from '../../components/ui/Button'
 import { getStudentContext } from '../../lib/studentContext'
-import { getEligiblePositions } from '../../mocks/mockElection'
-import type { Candidate, Position } from '../../mocks/mockElection'
+import { getEligiblePositions } from '../../lib/electionData'
+import type { Candidate, Position } from '../../lib/electionData'
 import { useCandidates } from '../../lib/queries'
 
 function initialsOf(name: string) {
@@ -149,19 +149,8 @@ function CandidateCard({ c, index }: { c: Candidate; index: number }) {
             {c.fullName}
           </div>
 
-          {/* Partylist + Position row */}
+          {/* Position row */}
           <div className="mt-2 flex items-center gap-2 flex-wrap">
-            <div
-              className="inline-flex items-center gap-1 rounded px-2 py-1 text-[10px] font-bold uppercase tracking-wider"
-              style={{
-                background: `${theme.accent}15`,
-                border: `1px solid ${theme.accent}35`,
-                color: theme.accent,
-              }}
-            >
-              <Shield className="h-2.5 w-2.5" />
-              {c.partylist}
-            </div>
             <div
               className="inline-flex items-center gap-1 rounded px-2 py-1 text-[10px] font-bold uppercase tracking-wider"
               style={{
@@ -173,14 +162,6 @@ function CandidateCard({ c, index }: { c: Candidate; index: number }) {
               <Zap className="h-2.5 w-2.5" />
               {c.positionCode.replace(/_/g, ' ')}
             </div>
-          </div>
-
-          {/* Tagline */}
-          <div
-            className="mt-3 text-xs font-medium italic leading-relaxed line-clamp-2"
-            style={{ color: `${theme.accent}90` }}
-          >
-            "{c.tagline}"
           </div>
 
           {/* Bio */}
@@ -234,9 +215,7 @@ export default function CandidateListPage() {
     return filtered.filter((c) => {
       const matchQuery =
         !q ||
-        c.fullName.toLowerCase().includes(q) ||
-        c.tagline.toLowerCase().includes(q) ||
-        c.partylist.toLowerCase().includes(q)
+        c.fullName.toLowerCase().includes(q)
       const matchPosition = positionCode === 'all' || c.positionCode === positionCode
       return matchQuery && matchPosition
     })

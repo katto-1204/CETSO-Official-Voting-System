@@ -6,11 +6,14 @@ import * as Dialog from '@radix-ui/react-dialog'
 import Button from '../../components/ui/Button'
 import GlassCard from '../../components/ui/GlassCard'
 import { getStudentContext } from '../../lib/studentContext'
-import { submitMockVote } from '../../mocks/mockVotes'
-import type { VoteSelection } from '../../mocks/mockVotes'
-import { POSITIONS, getCandidatesForPosition } from '../../mocks/mockElection'
-import type { Position, Candidate } from '../../mocks/mockElection'
+import { supabase } from '../../lib/supabase'
+import { buildVoteSubmission, hasVoteSubmission } from '../../lib/voteRecords'
+import type { VoteSelection } from '../../lib/voteRecords'
+import { POSITIONS, CANDIDATES } from '../../lib/electionData'
+import type { Position, Candidate } from '../../lib/electionData'
 import { goeyToast } from 'goey-toast'
+import { useCandidates } from '../../lib/queries'
+import { useTransaction } from '../../lib/TransactionContext'
 
 const DRAFT_KEY = 'cetso_vote_draft'
 
@@ -32,7 +35,9 @@ const getOrdinal = (n: number) => {
 
 export default function VoteConfirmationPage() {
   const navigate = useNavigate()
+  const { runTransaction } = useTransaction()
   const ctx = getStudentContext()
+  const { data: dbCandidates } = useCandidates()
   const [open, setOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -45,16 +50,16 @@ export default function VoteConfirmationPage() {
   const lineup = useMemo(() => {
     if (!selections) return []
     const posByCode = new Map(POSITIONS.map((p) => [p.positionCode, p]))
+    const sourceCandidates = (dbCandidates && dbCandidates.length > 0) ? dbCandidates : CANDIDATES
     return selections
       .map((s) => {
         const position = posByCode.get(s.positionCode)
         if (!position) return null
-        const candidates = getCandidatesForPosition(s.positionCode)
-        const candidate = candidates.find((c) => c.candidateId === s.candidateId)
+        const candidate = (sourceCandidates as Candidate[]).find((c: Candidate) => c.candidateId === s.candidateId)
         return { position, candidate: candidate ?? null, selection: s }
       })
       .filter((x): x is { position: Position; candidate: Candidate | null; selection: VoteSelection } => x !== null)
-  }, [selections])
+  }, [selections, dbCandidates])
 
   if (!ctx) {
     return (
@@ -136,9 +141,6 @@ export default function VoteConfirmationPage() {
               <div className="flex-1">
                 <div className="text-lg md:text-2xl font-black italic uppercase tracking-tight text-white group-hover:translate-x-2 transition-transform duration-300">
                   {item.candidate?.fullName ?? 'NO SELECTION'}
-                </div>
-                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/20 mt-1">
-                  {item.candidate?.partylist ?? '—'}
                 </div>
               </div>
 
@@ -246,29 +248,54 @@ export default function VoteConfirmationPage() {
                                       variant="primary" 
                                       className="flex-[2] h-14 uppercase italic tracking-tighter shadow-orange-500/20"
                                       disabled={submitting}
-                                      onClick={() => {
+                                      onClick={async () => {
                                          setSubmitting(true)
                                          setError(null)
-                                         const res = submitMockVote({
-                                            studentName: ctx.studentName,
-                                            studentId: ctx.studentId,
-                                            programCode: ctx.programCode,
-                                            yearLevel: ctx.yearLevel,
-                                            selections: selections!,
-                                         })
-                                         if (!res.ok) {
+
+                                         try {
+                                            await runTransaction(async () => {
+                                               if (await hasVoteSubmission(ctx.studentId)) {
+                                                  throw new Error('IDENTITY CONFLICT: DATA ALREADY RECORDED.')
+                                               }
+
+                                               const submission = buildVoteSubmission({
+                                                  studentName: ctx.studentName,
+                                                  studentId: ctx.studentId,
+                                                  programCode: ctx.programCode,
+                                                  yearLevel: ctx.yearLevel,
+                                                  selections: selections!,
+                                               })
+
+                                               const { error: voteError } = await supabase.from('votes').insert({
+                                                  student_id: ctx.studentId,
+                                                  receipt_id: submission.receipt.verificationCode,
+                                                  program_code: ctx.programCode,
+                                                  selections: selections!,
+                                               })
+
+                                               if (voteError) {
+                                                  console.error('Error saving vote:', voteError)
+                                                  throw new Error(voteError.code === '42501'
+                                                     ? 'SUPABASE BLOCKED VOTE SAVING. RUN supabase/fix-live-database.sql.'
+                                                     : voteError.message || 'VOTE COULD NOT BE SAVED TO SUPABASE.')
+                                               }
+
+                                               localStorage.removeItem(DRAFT_KEY)
+                                            }, 'COMMITTING SECURE BALLOT')
+
+                                            goeyToast.success('Ballot Deployment Successful.')
+                                            setTimeout(() => {
+                                               setSubmitting(false)
+                                               setOpen(false)
+                                               navigate('/student/receipt')
+                                            }, 800)
+                                         } catch (err: any) {
                                             setSubmitting(false)
-                                            setError('IDENTITY CONFLICT: DATA ALREADY RECORDED.')
-                                            setTimeout(() => navigate('/student/receipt'), 1500)
-                                            return
+                                            setError(err.message || 'Transaction failed')
+                                            if (err.message?.includes('IDENTITY CONFLICT')) {
+                                               setTimeout(() => navigate('/student/receipt'), 1500)
+                                            }
                                          }
-                                         localStorage.removeItem(DRAFT_KEY)
-                                         goeyToast.success('Ballot Deployment Successful.')
-                                         setTimeout(() => {
-                                            setSubmitting(false)
-                                            setOpen(false)
-                                            navigate('/student/receipt')
-                                         }, 800)
                                       }}
                                    >
                                       {submitting ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Authorize Submission'}

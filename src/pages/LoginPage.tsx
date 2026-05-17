@@ -1,81 +1,120 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Eye, EyeOff, LogIn, ShieldCheck, Fingerprint, ArrowLeft, Terminal, ShieldAlert, Info, Settings, User, Command } from 'lucide-react'
+import { Eye, EyeOff, LogIn, ShieldCheck, ArrowLeft, Terminal, ShieldAlert, Info, Settings, User, UserX } from 'lucide-react'
 import Button from '../components/ui/Button'
 import TextField from '../components/ui/TextField'
 import GlassCard from '../components/ui/GlassCard'
+import Modal from '../components/ui/Modal'
 import { setMockSession } from '../lib/mockSession'
 import { supabase } from '../lib/supabase'
 import { goeyToast } from 'goey-toast'
-
+import { generatePassword, isValidStudentId } from '../lib/studentTypes'
+import { useTransaction } from '../lib/TransactionContext'
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const { runTransaction } = useTransaction()
   const [studentId, setStudentId] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [isAdminMode, setIsAdminMode] = useState(false)
+  const [invalidCredentialsOpen, setInvalidCredentialsOpen] = useState(false)
+  const [studentNotFoundOpen, setStudentNotFoundOpen] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
-    if (!studentId.trim() || !password.trim()) {
+    const identity = studentId.trim()
+
+    if (!identity || !password.trim()) {
       goeyToast.error('Identity and clearance level required.')
       return
     }
 
-    if (!studentId.startsWith('598') && !isAdminMode) {
+    if (!isAdminMode && !isValidStudentId(identity)) {
       goeyToast.error('Invalid ID sequence. Student IDs must begin with 598.')
       return
     }
 
     setLoading(true)
 
-    // Using Supabase Auth
-    const email = isAdminMode ? `${studentId.trim()}@admin.cetso.edu` : `${studentId.trim()}@cetso.edu`
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password: password.trim()
-    })
+    try {
+      await runTransaction(async () => {
+        if (!isAdminMode) {
+          const { data, error: studentLookupError } = await supabase
+            .rpc('get_student_by_id', { p_student_id: identity })
+            .maybeSingle()
+          const foundStudent = data as any
 
-    if (error) {
-      goeyToast.error(error.message || 'Authentication failed. Access denied.')
+          if (!foundStudent) {
+            if (studentLookupError) console.error('Error looking up student:', studentLookupError)
+            setStudentNotFoundOpen(true)
+            return
+          }
+
+          const expectedPassword = generatePassword(identity, foundStudent.full_name)
+          if (password.trim().toUpperCase() !== expectedPassword.toUpperCase()) {
+            setInvalidCredentialsOpen(true)
+            return
+          }
+
+          setMockSession({
+            role: 'student',
+            studentId: identity,
+            studentName: foundStudent.full_name,
+            programCode: foundStudent.program_code || 'BSIT',
+            yearLevel: foundStudent.year_level || 1
+          })
+
+          goeyToast.success('Welcome back, Voter.')
+          navigate('/student/dashboard')
+          return
+        }
+
+        const email = `${identity}@admin.cetso.edu`
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password: password.trim()
+        })
+
+        if (error) {
+          setInvalidCredentialsOpen(true)
+          return
+        }
+
+        const role = isAdminMode ? 'admin' : 'student'
+
+        // Upsert into public.users table so all users appear in Table Editor
+        await supabase.from('users').upsert({
+          auth_uid: data.user?.id,
+          email,
+          student_id: null,
+          display_name: identity,
+          role
+        }, { onConflict: 'auth_uid' })
+
+        setMockSession({
+          role,
+          studentId: identity,
+          studentName: identity,
+          programCode: 'BSIT',
+          yearLevel: 1
+        })
+
+        goeyToast.success(`Welcome back, ${role === 'admin' ? 'Administrator' : 'Voter'}.`)
+
+        if (role === 'admin') {
+          navigate('/admin/dashboard')
+        } else {
+          navigate('/student/dashboard')
+        }
+      }, `AUTHENTICATING ${isAdminMode ? 'ADMINISTRATOR' : 'VOTER'}`)
+    } catch (err: any) {
+      goeyToast.error(err.message || 'Authentication error')
+    } finally {
       setLoading(false)
-      return
-    }
-
-    const role = isAdminMode ? 'admin' : 'student'
-
-    if (role === 'student') {
-      // Fetch fresh profile data to populate the app's synchronous context
-      const { data: studentData } = await supabase.from('students').select('*').eq('student_id', studentId.trim()).single()
-      
-      setMockSession({
-        role,
-        studentId: studentId.trim(),
-        studentName: studentData?.full_name || studentId.trim(),
-        programCode: studentData?.program_code || 'BSIT',
-        yearLevel: studentData?.year_level || 1
-      })
-    } else {
-      setMockSession({
-        role,
-        studentId: studentId.trim(),
-        studentName: studentId.trim(),
-        programCode: 'BSIT',
-        yearLevel: 1
-      })
-    }
-
-    setLoading(false)
-    goeyToast.success(`Welcome back, ${role === 'admin' ? 'Administrator' : 'Voter'}.`)
-
-    if (role === 'admin') {
-      navigate('/admin/dashboard')
-    } else {
-      navigate('/student/dashboard')
     }
   }
 
@@ -84,6 +123,67 @@ export default function LoginPage() {
       className="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden"
       style={{ background: 'var(--cetso-bg)' }}
     >
+      <Modal
+        isOpen={invalidCredentialsOpen}
+        onClose={() => setInvalidCredentialsOpen(false)}
+        title="Invalid Credentials"
+        maxWidth="max-w-md"
+      >
+        <div className="space-y-6 text-center">
+          <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl border border-red-500/20 bg-red-500/10">
+            <ShieldAlert className="h-8 w-8 text-red-400" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold leading-relaxed text-white/70">
+              The ID number exists, but the password does not match the registered student record.
+            </p>
+            <p className="mt-3 text-[11px] font-medium uppercase leading-relaxed tracking-widest text-white/35">
+              Password format: numbers after 598 plus your last name. Uppercase or lowercase is accepted.
+            </p>
+          </div>
+          <Button variant="primary" size="lg" className="w-full" onClick={() => setInvalidCredentialsOpen(false)}>
+            TRY AGAIN
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={studentNotFoundOpen}
+        onClose={() => setStudentNotFoundOpen(false)}
+        title="Student Not Found"
+        maxWidth="max-w-md"
+      >
+        <div className="space-y-6 text-center">
+          <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl border border-orange-500/20 bg-orange-500/10">
+            <UserX className="h-8 w-8 text-orange-400" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold leading-relaxed text-white/70">
+              No registered student record was found for{' '}
+              <span className="font-mono font-black text-white">{studentId.trim() || 'N/A'}</span>.
+            </p>
+            <p className="mt-3 text-[11px] font-medium uppercase leading-relaxed tracking-widest text-white/35">
+              Register first before logging in to the voting system.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Button variant="secondary" size="lg" onClick={() => setStudentNotFoundOpen(false)}>
+              TRY AGAIN
+            </Button>
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={() => {
+                setStudentNotFoundOpen(false)
+                navigate('/register')
+              }}
+            >
+              REGISTER
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
       {/* Background effects */}
       <div
         className="pointer-events-none absolute inset-0 overflow-hidden"
@@ -150,18 +250,17 @@ export default function LoginPage() {
               className="relative mx-auto mb-6 w-fit"
             >
               <div
-                className="grid h-20 w-20 place-items-center rounded-[24px] rotate-3 group-hover:rotate-6 transition-transform duration-500"
+                className="grid h-24 w-24 place-items-center rounded-[28px] rotate-3 group-hover:rotate-6 transition-transform duration-500 overflow-hidden bg-black/20"
                 style={{
-                  background: isAdminMode ? 'rgba(59,130,246,0.08)' : 'rgba(255,122,24,0.08)',
                   border: `1.5px solid ${isAdminMode ? 'rgba(59,130,246,0.4)' : 'rgba(255,122,24,0.4)'}`,
                   boxShadow: `0 0 50px ${isAdminMode ? 'rgba(59,130,246,0.15)' : 'rgba(255,122,24,0.15)'}`,
                 }}
               >
-                {isAdminMode ? (
-                  <Command className="h-10 w-10 text-blue-400 -rotate-3 group-hover:-rotate-6 transition-transform" />
-                ) : (
-                  <Fingerprint className="h-10 w-10 text-[var(--cetso-orange)] -rotate-3 group-hover:-rotate-6 transition-transform" />
-                )}
+                <img
+                  src="/CETSO ELECTION.png"
+                  alt="CETSO Election Logo"
+                  className="h-20 w-20 object-contain -rotate-3 group-hover:-rotate-6 transition-transform duration-500"
+                />
               </div>
             </motion.div>
 
@@ -314,8 +413,8 @@ export default function LoginPage() {
                   </div>
                 </div>
                 <div className="text-[11px] font-medium text-white/40 leading-relaxed">
-                  Code = Suffix digits + <span className="text-white/60">LASTNAME</span> (Upper)
-                  <div className="mt-1 font-mono text-[10px] text-white/20">59812345 + DOE → 12345DOE</div>
+                  Password = ID suffix + <span className="text-white/60">LASTNAME</span> (case-insensitive)
+                  <div className="mt-1 font-mono text-[10px] text-white/20">59812345 + Cruz = 12345CRUZ or 12345cruz</div>
                 </div>
               </motion.div>
             )}

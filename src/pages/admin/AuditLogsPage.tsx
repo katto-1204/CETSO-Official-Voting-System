@@ -106,7 +106,7 @@ export default function AuditLogsPage() {
               >
                 <Shield className="h-5 w-5 text-[var(--cetso-orange)] shrink-0 mt-0.5" />
                 <div>
-                  <div className="text-sm font-bold text-white">System Logs</div>
+                  <div className="text-sm font-bold text-[var(--cetso-text)]">System Logs</div>
                   <div className="mt-1 text-xs font-medium text-[var(--cetso-text-2)] leading-relaxed">
                     All actions are recorded to ensure the election is transparent.
                   </div>
@@ -121,7 +121,7 @@ export default function AuditLogsPage() {
                     <div
                       key={type}
                       className="flex items-center gap-3 rounded-xl px-3 py-2.5"
-                      style={{ background: 'rgba(0,0,0,0.18)', border: '1px solid rgba(255,255,255,0.06)' }}
+                      style={{ background: 'var(--cetso-surface-2)', border: '1px solid var(--cetso-border)' }}
                     >
                       <div
                         className="grid h-7 w-7 shrink-0 place-items-center rounded-lg"
@@ -162,7 +162,7 @@ export default function AuditLogsPage() {
                 {/* Timeline line */}
                 <div
                   className="absolute left-[19px] top-3 bottom-3 w-[1px]"
-                  style={{ background: 'rgba(255,255,255,0.07)' }}
+                  style={{ background: 'var(--cetso-border)' }}
                 />
 
                 {events.map((ev, idx) => {
@@ -186,15 +186,15 @@ export default function AuditLogsPage() {
                       {/* Card */}
                       <div
                         className="flex-1 rounded-2xl p-4 min-w-0"
-                        style={{ background: 'rgba(0,0,0,0.20)', border: '1px solid rgba(255,255,255,0.06)' }}
+                        style={{ background: 'var(--cetso-surface-2)', border: '1px solid var(--cetso-border)' }}
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <div className="text-sm font-bold text-white">
+                            <div className="text-sm font-bold text-[var(--cetso-text)]">
                               {ev.eventType.replaceAll('_', ' ')}
                             </div>
                             <div className="mt-1 text-xs font-medium text-[var(--cetso-text-2)]">
-                              User: <span className="font-bold text-white">{ev.actor}</span>
+                              User: <span className="font-bold text-[var(--cetso-text)]">{ev.actor}</span>
                               <span className="mx-1.5 text-[var(--cetso-text-3)]">•</span>
                               Role: <span className="text-[var(--cetso-text)]">{ev.entity}</span>
                             </div>
