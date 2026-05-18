@@ -2,7 +2,6 @@ import { Fragment, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Search, X, Filter, Crosshair, Zap } from 'lucide-react'
 import GlassCard from '../../components/ui/GlassCard'
-import TextField from '../../components/ui/TextField'
 import Button from '../../components/ui/Button'
 import { getStudentContext } from '../../lib/studentContext'
 import { POSITIONS, getPositionGroupLabel, mergeCandidatesWithOfficialSeed } from '../../lib/electionData'
@@ -83,6 +82,7 @@ export default function CandidateListPage() {
   const [query, setQuery] = useState('')
   const [positionCode, setPositionCode] = useState<string>('all')
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null)
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
 
   const displayPositions: Position[] = POSITIONS
 
@@ -230,12 +230,7 @@ export default function CandidateListPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        <div
-          className="text-[11px] font-bold uppercase tracking-widest mb-1"
-          style={{ color: 'var(--cetso-text-3)', fontFamily: 'var(--font-h2)' }}
-        >
-          Candidate Directory — {ctx.programCode} · Year {ctx.yearLevel}
-        </div>
+
         <h1
           style={{
             fontFamily: 'var(--font-h1)',
@@ -252,65 +247,91 @@ export default function CandidateListPage() {
         </p>
       </motion.div>
 
-      {/* Filters */}
-      <GlassCard className="p-4 sm:p-5">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-12 sm:items-end">
-          <div className="sm:col-span-6 relative">
-            <TextField
-              label="Search Candidates"
-              name="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Name, partylist, tagline…"
-            />
-            {query ? (
+      {/* Compact horizontal Single-Line Search & Filter Bar */}
+      <div className="w-full flex items-center justify-between gap-2.5 bg-[var(--cetso-card-bg)] border border-[var(--cetso-border)] p-2 rounded-xl shadow-xl backdrop-blur-md">
+        
+        {/* Left Section: Search & Filter */}
+        <div className="flex items-center gap-2">
+          {/* Expandable Search Icon Button */}
+          {!isSearchOpen && !query ? (
+            <button
+              type="button"
+              onClick={() => setIsSearchOpen(true)}
+              className="p-2 rounded-lg bg-[var(--cetso-input-bg)] border border-[var(--cetso-border)] text-[var(--cetso-text-2)] hover:text-[var(--cetso-text)] transition-all hover:bg-[rgba(255,122,24,0.06)]"
+              title="Search Candidates"
+            >
+              <Search className="h-4 w-4" />
+            </button>
+          ) : (
+            <div className="relative flex items-center w-36 sm:w-60 transition-all duration-300">
+              <Search className="pointer-events-none absolute left-2.5 h-3.5 w-3.5 text-[var(--cetso-text-3)]" />
+              <input
+                type="text"
+                name="search"
+                autoFocus
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search..."
+                className="w-full rounded-lg pl-7.5 pr-7.5 py-1.5 text-xs text-[var(--cetso-text)] bg-[var(--cetso-input-bg)] border border-[var(--cetso-border)] transition-all focus:border-[var(--cetso-border-strong)] focus:bg-[rgba(255,122,24,0.04)] focus:outline-none"
+              />
               <button
                 type="button"
-                onClick={() => setQuery('')}
-                className="absolute right-3 top-[38px] transition"
-                style={{ color: 'var(--cetso-text-2)' }}
+                onClick={() => {
+                  setQuery('')
+                  setIsSearchOpen(false)
+                }}
+                className="absolute right-2.5 hover:text-[var(--cetso-text)] transition text-[var(--cetso-text-3)]"
               >
-                <X className="h-4 w-4" />
+                <X className="h-3 w-3" />
               </button>
-            ) : (
-              <Search className="pointer-events-none absolute right-3 top-[38px] h-4 w-4" style={{ color: 'var(--cetso-text-3)' }} />
-            )}
-          </div>
-          <div className="sm:col-span-4">
-            <label className="mb-2 block text-sm font-semibold" style={{ color: 'var(--cetso-text)' }}>
-              <Filter className="inline h-3.5 w-3.5 mr-1.5 opacity-70" />
-              Position
-            </label>
+            </div>
+          )}
+
+          {/* Position Selector */}
+          <div className="relative flex items-center w-36 sm:w-48">
+            <Filter className="pointer-events-none absolute left-2.5 h-3.5 w-3.5 text-[var(--cetso-text-3)]" />
             <select
               value={positionCode}
               onChange={(e) => setPositionCode(e.target.value)}
-              className="w-full rounded-2xl border px-4 py-3 text-sm transition focus:outline-none"
-              style={{
-                background: 'var(--cetso-input-bg)',
-                border: '1px solid var(--cetso-border)',
-                color: 'var(--cetso-text)',
-              }}
+              className="w-full rounded-lg pl-7.5 pr-7 py-1.5 text-xs text-[var(--cetso-text)] bg-[var(--cetso-input-bg)] border border-[var(--cetso-border)] appearance-none transition focus:border-[var(--cetso-border-strong)] focus:bg-[rgba(255,122,24,0.04)] focus:outline-none"
             >
               {posOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                <option key={opt.value} value={opt.value}>
+                  {opt.value === 'all' ? 'All Positions' : opt.label}
+                </option>
               ))}
             </select>
+            <div className="pointer-events-none absolute right-2.5 flex items-center">
+              <svg className="h-3 w-3 text-[var(--cetso-text-3)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
           </div>
-          <div className="sm:col-span-2">
-            <Button
-              variant="secondary"
-              size="lg"
-              className="w-full"
-              onClick={() => { setQuery(''); setPositionCode('all') }}
+        </div>
+
+        {/* Right Section: Results Count & Reset Button */}
+        <div className="flex items-center gap-2">
+          <div className="hidden sm:block px-2.5 py-1.5 rounded-lg bg-[var(--cetso-input-bg)] border border-[var(--cetso-border)] text-[10px] font-black uppercase tracking-wider text-[var(--cetso-text-2)]">
+            {candidates.length} Found
+          </div>
+          <div className="sm:hidden px-2 py-1.5 rounded-lg bg-[var(--cetso-input-bg)] border border-[var(--cetso-border)] text-[10px] font-black uppercase text-[var(--cetso-text-2)]">
+            {candidates.length}
+          </div>
+          {(query || positionCode !== 'all') && (
+            <button
+              onClick={() => {
+                setQuery('')
+                setPositionCode('all')
+                setIsSearchOpen(false)
+              }}
+              className="px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition border border-red-500/20 hover:border-red-500/40 text-red-400 bg-red-500/5 hover:bg-red-500/10 flex items-center gap-1"
             >
+              <X className="h-3 w-3" />
               Reset
-            </Button>
-          </div>
+            </button>
+          )}
         </div>
-        <div className="mt-3 text-xs font-semibold" style={{ color: 'var(--cetso-text-2)' }}>
-          {candidates.length} candidate{candidates.length !== 1 ? 's' : ''} found
-        </div>
-      </GlassCard>
+      </div>
 
       {/* Candidates grouped by position */}
       <div className="space-y-8">
@@ -332,15 +353,14 @@ export default function CandidateListPage() {
               <section className="space-y-4">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                   <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.25em]" style={{ color: 'var(--cetso-orange)' }}>
-                      {groupCandidates.length} candidate{groupCandidates.length !== 1 ? 's' : ''}
-                    </div>
+                    {position.positionCode === 'BUSINESS_MANAGER' ? (
+                      <div className="text-[10px] font-black uppercase tracking-[0.25em]" style={{ color: 'var(--cetso-orange)' }}>
+                        2 candidates needed
+                      </div>
+                    ) : null}
                     <h2 className="text-2xl font-black uppercase italic tracking-tighter text-[var(--cetso-text)]">
                       {position.title}
                     </h2>
-                  </div>
-                  <div className="text-[10px] font-black uppercase tracking-widest text-[var(--cetso-text-3)]">
-                    {groupLabel}
                   </div>
                 </div>
 

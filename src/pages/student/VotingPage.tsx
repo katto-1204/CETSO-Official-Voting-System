@@ -613,74 +613,86 @@ export default function VotingPage() {
     <div className="space-y-4 pb-[calc(160px+env(safe-area-inset-bottom))] lg:pb-0">
 
       {/* Intro Modal */}
-      <Modal isOpen={showIntro} onClose={() => setShowIntro(false)} title="Welcome to CETSO Portal" maxWidth="max-w-xl">
-        <div className="space-y-6">
-          <div className="space-y-4">
-            <div className="flex gap-4 p-4 rounded-2xl bg-white/5 border border-white/10">
-              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--cetso-orange)]/10 border border-[var(--cetso-orange)]/20">
-                <Info className="h-5 w-5 text-[var(--cetso-orange)]" />
+      <Modal isOpen={showIntro} onClose={() => setShowIntro(false)} title="Before You Vote" maxWidth="max-w-2xl">
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            {/* Left Column: About & Rules */}
+            <div className="space-y-3">
+              {/* About CETSO */}
+              <div className="flex gap-3 p-3 rounded-2xl bg-white/5 border border-white/10">
+                <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-[var(--cetso-orange)]/10 border border-[var(--cetso-orange)]/20">
+                  <Info className="h-4 w-4 text-[var(--cetso-orange)]" />
+                </div>
+                <div>
+                  <h4 className="font-black text-white uppercase text-xs tracking-tight">About CETSO</h4>
+                  <p className="mt-1 text-[11px] text-[var(--cetso-text-2)] leading-relaxed">
+                    The College of Engineering and Technology Student Organization (CETSO) is the official student body representing all engineering and technology programs. This portal ensures a transparent and secure election process.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h4 className="font-black text-white uppercase text-sm tracking-tight">About CETSO</h4>
-                <p className="mt-1 text-sm text-[var(--cetso-text-2)] leading-relaxed">
-                  The College of Engineering and Technology Student Organization (CETSO) is the official student body representing all engineering and technology programs. This portal ensures a transparent and secure election process.
+
+              {/* Voting Rules */}
+              <div className="flex gap-3 p-3 rounded-2xl bg-white/5 border border-white/10">
+                <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-blue-500/10 border border-blue-500/20">
+                  <ShieldCheck className="h-4 w-4 text-blue-400" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-black text-white uppercase text-xs tracking-tight">Voting Rules</h4>
+                  <ul className="mt-1.5 grid grid-cols-1 gap-1 text-[11px] text-[var(--cetso-text-2)] list-disc pl-4">
+                    <li>Officially enrolled CET student.</li>
+                    <li>Votes are immutable once submitted.</li>
+                    <li>One (1) vote per student only.</li>
+                    <li>Tampering is strictly prohibited.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Program Weight & Important Notice */}
+            <div className="space-y-3">
+              {/* Program Voting Weight */}
+              <div className="rounded-2xl border border-orange-500/20 bg-orange-500/10 p-3">
+                <div className="flex gap-3">
+                  <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl border border-orange-500/20 bg-orange-500/10">
+                    <Vote className="h-4 w-4 text-[var(--cetso-orange)]" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-xs font-black uppercase tracking-tight text-white">Program Voting Weight</h4>
+                    <p className="mt-1 text-[11px] font-semibold leading-relaxed text-orange-100/80">
+                      Results are based on 25% voting weight per program, ensuring equal representation across all CET programs.
+                    </p>
+                    <div className="mt-2 grid grid-cols-4 gap-1">
+                      {[
+                        ['BSIT', '25%'],
+                        ['BLIS', '25%'],
+                        ['BSpE', '25%'],
+                        ['BSECE', '25%'],
+                      ].map(([program, weight]) => (
+                        <div
+                          key={program}
+                          className="flex flex-col items-center justify-center rounded-xl border border-white/5 bg-black/30 p-1.5 text-[10px]"
+                        >
+                          <span className="font-black text-white">{program}</span>
+                          <span className="font-black text-[var(--cetso-orange)] mt-0.5">{weight}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Important Notice */}
+              <div className="flex gap-3 p-3 rounded-2xl bg-orange-500/10 border border-orange-500/20 items-center">
+                <AlertCircle className="h-4 w-4 text-[var(--cetso-orange)] shrink-0" />
+                <p className="text-[11px] font-bold text-orange-200 leading-tight">
+                  IMPORTANT: You must select a candidate for EVERY position to complete the ballot. Your draft is saved automatically.
                 </p>
               </div>
             </div>
 
-            <div className="flex gap-4 p-4 rounded-2xl bg-white/5 border border-white/10">
-              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blue-500/10 border border-blue-500/20">
-                <ShieldCheck className="h-5 w-5 text-blue-400" />
-              </div>
-              <div>
-                <h4 className="font-black text-white uppercase text-sm tracking-tight">Voting Rules</h4>
-                <ul className="mt-2 space-y-1.5 text-xs text-[var(--cetso-text-2)] list-disc pl-4">
-                  <li>You must be an officially enrolled CET student to vote.</li>
-                  <li>Votes are immutable once submitted and confirmed.</li>
-                  <li>One (1) vote per student only.</li>
-                  <li>Tampering with the system is strictly prohibited.</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-orange-500/20 bg-orange-500/10 p-4">
-              <div className="flex gap-4">
-                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-orange-500/20 bg-orange-500/10">
-                  <Vote className="h-5 w-5 text-[var(--cetso-orange)]" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h4 className="text-sm font-black uppercase tracking-tight text-white">Program Voting Weight</h4>
-                  <p className="mt-1 text-xs font-semibold leading-relaxed text-orange-100/80">
-                    Election results shall be based on a 25% voting weight per program, ensuring equal representation across all CET programs.
-                  </p>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    {[
-                      ['BSIT', '25%'],
-                      ['BLIS', '25%'],
-                      ['BSpE', '25%'],
-                      ['BSECE', '25%'],
-                    ].map(([program, weight]) => (
-                      <div
-                        key={program}
-                        className="flex items-center justify-between rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs"
-                      >
-                        <span className="font-black text-white">{program}</span>
-                        <span className="font-black text-[var(--cetso-orange)]">{weight}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-4 p-4 rounded-2xl bg-orange-500/10 border border-orange-500/20">
-              <AlertCircle className="h-5 w-5 text-[var(--cetso-orange)]" />
-              <p className="text-xs font-bold text-orange-200 leading-relaxed">
-                IMPORTANT: You must select a candidate for EVERY position to complete the ballot. Your draft is saved automatically.
-              </p>
-            </div>
           </div>
-          
+
           <Button variant="primary" size="lg" className="w-full" onClick={() => setShowIntro(false)}>
             I Understand, Let's Start
           </Button>
