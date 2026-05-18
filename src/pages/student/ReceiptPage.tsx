@@ -116,20 +116,11 @@ export default function ReceiptPage() {
       <div className="flex min-h-[60vh] items-center justify-center">
         <GlassCard className="w-full max-w-md p-8 text-center">
           <div className="text-4xl font-black italic uppercase tracking-tighter text-[var(--cetso-text)]">
-            {submissionError ? (
-              <>
-                RECEIPT<br />
-                <span className="text-orange-500">SYNC FAILED</span>
-              </>
-            ) : (
-              <>
-                NO DATA<br />
-                <span className="text-orange-500">FOUND</span>
-              </>
-            )}
+            YOU HAVEN'T<br />
+            <span className="text-orange-500">VOTED YET</span>
           </div>
           <div className="mt-4 text-xs font-black uppercase tracking-widest text-[var(--cetso-text-3)]">
-            {submissionError || 'No receipt has been recorded for this student account.'}
+            {submissionError ? `Sync Notice: ${submissionError}` : "You haven't cast your vote in the election yet."}
           </div>
           <Button
             variant="primary"
