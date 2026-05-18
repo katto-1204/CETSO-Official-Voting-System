@@ -259,7 +259,7 @@ export default function RegisterPage() {
           </div>
 
           {/* Step indicator */}
-          <div className="flex items-center gap-2 mb-6">
+          <div className="flex items-stretch gap-2 mb-6">
             {STEP_LABELS.map((label, i) => {
               const stepNum = (i + 1) as Step
               const isActive = step === stepNum
@@ -267,7 +267,7 @@ export default function RegisterPage() {
               return (
                 <div key={label} className="flex-1">
                   <div
-                    className="flex items-center gap-2 rounded-xl px-3 py-2 text-[10px] font-bold uppercase tracking-widest transition-all"
+                    className="flex h-full items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-1 sm:px-3 py-2 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider sm:tracking-widest whitespace-nowrap transition-all"
                     style={
                       isActive
                         ? {
@@ -288,8 +288,8 @@ export default function RegisterPage() {
                             }
                     }
                   >
-                    {isDone ? <CheckCircle2 className="h-3 w-3" /> : <span>{stepNum}</span>}
-                    <span>{label}</span>
+                    {isDone ? <CheckCircle2 className="h-3 w-3 shrink-0" /> : <span className="shrink-0">{stepNum}</span>}
+                    <span className="truncate">{label}</span>
                   </div>
                 </div>
               )
