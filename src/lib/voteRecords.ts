@@ -26,6 +26,22 @@ export type VoteSubmission = {
   selections: VoteSelection[]
 }
 
+type VoteSubmissionRow = {
+  student_id: string
+  receipt_id: string
+  program_code: ProgramCode
+  selections: unknown
+  created_at: string
+  student_full_name?: string | null
+  year_level?: number | null
+}
+
+type StudentLookupRow = {
+  student_id: string
+  full_name: string
+  year_level: number
+}
+
 function generateVerificationCode() {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
   const chunk = () =>
@@ -60,54 +76,94 @@ export function buildVoteSubmission(params: {
   }
 }
 
-export async function getVoteSubmission(studentId: string): Promise<VoteSubmission | null> {
-  const { data, error } = await supabase
-    .from('votes')
-    .select('student_id, receipt_id, program_code, selections, created_at, students(full_name, year_level)')
-    .eq('student_id', studentId)
-    .maybeSingle()
-
-  if (error) {
-    console.error('Error loading vote submission:', error)
-    return null
-  }
-  if (!data) return null
-
-  const student = Array.isArray((data as any).students) ? (data as any).students[0] : (data as any).students
-  const selections = ((data as any).selections ?? []) as VoteSelection[]
-  const submittedAt = (data as any).created_at
-  const programCode = (data as any).program_code as ProgramCode
-  const yearLevel = (student?.year_level ?? 1) as YearLevel
-  const studentName = student?.full_name ?? (data as any).student_id
+function mapVoteSubmissionRow(row: VoteSubmissionRow): VoteSubmission {
+  const selections = Array.isArray(row.selections) ? (row.selections as VoteSelection[]) : []
+  const submittedAt = row.created_at
+  const yearLevel = (row.year_level ?? 1) as YearLevel
+  const studentName = row.student_full_name ?? row.student_id
 
   return {
     electionId: ELECTION.electionId,
-    studentId: (data as any).student_id,
+    studentId: row.student_id,
     submittedAt,
     selections,
     receipt: {
       studentName,
-      studentId: (data as any).student_id,
-      programCode,
+      studentId: row.student_id,
+      programCode: row.program_code,
       yearLevel,
       timestamp: submittedAt,
-      verificationCode: (data as any).receipt_id,
+      verificationCode: row.receipt_id,
       electionYear: ELECTION.electionYear,
       selections,
     },
   }
 }
 
-export async function hasVoteSubmission(studentId: string): Promise<boolean> {
-  const { data, error } = await supabase
+function isMissingRpcFunction(error: { code?: string; message?: string }) {
+  const code = String(error.code ?? '')
+  const message = String(error.message ?? '').toLowerCase()
+  return code === 'PGRST202' || code === '42883' || message.includes('function') && message.includes('does not exist')
+}
+
+async function fetchVoteSubmissionRow(studentId: string): Promise<VoteSubmissionRow | null> {
+  const rpcResponse = await supabase.rpc('get_vote_submission_by_student_id', {
+    p_student_id: studentId,
+  })
+
+  if (rpcResponse.error) {
+    if (!isMissingRpcFunction(rpcResponse.error)) {
+      throw new Error(rpcResponse.error.message)
+    }
+  } else {
+    const raw = rpcResponse.data as VoteSubmissionRow[] | VoteSubmissionRow | null
+    if (Array.isArray(raw)) return raw[0] ?? null
+    if (raw) return raw
+    return null
+  }
+
+  const fallback = await supabase
     .from('votes')
-    .select('student_id')
+    .select('student_id, receipt_id, program_code, selections, created_at')
     .eq('student_id', studentId)
     .maybeSingle()
 
-  if (error) {
+  if (fallback.error) {
+    throw new Error(fallback.error.message)
+  }
+
+  if (!fallback.data) return null
+
+  const row = fallback.data as VoteSubmissionRow
+
+  if (!row.student_full_name || !row.year_level) {
+    const studentResponse = await supabase.rpc('get_student_by_id', {
+      p_student_id: studentId,
+    })
+
+    if (!studentResponse.error) {
+      const studentRaw = studentResponse.data as StudentLookupRow[] | StudentLookupRow | null
+      const student = Array.isArray(studentRaw) ? studentRaw[0] ?? null : studentRaw
+      if (student) {
+        row.student_full_name = student.full_name
+        row.year_level = student.year_level
+      }
+    }
+  }
+
+  return row
+}
+
+export async function getVoteSubmission(studentId: string): Promise<VoteSubmission | null> {
+  const row = await fetchVoteSubmissionRow(studentId)
+  return row ? mapVoteSubmissionRow(row) : null
+}
+
+export async function hasVoteSubmission(studentId: string): Promise<boolean> {
+  try {
+    return Boolean(await getVoteSubmission(studentId))
+  } catch (error) {
     console.error('Error checking vote submission:', error)
     return false
   }
-  return Boolean(data)
 }

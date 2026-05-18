@@ -156,10 +156,16 @@ export default function VotingPage() {
       setExistingSubmission(null)
       return
     }
-    getVoteSubmission(ctx.studentId).then((submission) => {
-      if (!active) return
-      setExistingSubmission(submission)
-    })
+    getVoteSubmission(ctx.studentId)
+      .then((submission) => {
+        if (!active) return
+        setExistingSubmission(submission)
+      })
+      .catch((error) => {
+        if (!active) return
+        console.error('Error checking existing vote submission:', error)
+        setExistingSubmission(null)
+      })
     return () => { active = false }
   }, [ctx?.studentId])
 

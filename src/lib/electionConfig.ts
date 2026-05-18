@@ -106,7 +106,15 @@ export function subscribeToElectionConfig(
   refresh()
 
   const handleLocalUpdate = () => refresh()
+  const handleFocus = () => refresh()
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible') {
+      refresh()
+    }
+  }
   window.addEventListener('cetso-election-config-updated', handleLocalUpdate)
+  window.addEventListener('focus', handleFocus)
+  document.addEventListener('visibilitychange', handleVisibilityChange)
 
   const channel = supabase
     .channel('public:election_config')
@@ -119,6 +127,8 @@ export function subscribeToElectionConfig(
 
   return () => {
     window.removeEventListener('cetso-election-config-updated', handleLocalUpdate)
+    window.removeEventListener('focus', handleFocus)
+    document.removeEventListener('visibilitychange', handleVisibilityChange)
     supabase.removeChannel(channel)
   }
 }

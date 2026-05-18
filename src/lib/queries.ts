@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from './supabase'
 import { CANDIDATES } from './electionData'
@@ -37,21 +38,42 @@ export function mapCandidate(dbCandidate: SupabaseCandidate) {
 }
 
 export function useCandidates() {
+  const queryClient = useQueryClient()
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('public:candidates')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'candidates' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['candidates'] })
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [queryClient])
+
   return useQuery({
     queryKey: ['candidates'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('candidates')
         .select('*')
-        
+
       if (error) {
         console.error('Supabase fetch error:', error)
         throw new Error(error.message)
       }
-      
+
       return (data as SupabaseCandidate[]).map(mapCandidate)
     },
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   })
 }
 

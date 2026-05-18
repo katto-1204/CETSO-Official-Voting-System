@@ -9,6 +9,14 @@ import { mapDbStudent, type StudentRecord } from '../../lib/studentTypes'
 import { setMockSession } from '../../lib/mockSession'
 import { supabase } from '../../lib/supabase'
 
+type StudentRow = {
+  student_id: string
+  full_name: string
+  email?: string | null
+  program_code: string
+  year_level: number
+}
+
 export default function ProfileSettingsPage() {
   const navigate = useNavigate()
   const ctx = getStudentContext()
@@ -29,27 +37,11 @@ export default function ProfileSettingsPage() {
       setError('')
 
       try {
-        const query = supabase
-          .from('students')
-          .select('student_id, email, full_name, program_code, year_level')
-          .eq('student_id', ctx.studentId)
-          .maybeSingle()
+        const rpc = await supabase.rpc('get_student_by_id', { p_student_id: ctx.studentId })
+        const rpcData = rpc.data as StudentRow[] | StudentRow | null
+        const data = Array.isArray(rpcData) ? rpcData[0] ?? null : rpcData
 
-        let data: any = null
-        let dbError: any = null
-        ;({ data, error: dbError } = await query)
-
-        if (dbError && (dbError.code === '42703' || dbError.code === 'PGRST204') && String(dbError.message).includes('email')) {
-          const retry = await supabase
-            .from('students')
-            .select('student_id, full_name, program_code, year_level')
-            .eq('student_id', ctx.studentId)
-            .maybeSingle()
-          data = retry.data
-          dbError = retry.error
-        }
-
-        if (dbError) throw dbError
+        if (rpc.error) throw rpc.error
         if (!data) throw new Error('Student profile was not found in the database.')
 
         const nextProfile = mapDbStudent(data)

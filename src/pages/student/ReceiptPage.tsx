@@ -30,6 +30,7 @@ export default function ReceiptPage() {
   const [copied, setCopied] = useState(false)
   const [submission, setSubmission] = useState<VoteSubmission | null>(null)
   const [loadingSubmission, setLoadingSubmission] = useState(true)
+  const [submissionError, setSubmissionError] = useState('')
 
   useEffect(() => {
     let active = true
@@ -39,9 +40,15 @@ export default function ReceiptPage() {
       return
     }
     setLoadingSubmission(true)
+    setSubmissionError('')
     getVoteSubmission(ctx.studentId).then((nextSubmission) => {
       if (!active) return
       setSubmission(nextSubmission)
+      setLoadingSubmission(false)
+    }).catch((error) => {
+      if (!active) return
+      setSubmission(null)
+      setSubmissionError(error instanceof Error ? error.message : 'Could not load the receipt from the database.')
       setLoadingSubmission(false)
     })
     return () => { active = false }
@@ -99,19 +106,28 @@ export default function ReceiptPage() {
       <div className="flex min-h-[60vh] items-center justify-center">
         <GlassCard className="w-full max-w-md p-8 text-center">
           <div className="text-4xl font-black italic uppercase tracking-tighter text-white">
-            NO DATA<br />
-            <span className="text-orange-500">FOUND</span>
+            {submissionError ? (
+              <>
+                RECEIPT<br />
+                <span className="text-orange-500">SYNC FAILED</span>
+              </>
+            ) : (
+              <>
+                NO DATA<br />
+                <span className="text-orange-500">FOUND</span>
+              </>
+            )}
           </div>
           <div className="mt-4 text-xs font-black uppercase tracking-widest text-white/40">
-            No receipt has been recorded for this student account.
+            {submissionError || 'No receipt has been recorded for this student account.'}
           </div>
           <Button
             variant="primary"
             size="lg"
             className="mt-8 w-full shadow-orange-500/20"
-            onClick={() => navigate('/student/vote')}
+            onClick={() => submissionError ? window.location.reload() : navigate('/student/vote')}
           >
-            START VOTING
+            {submissionError ? 'RETRY SYNC' : 'START VOTING'}
           </Button>
         </GlassCard>
       </div>

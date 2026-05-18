@@ -51,11 +51,46 @@ CREATE OR REPLACE FUNCTION public.get_student_by_id(p_student_id text)
 RETURNS SETOF public.students
 LANGUAGE plpgsql
 SECURITY DEFINER -- Bypasses RLS to query the table securely on a per-student basis
+SET search_path = public
 AS $$
 BEGIN
   RETURN QUERY 
   SELECT * FROM public.students 
   WHERE student_id = p_student_id;
+END;
+$$;
+
+-- Secure RPC for student receipt lookup. This keeps the live RLS policy strict
+-- while still allowing the student UI to load its own submitted ballot.
+CREATE OR REPLACE FUNCTION public.get_vote_submission_by_student_id(p_student_id text)
+RETURNS TABLE (
+  student_id text,
+  receipt_id text,
+  program_code varchar(50),
+  selections jsonb,
+  created_at timestamptz,
+  student_full_name text,
+  year_level integer
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    v.student_id,
+    v.receipt_id,
+    v.program_code,
+    v.selections,
+    v.created_at,
+    s.full_name,
+    s.year_level
+  FROM public.votes AS v
+  JOIN public.students AS s
+    ON s.student_id = v.student_id
+  WHERE v.student_id = p_student_id
+  LIMIT 1;
 END;
 $$;
 
@@ -220,3 +255,5 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.votes TO anon, authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.vote_selections TO anon, authenticated;
 GRANT SELECT, INSERT, UPDATE ON public.users TO anon, authenticated;
 GRANT SELECT, INSERT ON public.audit_logs TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.get_student_by_id(text) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.get_vote_submission_by_student_id(text) TO anon, authenticated;

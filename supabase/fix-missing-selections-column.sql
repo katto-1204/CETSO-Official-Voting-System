@@ -1,54 +1,88 @@
 -- ============================================================================
--- CETSO VOTING SYSTEM - FIX MISSING SELECTIONS COLUMN
+-- CETSO VOTING SYSTEM - FIX MISSING SELECTIONS COLUMN + RLS POLICIES
 -- ============================================================================
--- Run this script in the Supabase SQL Editor (Dashboard → SQL Editor → New Query)
--- This fixes the 400 Bad Request error on POST /rest/v1/votes
--- Root cause: The live `votes` table is missing the `selections` JSONB column.
+-- Run this in Supabase SQL Editor
+-- Dashboard → SQL Editor → New Query → Run
 -- ============================================================================
 
--- Step 1: Add the missing `selections` column to the votes table.
+-- Step 1: Add the missing selections column to the votes table
 DO $$
 BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns
+    SELECT 1
+    FROM information_schema.columns
     WHERE table_schema = 'public'
-    AND table_name = 'votes'
-    AND column_name = 'selections'
+      AND table_name = 'votes'
+      AND column_name = 'selections'
   ) THEN
     ALTER TABLE public.votes
       ADD COLUMN selections JSONB NOT NULL DEFAULT '[]'::jsonb;
-    RAISE NOTICE '✅ Added `selections` JSONB column to votes table.';
+
+    RAISE NOTICE '✅ Added selections JSONB column to votes table.';
   ELSE
-    RAISE NOTICE 'ℹ️  `selections` column already exists — skipping.';
+    RAISE NOTICE 'ℹ️ selections column already exists. Skipping.';
   END IF;
 END $$;
 
--- Step 2: Verify the column now exists.
-SELECT column_name, data_type, column_default
+
+-- Step 2: Enable Row Level Security on votes table
+ALTER TABLE public.votes ENABLE ROW LEVEL SECURITY;
+
+
+-- Step 3: Drop old/conflicting RLS policies if they exist
+DROP POLICY IF EXISTS "Allow students to insert votes" ON public.votes;
+DROP POLICY IF EXISTS "Allow students to read own vote" ON public.votes;
+DROP POLICY IF EXISTS "Allow public insert votes" ON public.votes;
+DROP POLICY IF EXISTS "Allow public read votes" ON public.votes;
+DROP POLICY IF EXISTS "Enable insert for everyone" ON public.votes;
+DROP POLICY IF EXISTS "Enable read access for everyone" ON public.votes;
+
+
+-- Step 4: Create insert policy
+-- This allows the frontend to submit votes.
+CREATE POLICY "Allow public insert votes"
+ON public.votes
+FOR INSERT
+TO anon, authenticated
+WITH CHECK (true);
+
+
+-- Step 5: Create read policy
+-- This allows the app to check if a student already voted.
+CREATE POLICY "Allow public read votes"
+ON public.votes
+FOR SELECT
+TO anon, authenticated
+USING (true);
+
+
+-- Step 6: Verify the selections column exists
+SELECT 
+  column_name,
+  data_type,
+  column_default,
+  is_nullable
 FROM information_schema.columns
-WHERE table_schema = 'public' AND table_name = 'votes'
-ORDER BY ordinal_position;
+WHERE table_schema = 'public'
+  AND table_name = 'votes'
+  AND column_name = 'selections';
 
--- Step 3: Ensure the RLS INSERT policy on votes allows both anon and authenticated roles.
--- Drop old conflicting policies first.
-DROP POLICY IF EXISTS "Anyone can insert votes" ON public.votes;
-DROP POLICY IF EXISTS "Authenticated can insert votes" ON public.votes;
-DROP POLICY IF EXISTS "Students can insert votes" ON public.votes;
 
--- Allow any anon/authenticated request to insert a vote row.
--- (Spoofing is prevented at the application layer via the UNIQUE constraint on student_id.)
-CREATE POLICY "Anyone can insert votes"
-  ON public.votes FOR INSERT
-  TO anon, authenticated
-  WITH CHECK (true);
+-- Step 7: Verify RLS policies
+SELECT 
+  schemaname,
+  tablename,
+  policyname,
+  permissive,
+  roles,
+  cmd,
+  qual,
+  with_check
+FROM pg_policies
+WHERE schemaname = 'public'
+  AND tablename = 'votes';
 
--- Step 4: Grant explicit table-level INSERT privilege to anon and authenticated roles.
--- (Needed in addition to RLS policies for PostgREST to honor the request.)
-GRANT INSERT ON public.votes TO anon, authenticated;
-GRANT SELECT ON public.votes TO anon, authenticated;
 
--- Step 5: Notify PostgREST to reload its schema cache so the new column is visible.
--- This is the equivalent of clicking "Reload" in the Supabase API docs sidebar.
-NOTIFY pgrst, 'reload schema';
-
-RAISE NOTICE '✅ Done. The votes table now has the selections column and correct RLS policies.';
+-- Final success message
+SELECT 
+  '✅ Done. The votes table now has the selections column and correct RLS policies.' AS status;
