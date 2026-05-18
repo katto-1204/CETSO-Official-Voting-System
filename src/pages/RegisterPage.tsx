@@ -289,7 +289,7 @@ export default function RegisterPage() {
                     }
                   >
                     {isDone ? <CheckCircle2 className="h-3 w-3" /> : <span>{stepNum}</span>}
-                    <span className="hidden sm:inline">{label}</span>
+                    <span>{label}</span>
                   </div>
                 </div>
               )
