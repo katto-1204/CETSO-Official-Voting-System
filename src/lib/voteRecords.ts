@@ -100,39 +100,22 @@ function mapVoteSubmissionRow(row: VoteSubmissionRow): VoteSubmission {
   }
 }
 
-function isMissingRpcFunction(error: { code?: string; message?: string }) {
-  const code = String(error.code ?? '')
-  const message = String(error.message ?? '').toLowerCase()
-  return code === 'PGRST202' || code === '42883' || message.includes('function') && message.includes('does not exist')
-}
 
 async function fetchVoteSubmissionRow(studentId: string): Promise<VoteSubmissionRow | null> {
-  const rpcResponse = await supabase.rpc('get_vote_submission_by_student_id', {
-    p_student_id: studentId,
-  })
-
-  if (rpcResponse.error) {
-    console.warn('RPC get_vote_submission_by_student_id failed, attempting fallback table query:', rpcResponse.error)
-  } else {
-    const raw = rpcResponse.data as VoteSubmissionRow[] | VoteSubmissionRow | null
-    if (Array.isArray(raw)) return raw[0] ?? null
-    if (raw) return raw
-    return null
-  }
-
-  const fallback = await supabase
+  const query = await supabase
     .from('votes')
     .select('student_id, receipt_id, program_code, selections, created_at')
     .eq('student_id', studentId)
     .maybeSingle()
 
-  if (fallback.error) {
-    throw new Error(fallback.error.message)
+  if (query.error) {
+    console.error('Failed to fetch vote from votes table:', query.error)
+    throw new Error(query.error.message)
   }
 
-  if (!fallback.data) return null
+  if (!query.data) return null
 
-  const row = fallback.data as VoteSubmissionRow
+  const row = query.data as VoteSubmissionRow
 
   if (!row.student_full_name || !row.year_level) {
     const studentResponse = await supabase.rpc('get_student_by_id', {
