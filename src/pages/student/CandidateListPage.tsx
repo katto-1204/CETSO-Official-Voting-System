@@ -51,7 +51,7 @@ function CandidateCard({ c, index, onClick }: { c: Candidate; index: number, onC
             <img 
               src={c.imageUrl} 
               alt={c.fullName} 
-              className="absolute inset-0 w-full h-full object-cover object-center filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.4)] transition-transform duration-700 group-hover:scale-110" 
+              className="absolute inset-x-0 bottom-0 w-full h-[88%] object-contain object-bottom filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.4)] transition-transform duration-700 group-hover:scale-105" 
             />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center opacity-20">
@@ -63,8 +63,8 @@ function CandidateCard({ c, index, onClick }: { c: Candidate; index: number, onC
           <div className="absolute inset-0 opacity-10 pointer-events-none" 
                style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '10px 10px' }} />
 
-          {/* Top Right Position Badge */}
-          <div className="absolute top-6 right-8 z-20 flex items-center gap-1.5 bg-black/80 backdrop-blur-md rounded-md px-2.5 py-1 border border-white/10 shadow-lg" style={{ borderBottom: `2px solid ${theme.accent}` }}>
+          {/* Top Center Position Badge */}
+          <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 bg-black/80 backdrop-blur-md rounded-md px-2.5 py-1 border border-white/10 shadow-lg whitespace-nowrap" style={{ borderBottom: `2px solid ${theme.accent}` }}>
             <span className="text-xs font-black italic uppercase" style={{ color: theme.accent }}>
               {c.positionCode.slice(0, 1).toUpperCase()}
             </span>
