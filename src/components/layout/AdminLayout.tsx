@@ -4,10 +4,9 @@ import { type ReactNode, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
   LayoutDashboard, CalendarRange, Users, GraduationCap,
-  Activity, BarChart3, ScrollText, LogOut, ShieldCheck, Sun, Moon,
+  Activity, BarChart3, ScrollText, LogOut, ShieldCheck,
   Terminal, Wifi, Database, Cpu, User
 } from 'lucide-react'
-import { useTheme } from '../../lib/theme'
 import { goeyToast } from 'goey-toast'
 
 const navItems = [
@@ -23,7 +22,6 @@ const navItems = [
 export default function AdminLayout({ children }: { children?: ReactNode }) {
   const { pathname } = useLocation()
   const navigate = useNavigate()
-  const { theme, toggle } = useTheme()
 
   const role = localStorage.getItem('cetso_role')
 
@@ -234,19 +232,11 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
         </div>
 
         {/* Footer Actions */}
-        <div className="px-4 py-6 flex gap-2 border-t border-[var(--cetso-border)] bg-[var(--cetso-surface-2)]/50">
-          <button
-            type="button"
-            onClick={toggle}
-            className="flex-1 grid h-12 place-items-center rounded-2xl bg-[var(--cetso-surface-2)] border border-[var(--cetso-border)] hover:bg-[var(--cetso-surface-3)] transition-colors group/btn"
-            title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-          >
-            {theme === 'dark' ? <Sun className="h-5 w-5 text-orange-400" /> : <Moon className="h-5 w-5 text-blue-400" />}
-          </button>
+        <div className="px-4 py-6 border-t border-[var(--cetso-border)] bg-[var(--cetso-surface-2)]/50">
           <button
             type="button"
             onClick={handleLogout}
-            className="flex-[2] flex items-center justify-center gap-3 rounded-2xl bg-red-500/5 border border-red-500/10 hover:bg-red-500/10 transition-colors text-red-500 font-black uppercase tracking-widest text-[11px]"
+            className="w-full h-12 flex items-center justify-center gap-3 rounded-2xl bg-red-500/5 border border-red-500/10 hover:bg-red-500/10 transition-colors text-red-500 font-black uppercase tracking-widest text-[11px]"
           >
             <LogOut className="h-4 w-4" /> Exit Console
           </button>
@@ -280,13 +270,7 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
           </Link>
 
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={toggle}
-              className="grid h-10 w-10 place-items-center rounded-2xl bg-[var(--cetso-surface-2)] border border-[var(--cetso-border)]"
-            >
-              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </button>
+
             <button
               type="button"
               onClick={handleLogout}

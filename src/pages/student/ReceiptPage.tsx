@@ -59,8 +59,18 @@ export default function ReceiptPage() {
     const sourceCandidates = (dbCandidates && dbCandidates.length > 0) ? dbCandidates : CANDIDATES
     return submission.selections
       .map((selection) => {
-        const candidate = (sourceCandidates as Candidate[]).find((item: Candidate) => item.candidateId === selection.candidateId)
+        let candidate = (sourceCandidates as Candidate[]).find((item: Candidate) => item.candidateId === selection.candidateId)
         const position = POSITIONS.find((item: Position) => item.positionCode === selection.positionCode)
+        if (!candidate && (selection.candidateId.startsWith('ABSTAIN_') || selection.candidateId === 'ABSTAIN')) {
+          candidate = {
+            candidateId: selection.candidateId,
+            positionCode: selection.positionCode,
+            fullName: 'Abstain',
+            partylist: 'None',
+            tagline: 'No candidate selected',
+            bio: 'Voted Abstain'
+          }
+        }
         if (!candidate) return null
         return { candidate, positionTitle: position?.title ?? selection.positionCode }
       })
@@ -186,7 +196,7 @@ export default function ReceiptPage() {
     const paperWidth = 600;
     const padding = 80;
     const zigZagSize = 10;
-    
+
     // Calculate height
     const itemHeight = 70;
     const contentHeight = 250 + 100 + 60 + (selectedCandidates.length * itemHeight) + 100 + 350;
@@ -213,26 +223,26 @@ export default function ReceiptPage() {
 
     ctx.beginPath();
     ctx.moveTo(startX, startY + zigZagSize);
-    
+
     // Top zig-zag
     for (let x = startX; x < endX; x += zigZagSize * 2) {
       ctx.lineTo(Math.min(x + zigZagSize, endX), startY);
       ctx.lineTo(Math.min(x + zigZagSize * 2, endX), startY + zigZagSize);
     }
-    
+
     // Right edge
     ctx.lineTo(endX, endY - zigZagSize);
-    
+
     // Bottom zig-zag
     for (let x = endX; x > startX; x -= zigZagSize * 2) {
       ctx.lineTo(Math.max(x - zigZagSize, startX), endY);
       ctx.lineTo(Math.max(x - zigZagSize * 2, startX), endY - zigZagSize);
     }
-    
+
     // Left edge
     ctx.lineTo(startX, startY + zigZagSize);
     ctx.closePath();
-    
+
     // Keep a subtle edge without adding a dark page background.
     ctx.shadowColor = 'rgba(15, 23, 42, 0.12)';
     ctx.shadowBlur = 18;
@@ -250,11 +260,11 @@ export default function ReceiptPage() {
 
     // Setup Text Styles
     ctx.fillStyle = '#111827';
-    
+
     const centerX = startX + paperWidth / 2;
     const leftX = startX + 60;
     const rightX = endX - 60;
-    
+
     function drawDashedLine(y: number) {
       canvasCtx.font = 'bold 20px "Courier New", Courier, monospace';
       canvasCtx.textAlign = 'center';
@@ -267,7 +277,7 @@ export default function ReceiptPage() {
     ctx.font = 'bold 54px "Courier New", Courier, monospace';
     ctx.textAlign = 'center';
     ctx.fillText('CETSO', centerX, currentY);
-    
+
     currentY += 50;
     ctx.font = '20px "Courier New", Courier, monospace';
     ctx.fillText('College of Engineering and Technology', centerX, currentY);
@@ -277,25 +287,25 @@ export default function ReceiptPage() {
     ctx.fillText('cetso.official@gmail.com', centerX, currentY);
 
     currentY += 70;
-    
+
     // --- ORDER INFO ---
     ctx.textAlign = 'left';
     ctx.font = 'bold 24px "Courier New", Courier, monospace';
-    
+
     ctx.fillText('RECEIPT', leftX, currentY);
     ctx.textAlign = 'right';
     const shortTracking = trackingNumber.substring(0, 8).toUpperCase();
     ctx.fillText(`#${shortTracking}`, rightX, currentY);
-    
+
     ctx.textAlign = 'left';
     currentY += 35;
     ctx.font = '20px "Courier New", Courier, monospace';
-    
+
     const dateFormatted = `${dateStr.replace(/ /g, ' / ')} ${timeStr}`;
     ctx.fillText(dateFormatted, leftX, currentY);
 
     currentY += 50;
-    
+
     // --- COLUMNS ---
     ctx.textAlign = 'left';
     ctx.font = 'bold 22px "Courier New", Courier, monospace';
@@ -313,17 +323,17 @@ export default function ReceiptPage() {
     selectedCandidates.forEach(({ candidate, positionTitle }) => {
       ctx.textAlign = 'left';
       ctx.fillText('1 x', leftX, currentY);
-      
+
       ctx.fillText(positionTitle.substring(0, 24), leftX + 80, currentY);
-      
+
       ctx.textAlign = 'right';
       ctx.fillText('OK', rightX, currentY);
-      
+
       currentY += 30;
-      
+
       ctx.textAlign = 'left';
       ctx.fillText(`  ${candidate.fullName}`, leftX + 80, currentY);
-      
+
       currentY += 40;
     });
 
@@ -335,7 +345,7 @@ export default function ReceiptPage() {
     ctx.textAlign = 'left';
     ctx.font = 'bold 32px "Courier New", Courier, monospace';
     ctx.fillText('TOTAL:', leftX, currentY);
-    
+
     ctx.textAlign = 'right';
     ctx.fillText(selectedCandidates.length.toString(), rightX, currentY);
 
@@ -349,7 +359,7 @@ export default function ReceiptPage() {
     ctx.fillText('Official voting receipt issued by CETSO - Elections.', centerX, currentY);
     currentY += 25;
     ctx.fillText('For verification purposes exclusively.', centerX, currentY);
-    
+
     currentY += 60;
     ctx.font = 'bold 28px "Courier New", Courier, monospace';
     ctx.fillText('CETSO*', centerX, currentY);
@@ -358,10 +368,10 @@ export default function ReceiptPage() {
     const qrImage = await getQrImage();
     const qrSize = 140;
     currentY += 40;
-    
+
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(centerX - qrSize/2 - 10, currentY - 10, qrSize + 20, qrSize + 20);
-    ctx.drawImage(qrImage, centerX - qrSize/2, currentY, qrSize, qrSize);
+    ctx.fillRect(centerX - qrSize / 2 - 10, currentY - 10, qrSize + 20, qrSize + 20);
+    ctx.drawImage(qrImage, centerX - qrSize / 2, currentY, qrSize, qrSize);
 
     return canvas
   }

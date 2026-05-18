@@ -8,19 +8,16 @@ const ThemeContext = createContext<{ theme: Theme; toggle: () => void }>({
 })
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    const saved = localStorage.getItem('cetso_theme')
-    return (saved === 'light' || saved === 'dark') ? saved : 'dark'
-  })
+  const [theme] = useState<Theme>('dark')
 
   useEffect(() => {
     const root = document.documentElement
-    root.setAttribute('data-theme', theme)
-    localStorage.setItem('cetso_theme', theme)
-  }, [theme])
+    root.setAttribute('data-theme', 'dark')
+    localStorage.setItem('cetso_theme', 'dark')
+  }, [])
 
   function toggle() {
-    setTheme((t) => (t === 'dark' ? 'light' : 'dark'))
+    // Locked in Dark Mode
   }
 
   return (

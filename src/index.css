@@ -442,3 +442,61 @@ textarea {
   --toast-bg: #111111;
   --toast-text: #ffffff;
 }
+
+:root {
+  --cetso-toast-gutter: clamp(12px, 4vw, 24px);
+}
+
+[data-sonner-toaster] {
+  max-width: calc(100dvw - (var(--cetso-toast-gutter) * 2)) !important;
+}
+
+[data-sonner-toaster][data-x-position="center"] {
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
+  width: min(420px, calc(100dvw - (var(--cetso-toast-gutter) * 2))) !important;
+}
+
+[data-sonner-toast] {
+  max-width: 100% !important;
+}
+
+[data-sonner-toast][data-x-position="center"] {
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.gooey-wrapper,
+.gooey-content,
+.gooey-contentCompact,
+.gooey-contentExpanded {
+  max-width: 100%;
+}
+
+.gooey-wrapper {
+  width: 100%;
+}
+
+.gooey-contentExpanded {
+  width: min(380px, calc(100dvw - (var(--cetso-toast-gutter) * 2)));
+  min-width: 0;
+}
+
+.gooey-header {
+  width: 100%;
+  min-width: 0;
+}
+
+.gooey-title,
+.gooey-description,
+.gooey-actionButton {
+  overflow-wrap: anywhere;
+}
+
+.gooey-description {
+  max-width: 100%;
+}

@@ -140,7 +140,7 @@ export default function VoteConfirmationPage() {
               {/* Center Info - Name */}
               <div className="flex-1">
                 <div className="text-lg md:text-2xl font-black italic uppercase tracking-tight text-[var(--cetso-text)] group-hover:translate-x-2 transition-transform duration-300">
-                  {item.candidate?.fullName ?? 'NO SELECTION'}
+                  {item.candidate?.fullName ?? (item.selection.candidateId.startsWith('ABSTAIN_') || item.selection.candidateId === 'ABSTAIN' ? 'ABSTAIN' : 'NO SELECTION')}
                 </div>
               </div>
 

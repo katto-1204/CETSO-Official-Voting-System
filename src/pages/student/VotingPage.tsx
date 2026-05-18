@@ -117,6 +117,7 @@ export default function VotingPage() {
     if (lastElectionState && !currentOpenState) {
       setShowEndedModal(true)
       setShowConfirm(false)
+      setShowDonePrompt(false)
       setShowIntro(false)
     }
     setLastElectionState(currentOpenState)
@@ -145,6 +146,7 @@ export default function VotingPage() {
   const [selectionsByPosition, setSelectionsByPosition] = useState<Record<string, string[]>>({})
   const [submitting, setSubmitting] = useState(false)
   const [showIntro, setShowIntro] = useState(true)
+  const [showDonePrompt, setShowDonePrompt] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [existingSubmission, setExistingSubmission] = useState<any>(null)
 
@@ -229,14 +231,70 @@ export default function VotingPage() {
   }, 0)
   const requiredSelectionCount = eligiblePositions.reduce((sum, p) => sum + getPositionSelectionLimit(p), 0)
   const canClearBallot = selectedCount > 0 && !alreadySubmitted && !submitting
+  const [hasAutoOpened, setHasAutoOpened] = useState(false)
+
+  useEffect(() => {
+    if (isComplete) {
+      if (!hasAutoOpened) {
+        setShowDonePrompt(true)
+        setHasAutoOpened(true)
+      }
+    } else {
+      setShowDonePrompt(false)
+      setHasAutoOpened(false)
+    }
+  }, [isComplete, hasAutoOpened])
 
   function handleClearBallot() {
     if (!canClearBallot) return
     setSelectionsByPosition({})
     setActiveIdx(0)
+    setShowDonePrompt(false)
     setShowConfirm(false)
+    setHasAutoOpened(false)
     localStorage.removeItem(DRAFT_KEY)
     goeyToast.success('Ballot cleared. You can start selecting again.')
+  }
+
+  function handleSelectAllChoices() {
+    if (alreadySubmitted || submitting) return
+    const next = { ...selectionsByPosition }
+    
+    for (const p of eligiblePositions) {
+      const posCode = p.positionCode
+      const limit = getPositionSelectionLimit(p)
+      const current = next[posCode] ?? []
+      
+      if (current.length < limit && !current.includes(`ABSTAIN_${posCode}`)) {
+        const posCandidates = sourceCandidates.filter((c) => c.positionCode === posCode)
+        const updated = [...current]
+        
+        if (posCandidates.length > 0) {
+          for (const cand of posCandidates) {
+            if (updated.length >= limit) break
+            if (!updated.includes(cand.candidateId)) {
+              updated.push(cand.candidateId)
+            }
+          }
+        }
+        
+        if (updated.length === 0) {
+          updated.push(`ABSTAIN_${posCode}`)
+        }
+        
+        next[posCode] = updated
+      }
+    }
+    
+    setSelectionsByPosition(next)
+    
+    if (ctx) {
+      const draftSelections: VoteSelection[] = eligiblePositions
+        .flatMap((p) => (next[p.positionCode] ?? []).map((candidateId) => ({ positionCode: p.positionCode, candidateId })))
+      saveDraft({ studentId: ctx.studentId, selections: draftSelections })
+    }
+    
+    goeyToast.success('Auto-selected remaining choices!')
   }
 
   function onSelectCandidate(candidate: Candidate) {
@@ -552,7 +610,7 @@ export default function VotingPage() {
   }
 
   return (
-    <div className="space-y-4 pb-28 lg:pb-0">
+    <div className="space-y-4 pb-[calc(160px+env(safe-area-inset-bottom))] lg:pb-0">
 
       {/* Intro Modal */}
       <Modal isOpen={showIntro} onClose={() => setShowIntro(false)} title="Welcome to CETSO Portal" maxWidth="max-w-xl">
@@ -629,6 +687,44 @@ export default function VotingPage() {
         </div>
       </Modal>
 
+      {/* Done Prompt Modal */}
+      <Modal isOpen={showDonePrompt} onClose={() => setShowDonePrompt(false)} title="Are you done?" maxWidth="max-w-md">
+        <div className="space-y-6 text-center">
+          <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-[var(--cetso-orange)]/10 border border-[var(--cetso-orange)]/30">
+            <CheckCircle2 className="h-8 w-8 text-[var(--cetso-orange)]" />
+          </div>
+
+          <div>
+            <h4 className="text-xl font-black text-white uppercase italic tracking-tighter">Are you done?</h4>
+            <p className="mt-2 text-sm font-semibold leading-relaxed text-[var(--cetso-text-2)]">
+              You have completed all {requiredSelectionCount} selections. Do you want to review your ballot now?
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Button
+              variant="secondary"
+              size="lg"
+              className="flex-1"
+              onClick={() => setShowDonePrompt(false)}
+            >
+              No
+            </Button>
+            <Button
+              variant="primary"
+              size="lg"
+              className="flex-1"
+              onClick={() => {
+                setShowDonePrompt(false)
+                setShowConfirm(true)
+              }}
+            >
+              Yes, Review
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
       {/* Confirmation Modal (Lineup Style) */}
       <Modal isOpen={showConfirm} onClose={() => setShowConfirm(false)} title="Final Review" maxWidth="max-w-2xl">
         <div className="space-y-6">
@@ -651,7 +747,7 @@ export default function VotingPage() {
                   <div className="min-w-0">
                     <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)] truncate">{p.title}</div>
                     <div className="text-sm font-black text-[var(--cetso-orange)] truncate">
-                      {candidates.length ? candidates.map((candidate) => candidate.fullName).join(', ') : 'No selection'}
+                      {candidates.length ? candidates.map((candidate) => candidate.fullName).join(', ') : (candIds.includes(`ABSTAIN_${p.positionCode}`) || candIds.some(id => id.startsWith('ABSTAIN')) ? 'Abstain' : 'No selection')}
                     </div>
                   </div>
                 </div>
@@ -813,6 +909,8 @@ export default function VotingPage() {
             const positionSelections = selectionsByPosition[p.positionCode] ?? []
             const selected =
               positionSelections.includes(`ABSTAIN_${p.positionCode}`) ||
+              positionSelections.includes('ABSTAIN') ||
+              positionSelections.some((id) => id.startsWith('ABSTAIN')) ||
               positionSelections.length === getPositionSelectionLimit(p)
             const active = idx === activeIdx
             return (
@@ -841,10 +939,6 @@ export default function VotingPage() {
                 {selected && !active && (
                   <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-green-500 border-2 border-[rgb(10,10,15)]" />
                 )}
-                {/* Abstain Indicator */}
-                {!active && !selected && (selectionsByPosition[p.positionCode] ?? []).includes(`ABSTAIN_${p.positionCode}`) && (
-                  <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-yellow-500 border-2 border-[rgb(10,10,15)]" />
-                )}
               </button>
             )
           })}
@@ -859,12 +953,12 @@ export default function VotingPage() {
           animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
           exit={{ opacity: 0, x: -20, filter: 'blur(10px)' }}
           transition={{ duration: 0.4, ease: 'backOut' }}
-          className="relative overflow-hidden rounded-[32px] p-6"
+          className="relative overflow-hidden rounded-[32px] p-4 sm:p-6"
           style={{
             background: 'rgba(20,20,25,0.4)',
             border: '1px solid rgba(255,255,255,0.08)',
             backdropFilter: 'blur(24px)',
-            boxShadow: '0 32px 80px rgba(0,0,0,0.60)',
+            boxShadow: 'var(--cetso-shadow)',
           }}
         >
           {/* Background Accent */}
@@ -891,7 +985,7 @@ export default function VotingPage() {
             </div>
           </div>
 
-          <div className="mt-8 flex flex-wrap justify-center gap-4">
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:justify-center sm:gap-4">
             {candidates.map((c, i) => {
               const selected = (selectionsByPosition[currentPosition?.positionCode ?? ''] ?? []).includes(c.candidateId)
               const ZZZ_COLORS = [
@@ -907,7 +1001,7 @@ export default function VotingPage() {
                 : ZZZ_COLORS[i % ZZZ_COLORS.length]
 
               return (
-                <div key={c.candidateId} className="w-[calc(50%-0.5rem)] sm:w-[calc(33.333%-0.666rem)] lg:w-[calc(25%-0.75rem)] xl:w-[calc(20%-0.8rem)]">
+                <div key={c.candidateId} className="w-full sm:w-[calc(33.333%-0.666rem)] lg:w-[calc(25%-0.75rem)] xl:w-[calc(20%-0.8rem)]">
                   <motion.button
                     type="button"
                     onClick={() => onSelectCandidate(c)}
@@ -916,6 +1010,16 @@ export default function VotingPage() {
                     className="group relative w-full aspect-[3/4] outline-none"
                     aria-pressed={selected}
                   >
+                    {/* Top Center Position Badge - rendered outside overflow-hidden skewed container */}
+                    <div className="absolute top-2 sm:top-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1 sm:gap-1.5 bg-black/80 backdrop-blur-md rounded-md px-1.5 py-0.5 sm:px-2.5 sm:py-1 border border-white/10 shadow-lg whitespace-nowrap" style={{ borderBottom: `2px solid ${theme.accent}` }}>
+                      <span className="text-[9px] sm:text-xs font-black italic uppercase" style={{ color: theme.accent }}>
+                        {c.positionCode.slice(0, 1).toUpperCase()}
+                      </span>
+                      <span className="text-[7.5px] sm:text-[10px] font-bold text-white uppercase tracking-widest opacity-90">
+                        {c.positionCode.replace(/_/g, ' ')}
+                      </span>
+                    </div>
+
                     <div
                       className={`absolute inset-0 overflow-hidden transition-all duration-300 z-10 ${selected ? 'animate-pulse' : ''}`}
                       style={{ 
@@ -923,7 +1027,7 @@ export default function VotingPage() {
                         background: theme.bg,
                         borderRadius: '1.5rem',
                         border: selected ? '3px solid white' : '1px solid rgba(255,255,255,0.1)',
-                        boxShadow: selected ? `0 0 30px ${theme.accent}60` : '0 10px 30px rgba(0,0,0,0.5)'
+                        boxShadow: selected ? `0 0 30px ${theme.accent}60` : 'var(--cetso-shadow-sm)'
                       }}
                     >
                       {/* Unskewed Content Wrapper */}
@@ -952,25 +1056,15 @@ export default function VotingPage() {
                         <div className="absolute inset-0 opacity-10 pointer-events-none" 
                              style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '10px 10px' }} />
 
-                        {/* Top Center Position Badge */}
-                        <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 bg-black/80 backdrop-blur-md rounded-md px-2.5 py-1 border border-white/10 shadow-lg whitespace-nowrap" style={{ borderBottom: `2px solid ${theme.accent}` }}>
-                          <span className="text-xs font-black italic uppercase" style={{ color: theme.accent }}>
-                            {c.positionCode.slice(0, 1).toUpperCase()}
-                          </span>
-                          <span className="text-[10px] font-bold text-white uppercase tracking-widest opacity-90">
-                            {c.positionCode.replace(/_/g, ' ')}
-                          </span>
-                        </div>
-
                         {/* Bottom Gradient for Text Legibility */}
                         <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none" />
 
                         {/* Info Container */}
-                        <div className="relative z-10 px-8 pb-10 pt-4 w-full flex flex-col justify-end text-left pr-16 md:pr-20 md:pb-12">
-                          <div className={`text-xl md:text-2xl font-black italic tracking-tighter uppercase drop-shadow-xl leading-tight text-white break-words`}>
+                        <div className="relative z-10 px-3 pb-4 pt-2 w-full flex flex-col justify-end text-left pr-4 sm:px-8 sm:pb-10 sm:pr-16 md:pr-20 md:pb-12">
+                          <div className={`text-xs min-[360px]:text-sm sm:text-lg md:text-xl xl:text-2xl font-black italic tracking-tighter uppercase drop-shadow-xl leading-tight text-white break-words hyphens-auto`}>
                             {c.fullName.split(' ')[0]}
                             {c.fullName.split(' ').length > 1 && (
-                              <span className="block text-sm md:text-base opacity-90 mt-1 break-words">
+                              <span className="block text-[10px] min-[360px]:text-[11px] sm:text-xs md:text-base opacity-90 mt-1 break-words hyphens-auto">
                                 {c.fullName.substring(c.fullName.indexOf(' ') + 1)}
                               </span>
                             )}
@@ -1033,8 +1127,12 @@ export default function VotingPage() {
 
       {/* Mobile sticky submit */}
       <div
-        className="fixed inset-x-0 bottom-0 z-50 border-t border-[rgba(255,255,255,0.06)] p-4 lg:hidden"
-        style={{ background: 'rgba(7,7,12,0.85)', backdropFilter: 'blur(28px)' }}
+        className="fixed inset-x-0 z-50 border-t border-[rgba(255,255,255,0.06)] p-4 lg:hidden"
+        style={{
+          background: 'rgba(7,7,12,0.85)',
+          backdropFilter: 'blur(28px)',
+          bottom: 'calc(56px + env(safe-area-inset-bottom))',
+        }}
       >
         <div className="flex gap-2">
           <Button
@@ -1051,8 +1149,8 @@ export default function VotingPage() {
             variant="primary"
             size="lg"
             className="flex-1"
-            disabled={!isComplete || submitting}
-            onClick={() => setShowConfirm(true)}
+            disabled={submitting}
+            onClick={isComplete ? () => setShowConfirm(true) : handleSelectAllChoices}
           >
             <Vote className="h-4 w-4" />
             {isComplete ? 'Review Lineup' : `Select all ${requiredSelectionCount} choices`}
@@ -1079,8 +1177,8 @@ export default function VotingPage() {
           variant="primary"
           size="lg"
           className="w-full sm:w-auto"
-          disabled={!isComplete || submitting}
-          onClick={() => setShowConfirm(true)}
+          disabled={submitting}
+          onClick={isComplete ? () => setShowConfirm(true) : handleSelectAllChoices}
         >
           <Vote className="h-4 w-4" />
           {isComplete ? 'Review & Submit Ballot' : `Complete all ${requiredSelectionCount} selections`}

@@ -1,7 +1,6 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
-import { LayoutDashboard, Users, Vote, FileCheck, UserCircle, LogOut, Sun, Moon } from 'lucide-react'
-import { useTheme } from '../../lib/theme'
+import { LayoutDashboard, Users, Vote, FileCheck, UserCircle, LogOut } from 'lucide-react'
 import Footer from './Footer'
 import { goeyToast } from 'goey-toast'
 
@@ -21,7 +20,6 @@ function isActive(pathname: string, to: string) {
 export default function AppShell() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
-  const { theme, toggle } = useTheme()
 
   const role = localStorage.getItem('cetso_role')
   const studentId = localStorage.getItem('cetso_student_id')
@@ -194,15 +192,7 @@ export default function AppShell() {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={toggle}
-            className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all"
-            style={{ color: 'var(--cetso-text-2)', border: '1px solid transparent' }}
-          >
-            {theme === 'dark' ? <Sun className="h-4 w-4 shrink-0" /> : <Moon className="h-4 w-4 shrink-0" />}
-            {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-          </button>
+
 
           <button
             type="button"
@@ -265,19 +255,7 @@ export default function AppShell() {
 
           {/* Right controls */}
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={toggle}
-              className="lg:hidden grid h-9 w-9 place-items-center rounded-xl transition"
-              style={{
-                background: 'var(--cetso-badge-bg)',
-                border: '1px solid var(--cetso-border)',
-                color: 'var(--cetso-text-2)',
-              }}
-              title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-            >
-              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </button>
+
 
             {/* Mobile avatar */}
             <div className="lg:hidden flex items-center gap-2">

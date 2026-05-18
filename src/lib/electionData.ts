@@ -170,12 +170,12 @@ export function mergeCandidatesWithOfficialSeed(dbCandidates?: Candidate[] | nul
 
   const dbKeys = new Set(
     dbCandidates.map((candidate) =>
-      `${candidate.positionCode}::${candidate.fullName.trim().toUpperCase()}`
+      `${candidate.positionCode}::${candidate.fullName.trim().toUpperCase().replace('JHON', 'JOHN')}`
     )
   )
 
   const missingOfficialCandidates = CANDIDATES.filter((candidate) => {
-    const key = `${candidate.positionCode}::${candidate.fullName.trim().toUpperCase()}`
+    const key = `${candidate.positionCode}::${candidate.fullName.trim().toUpperCase().replace('JHON', 'JOHN')}`
     return !dbKeys.has(key)
   })
 
