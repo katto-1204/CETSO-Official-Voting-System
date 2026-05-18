@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Eye, EyeOff, LogIn, ShieldCheck, ArrowLeft, Terminal, ShieldAlert, Info } from 'lucide-react'
+import { Eye, EyeOff, LogIn, ShieldCheck, ArrowLeft, Terminal, ShieldAlert } from 'lucide-react'
 import Button from '../components/ui/Button'
 import TextField from '../components/ui/TextField'
 import GlassCard from '../components/ui/GlassCard'
@@ -136,7 +136,7 @@ export default function LoginPage() {
               The ID number exists, but the password does not match the registered student record.
             </p>
             <p className="mt-3 text-[11px] font-medium uppercase leading-relaxed tracking-widest text-white/35">
-              Password format: numbers after 598 plus your last name. Uppercase or lowercase is accepted.
+              Please verify your credentials and try again.
             </p>
           </div>
           <Button variant="primary" size="lg" className="w-full" onClick={() => setInvalidCredentialsOpen(false)}>
@@ -370,7 +370,7 @@ export default function LoginPage() {
 
           {/* Dynamic Tooltip */}
           <AnimatePresence mode="wait">
-            {isAdminMode ? (
+            {isAdminMode && (
               <motion.div
                 key="admin-tip"
                 initial={{ opacity: 0, y: 10 }}
@@ -386,25 +386,6 @@ export default function LoginPage() {
                 </div>
                 <div className="text-[11px] font-medium text-white/40 leading-relaxed">
                   Admin credentials detected. Use your registered administrator password.
-                </div>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="student-tip"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="mt-8 rounded-2xl p-4 bg-orange-500/5 border border-orange-500/10"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <Info className="h-3 w-3 text-[var(--cetso-orange)]" />
-                  <div className="text-[9px] font-black uppercase tracking-widest text-[var(--cetso-orange)]">
-                    Password Hint
-                  </div>
-                </div>
-                <div className="text-[11px] font-medium text-white/40 leading-relaxed">
-                  Password = ID suffix + <span className="text-white/60">LASTNAME</span> (case-insensitive)
-                  <div className="mt-1 font-mono text-[10px] text-white/20">59812345 + Cruz = 12345CRUZ or 12345cruz</div>
                 </div>
               </motion.div>
             )}
