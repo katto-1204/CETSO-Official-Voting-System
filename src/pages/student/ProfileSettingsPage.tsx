@@ -253,7 +253,6 @@ export default function ProfileSettingsPage() {
                 { label: 'Email', value: emailValue },
                 { label: 'Program', value: activeStudent.programCode },
                 { label: 'Year Level', value: `Year ${activeStudent.yearLevel}` },
-                { label: 'Source', value: 'Supabase students table' },
               ].map((item) => (
                 <div
                   key={item.label}
@@ -263,10 +262,6 @@ export default function ProfileSettingsPage() {
                   <div className="mt-1 break-words text-sm font-bold text-[var(--cetso-text)]">{item.value}</div>
                 </div>
               ))}
-            </div>
-
-            <div className="mt-5 rounded-2xl border border-orange-500/20 bg-orange-500/10 p-4 text-sm text-[var(--cetso-text-2)]">
-              If the student record changes in Supabase, this page will reflect the updated name, program, year level, and email after refresh or next login.
             </div>
           </GlassCard>
         </motion.div>

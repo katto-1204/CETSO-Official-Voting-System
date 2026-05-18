@@ -1010,16 +1010,6 @@ export default function VotingPage() {
                     className="group relative w-full aspect-[3/4] outline-none"
                     aria-pressed={selected}
                   >
-                    {/* Top Center Position Badge - rendered outside overflow-hidden skewed container */}
-                    <div className="absolute top-2 sm:top-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1 sm:gap-1.5 bg-black/80 backdrop-blur-md rounded-md px-1.5 py-0.5 sm:px-2.5 sm:py-1 border border-white/10 shadow-lg whitespace-nowrap" style={{ borderBottom: `2px solid ${theme.accent}` }}>
-                      <span className="text-[9px] sm:text-xs font-black italic uppercase" style={{ color: theme.accent }}>
-                        {c.positionCode.slice(0, 1).toUpperCase()}
-                      </span>
-                      <span className="text-[7.5px] sm:text-[10px] font-bold text-white uppercase tracking-widest opacity-90">
-                        {c.positionCode.replace(/_/g, ' ')}
-                      </span>
-                    </div>
-
                     <div
                       className={`absolute inset-0 overflow-hidden transition-all duration-300 z-10 ${selected ? 'animate-pulse' : ''}`}
                       style={{ 
@@ -1060,14 +1050,9 @@ export default function VotingPage() {
                         <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none" />
 
                         {/* Info Container */}
-                        <div className="relative z-10 px-3 pb-4 pt-2 w-full flex flex-col justify-end text-left pr-4 sm:px-8 sm:pb-10 sm:pr-16 md:pr-20 md:pb-12">
-                          <div className={`text-xs min-[360px]:text-sm sm:text-lg md:text-xl xl:text-2xl font-black italic tracking-tighter uppercase drop-shadow-xl leading-tight text-white break-words hyphens-auto`}>
-                            {c.fullName.split(' ')[0]}
-                            {c.fullName.split(' ').length > 1 && (
-                              <span className="block text-[10px] min-[360px]:text-[11px] sm:text-xs md:text-base opacity-90 mt-1 break-words hyphens-auto">
-                                {c.fullName.substring(c.fullName.indexOf(' ') + 1)}
-                              </span>
-                            )}
+                        <div className="relative z-10 px-3 pb-4 pt-2 w-full flex flex-col justify-end text-left pr-4 sm:px-6 sm:pb-8 sm:pr-10 md:pb-10">
+                          <div className="text-[11px] min-[360px]:text-xs sm:text-base md:text-lg xl:text-xl font-black italic tracking-tighter uppercase drop-shadow-xl leading-[1.1] text-white break-words">
+                            {c.fullName}
                           </div>
                         </div>
 

@@ -63,28 +63,13 @@ function CandidateCard({ c, index, onClick }: { c: Candidate; index: number, onC
           <div className="absolute inset-0 opacity-10 pointer-events-none" 
                style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '10px 10px' }} />
 
-          {/* Top Center Position Badge */}
-          <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 bg-black/80 backdrop-blur-md rounded-md px-2.5 py-1 border border-white/10 shadow-lg whitespace-nowrap" style={{ borderBottom: `2px solid ${theme.accent}` }}>
-            <span className="text-xs font-black italic uppercase" style={{ color: theme.accent }}>
-              {c.positionCode.slice(0, 1).toUpperCase()}
-            </span>
-            <span className="text-[10px] font-bold text-white uppercase tracking-widest opacity-90">
-              {c.positionCode.replace(/_/g, ' ')}
-            </span>
-          </div>
-
           {/* Bottom Gradient for Text Legibility */}
           <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none" />
 
           {/* Info Container */}
-          <div className="relative z-10 px-8 pb-10 pt-4 w-full flex flex-col justify-end text-left pr-16 md:pr-20 md:pb-12">
-            <div className={`text-xl md:text-2xl font-black italic tracking-tighter uppercase drop-shadow-xl leading-tight text-white break-words`}>
-              {c.fullName.split(' ')[0]}
-              {c.fullName.split(' ').length > 1 && (
-                <span className="block text-sm md:text-base opacity-90 mt-1 break-words">
-                  {c.fullName.substring(c.fullName.indexOf(' ') + 1)}
-                </span>
-              )}
+          <div className="relative z-10 px-6 pb-8 pt-4 w-full flex flex-col justify-end text-left pr-12 md:pr-14 md:pb-10">
+            <div className="text-lg md:text-xl font-black italic tracking-tighter uppercase drop-shadow-xl leading-[1.1] text-white break-words">
+              {c.fullName}
             </div>
           </div>
         </div>
