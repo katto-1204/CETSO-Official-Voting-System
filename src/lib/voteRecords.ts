@@ -112,9 +112,7 @@ async function fetchVoteSubmissionRow(studentId: string): Promise<VoteSubmission
   })
 
   if (rpcResponse.error) {
-    if (!isMissingRpcFunction(rpcResponse.error)) {
-      throw new Error(rpcResponse.error.message)
-    }
+    console.warn('RPC get_vote_submission_by_student_id failed, attempting fallback table query:', rpcResponse.error)
   } else {
     const raw = rpcResponse.data as VoteSubmissionRow[] | VoteSubmissionRow | null
     if (Array.isArray(raw)) return raw[0] ?? null

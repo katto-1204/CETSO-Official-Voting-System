@@ -213,17 +213,17 @@ export default function CandidateListPage() {
                 <div className="text-[10px] font-black uppercase tracking-widest text-[var(--cetso-orange)] mb-2">
                   {selectedCandidate.positionCode.replace(/_/g, ' ')}
                 </div>
-                <h2 className="text-4xl sm:text-5xl font-black italic uppercase tracking-tighter text-white leading-[0.9]">
+                <h2 className="text-4xl sm:text-5xl font-black italic uppercase tracking-tighter text-[var(--cetso-text)] leading-[0.9]">
                   {selectedCandidate.fullName}
                 </h2>
               </div>
 
               {selectedCandidate.bio && (
-                <div className="bg-white/5 p-5 rounded-xl border border-white/10">
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-3">
+                <div className="bg-[var(--cetso-card-bg-inset)] p-5 rounded-xl border border-[var(--cetso-border)]">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)] mb-3">
                     Biography / Platform
                   </div>
-                  <p className="text-sm text-white/80 leading-relaxed font-medium whitespace-pre-wrap">
+                  <p className="text-sm text-[var(--cetso-text-2)] leading-relaxed font-medium whitespace-pre-wrap">
                     {selectedCandidate.bio}
                   </p>
                 </div>
@@ -338,8 +338,8 @@ export default function CandidateListPage() {
             <Fragment key={position.positionCode}>
               {showGroupHeader ? (
                 <div className={index === 0 ? 'pt-1' : 'pt-6'}>
-                  <div className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-                  <div className="mt-5 text-xs font-black uppercase tracking-[0.3em] text-white/35">
+                  <div className="h-px w-full bg-gradient-to-r from-transparent via-[var(--cetso-border)] to-transparent" />
+                  <div className="mt-5 text-xs font-black uppercase tracking-[0.3em] text-[var(--cetso-text-3)]">
                     {groupLabel}
                   </div>
                 </div>
@@ -350,11 +350,11 @@ export default function CandidateListPage() {
                     <div className="text-[10px] font-black uppercase tracking-[0.25em]" style={{ color: 'var(--cetso-orange)' }}>
                       {groupCandidates.length} candidate{groupCandidates.length !== 1 ? 's' : ''}
                     </div>
-                    <h2 className="text-2xl font-black uppercase italic tracking-tighter text-white">
+                    <h2 className="text-2xl font-black uppercase italic tracking-tighter text-[var(--cetso-text)]">
                       {position.title}
                     </h2>
                   </div>
-                  <div className="text-[10px] font-black uppercase tracking-widest text-white/35">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-[var(--cetso-text-3)]">
                     {groupLabel}
                   </div>
                 </div>

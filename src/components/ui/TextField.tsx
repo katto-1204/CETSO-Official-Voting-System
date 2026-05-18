@@ -31,17 +31,17 @@ export default function TextField({
         id={String(fieldId)}
         className={clsx(
           'w-full rounded-2xl px-4 py-3 text-sm text-[var(--cetso-text)]',
-          'bg-[rgba(255,255,255,0.04)] backdrop-blur-sm',
+          'bg-[var(--cetso-input-bg)] backdrop-blur-sm',
           'border transition-all duration-200',
           'placeholder:text-[var(--cetso-text-3)]',
-          'shadow-[inset_0_2px_6px_rgba(0,0,0,0.30)]',
+          'shadow-[var(--cetso-input-shadow)]',
           error
-            ? 'border-[rgba(239,68,68,0.55)] bg-[rgba(239,68,68,0.05)] shadow-[inset_0_2px_6px_rgba(0,0,0,0.30),0_0_0_2px_rgba(239,68,68,0.12)]'
+            ? 'border-[rgba(239,68,68,0.55)] bg-[rgba(239,68,68,0.05)] shadow-[var(--cetso-input-error-shadow)]'
             : [
                 'border-[var(--cetso-border)]',
-                'hover:border-[rgba(255,255,255,0.18)]',
+                'hover:border-[var(--cetso-input-border-hover)]',
                 'focus:border-[var(--cetso-border-strong)] focus:bg-[rgba(255,122,24,0.04)]',
-                'focus:shadow-[inset_0_2px_6px_rgba(0,0,0,0.30),0_0_0_2px_rgba(255,122,24,0.14)]',
+                'focus:shadow-[var(--cetso-input-focus-shadow)]',
                 'focus:outline-none',
               ].join(' ')
         )}

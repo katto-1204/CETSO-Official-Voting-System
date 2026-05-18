@@ -71,11 +71,11 @@ export default function ReceiptPage() {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <GlassCard className="w-full max-w-md p-8 text-center">
-          <div className="text-4xl font-black italic uppercase tracking-tighter text-white">
+          <div className="text-4xl font-black italic uppercase tracking-tighter text-[var(--cetso-text)]">
             ACCESS<br />
             <span className="text-orange-500">DENIED</span>
           </div>
-          <div className="mt-4 text-xs font-black uppercase tracking-widest text-white/40">
+          <div className="mt-4 text-xs font-black uppercase tracking-widest text-[var(--cetso-text-3)]">
             Please log in to view this.
           </div>
           <Button
@@ -95,7 +95,7 @@ export default function ReceiptPage() {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <GlassCard className="w-full max-w-md p-8 text-center">
-          <div className="text-xl font-black text-white">Loading receipt...</div>
+          <div className="text-xl font-black text-[var(--cetso-text)]">Loading receipt...</div>
         </GlassCard>
       </div>
     )
@@ -105,7 +105,7 @@ export default function ReceiptPage() {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <GlassCard className="w-full max-w-md p-8 text-center">
-          <div className="text-4xl font-black italic uppercase tracking-tighter text-white">
+          <div className="text-4xl font-black italic uppercase tracking-tighter text-[var(--cetso-text)]">
             {submissionError ? (
               <>
                 RECEIPT<br />
@@ -118,7 +118,7 @@ export default function ReceiptPage() {
               </>
             )}
           </div>
-          <div className="mt-4 text-xs font-black uppercase tracking-widest text-white/40">
+          <div className="mt-4 text-xs font-black uppercase tracking-widest text-[var(--cetso-text-3)]">
             {submissionError || 'No receipt has been recorded for this student account.'}
           </div>
           <Button
@@ -628,10 +628,10 @@ export default function ReceiptPage() {
         <div className="space-y-6 xl:col-span-4">
           <GlassCard className="space-y-8 p-8">
             <div>
-              <h3 className="mb-2 text-2xl font-black italic uppercase tracking-tighter text-white">
+              <h3 className="mb-2 text-2xl font-black italic uppercase tracking-tighter text-[var(--cetso-text)]">
                 Save Receipt
               </h3>
-              <p className="text-[11px] font-medium uppercase leading-relaxed tracking-widest text-white/40">
+              <p className="text-[11px] font-medium uppercase leading-relaxed tracking-widest text-[var(--cetso-text-3)]">
                 Keep a copy of your voting receipt with the student name, ID number, tracking number,
                 and QR code.
               </p>
@@ -651,7 +651,7 @@ export default function ReceiptPage() {
               <Button
                 variant="secondary"
                 size="lg"
-                className="h-14 w-full bg-white/5"
+                className="h-14 w-full"
                 onClick={saveAsImage}
                 loading={busy}
               >
@@ -660,12 +660,12 @@ export default function ReceiptPage() {
               </Button>
             </div>
 
-            <div className="border-t border-white/5 pt-8">
-              <div className="mb-4 text-[9px] font-black uppercase tracking-[0.3em] text-white/30">
+            <div className="border-t border-[var(--cetso-border)] pt-8">
+              <div className="mb-4 text-[9px] font-black uppercase tracking-[0.3em] text-[var(--cetso-text-3)]">
                 Tracking Number
               </div>
               <div className="flex items-center gap-2">
-                <div className="flex-1 overflow-hidden truncate rounded-2xl border border-white/5 bg-black/40 p-4 font-mono text-xs font-black text-white/60">
+                <div className="flex-1 overflow-hidden truncate rounded-2xl border border-[var(--cetso-card-border-inset)] bg-[var(--cetso-card-bg-inset)] p-4 font-mono text-xs font-black text-[var(--cetso-text-2)]">
                   {trackingNumber}
                 </div>
                 <button
@@ -680,14 +680,14 @@ export default function ReceiptPage() {
             </div>
           </GlassCard>
 
-          <div className="rounded-3xl border border-orange-500/10 bg-orange-500/5 p-6">
+          <div className="rounded-3xl border border-orange-500/20 bg-orange-500/10 p-6">
             <div className="mb-4 flex items-center gap-3">
               <ShieldCheck className="h-5 w-5 text-orange-500" />
               <span className="text-[11px] font-black uppercase tracking-[0.2em] text-orange-500">
                 Privacy Notice
               </span>
             </div>
-            <p className="text-[11px] font-medium uppercase leading-relaxed tracking-widest text-white/40">
+            <p className="text-[11px] font-medium uppercase leading-relaxed tracking-widest text-[var(--cetso-text-3)]">
               Your vote is secret. This receipt only proves that your account submitted a ballot.
             </p>
           </div>

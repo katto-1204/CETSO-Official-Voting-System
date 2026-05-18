@@ -79,13 +79,13 @@ AS $$
 BEGIN
   RETURN QUERY
   SELECT
-    v.student_id,
-    v.receipt_id,
-    v.program_code,
-    v.selections,
-    v.created_at,
-    s.full_name,
-    s.year_level
+    v.student_id::text,
+    v.receipt_id::text,
+    v.program_code::varchar(50),
+    v.selections::jsonb,
+    v.created_at::timestamptz,
+    s.full_name::text,
+    s.year_level::integer
   FROM public.votes AS v
   JOIN public.students AS s
     ON s.student_id = v.student_id

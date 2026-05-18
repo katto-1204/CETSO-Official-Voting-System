@@ -59,22 +59,22 @@ export default function Modal({
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className={`relative w-full ${maxWidth} overflow-hidden rounded-[32px] bg-[rgba(15,15,20,0.95)] border border-[rgba(255,255,255,0.08)] shadow-[0_32px_128px_rgba(0,0,0,0.8)]`}
+            className={`relative w-full ${maxWidth} overflow-hidden rounded-[32px] bg-[var(--cetso-modal-bg)] border border-[var(--cetso-modal-border)] shadow-[var(--cetso-modal-shadow)]`}
             style={{ backdropFilter: 'blur(32px)' }}
           >
             {/* Header */}
             {(title || showClose) && (
-              <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.05)] px-8 py-6">
+              <div className="flex items-center justify-between border-b border-[var(--cetso-modal-header-border)] px-8 py-6">
                 {title ? (
-                  <h3 className="text-xl font-black text-white uppercase tracking-wider">{title}</h3>
+                  <h3 className="text-xl font-black text-[var(--cetso-modal-text)] uppercase tracking-wider">{title}</h3>
                 ) : <div />}
                 
                 {showClose && (
                   <button
                     onClick={onClose}
-                    className="group relative grid h-10 w-10 place-items-center rounded-xl bg-white/5 transition-all hover:bg-white/10"
+                    className="group relative grid h-10 w-10 place-items-center rounded-xl bg-[var(--cetso-modal-close-bg)] transition-all hover:bg-[var(--cetso-modal-close-hover-bg)]"
                   >
-                    <X className="h-5 w-5 text-white/50 transition-colors group-hover:text-white" />
+                    <X className="h-5 w-5 text-[var(--cetso-modal-close-icon)] transition-colors group-hover:text-[var(--cetso-modal-close-icon-hover)]" />
                   </button>
                 )}
               </div>

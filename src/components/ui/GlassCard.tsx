@@ -16,13 +16,13 @@ export default function GlassCard({ children, className, variant = 'default', st
 
   const variants: Record<Variant, string> = {
     default:
-      'bg-[var(--cetso-surface)] border-[var(--cetso-border)] shadow-[0_24px_64px_rgba(0,0,0,0.55),0_4px_16px_rgba(0,0,0,0.30),inset_0_1px_0_rgba(255,255,255,0.07)]',
+      'bg-[var(--cetso-card-bg-default)] border-[var(--cetso-card-border-default)] shadow-[var(--cetso-card-shadow-default)]',
     elevated:
-      'bg-[rgba(255,255,255,0.07)] border-[var(--cetso-border-2)] shadow-[0_32px_80px_rgba(0,0,0,0.65),0_8px_24px_rgba(0,0,0,0.40),inset_0_1px_0_rgba(255,255,255,0.10)]',
+      'bg-[var(--cetso-card-bg-elevated)] border-[var(--cetso-card-border-elevated)] shadow-[var(--cetso-card-shadow-elevated)]',
     orange:
-      'bg-[rgba(255,122,24,0.08)] border-[rgba(255,122,24,0.30)] shadow-[0_24px_64px_rgba(0,0,0,0.50),0_0_48px_rgba(255,122,24,0.08),inset_0_1px_0_rgba(255,178,74,0.12)]',
+      'bg-[var(--cetso-card-bg-orange)] border-[var(--cetso-card-border-orange)] shadow-[var(--cetso-card-shadow-orange)]',
     inset:
-      'bg-[rgba(0,0,0,0.22)] border-[rgba(255,255,255,0.06)] shadow-[inset_0_2px_8px_rgba(0,0,0,0.35),0_4px_16px_rgba(0,0,0,0.25)]',
+      'bg-[var(--cetso-card-bg-inset)] border-[var(--cetso-card-border-inset)] shadow-[var(--cetso-card-shadow-inset)]',
   }
 
   return (

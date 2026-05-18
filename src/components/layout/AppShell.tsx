@@ -144,7 +144,7 @@ export default function AppShell() {
                     ? {
                         background: 'rgba(255,122,24,0.12)',
                         border: '1px solid rgba(255,122,24,0.28)',
-                        color: 'white',
+                        color: 'var(--cetso-text)',
                       }
                     : {
                         border: '1px solid transparent',
@@ -335,7 +335,7 @@ export default function AppShell() {
                 className="min-w-0 rounded-xl px-1.5 py-2 text-center text-[8px] font-bold uppercase tracking-normal transition-all min-[380px]:px-2 min-[380px]:text-[9px] min-[380px]:tracking-wide"
                 style={
                   active
-                    ? { background: 'rgba(255,122,24,0.12)', border: '1px solid rgba(255,122,24,0.28)', color: 'white' }
+                    ? { background: 'rgba(255,122,24,0.12)', border: '1px solid rgba(255,122,24,0.28)', color: 'var(--cetso-text)' }
                     : { border: '1px solid transparent', color: 'var(--cetso-text-3)' }
                 }
               >

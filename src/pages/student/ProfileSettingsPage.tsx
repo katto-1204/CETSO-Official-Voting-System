@@ -92,7 +92,7 @@ export default function ProfileSettingsPage() {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <GlassCard className="max-w-md w-full p-8 text-center">
-          <div className="text-xl font-black text-white">Login required</div>
+          <div className="text-xl font-black text-[var(--cetso-text)]">Login required</div>
           <div className="mt-2 text-sm font-medium text-[var(--cetso-text-2)]">Please log in to view your profile.</div>
           <Button variant="primary" size="lg" className="mt-6 w-full" onClick={() => navigate('/login')}>Go to Login</Button>
         </GlassCard>
@@ -105,7 +105,7 @@ export default function ProfileSettingsPage() {
       <div className="flex min-h-[60vh] items-center justify-center">
         <GlassCard className="max-w-md w-full p-8 text-center">
           <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-[var(--cetso-orange)] border-t-transparent" />
-          <div className="text-xl font-black text-white">Loading profile...</div>
+          <div className="text-xl font-black text-[var(--cetso-text)]">Loading profile...</div>
           <div className="mt-2 text-sm font-medium text-[var(--cetso-text-2)]">Syncing your student record from the registry.</div>
         </GlassCard>
       </div>
@@ -116,7 +116,7 @@ export default function ProfileSettingsPage() {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <GlassCard className="max-w-md w-full p-8 text-center border border-red-500/25">
-          <div className="text-xl font-black text-white">Profile sync failed</div>
+          <div className="text-xl font-black text-[var(--cetso-text)]">Profile sync failed</div>
           <div className="mt-2 text-sm font-medium text-[var(--cetso-text-2)]">
             {error || 'Student profile could not be loaded.'}
           </div>
@@ -145,12 +145,9 @@ export default function ProfileSettingsPage() {
       <motion.div
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-[32px] p-6"
+        className="relative overflow-hidden rounded-[32px] p-6 border border-[var(--cetso-card-border-default)] bg-[var(--cetso-card-bg-default)] shadow-[var(--cetso-card-shadow-default)]"
         style={{
-          background: 'rgba(255,255,255,0.03)',
-          border: '1px solid rgba(255,255,255,0.07)',
           backdropFilter: 'blur(20px)',
-          boxShadow: '0 24px 64px rgba(0,0,0,0.50)',
         }}
       >
         <div
@@ -172,7 +169,7 @@ export default function ProfileSettingsPage() {
             </div>
             <div>
               <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)]">Profile Settings</div>
-              <div className="mt-1 text-2xl font-black text-white">{activeStudent.fullName}</div>
+              <div className="mt-1 text-2xl font-black text-[var(--cetso-text)]">{activeStudent.fullName}</div>
               <div className="mt-0.5 text-xs font-semibold text-[var(--cetso-text-2)]">
                 {activeStudent.studentId} - {activeStudent.programCode} - Year {activeStudent.yearLevel}
               </div>
@@ -215,12 +212,12 @@ export default function ProfileSettingsPage() {
               </div>
 
               <div className="text-center">
-                <div className="text-sm font-bold text-white">{activeStudent.fullName}</div>
+                <div className="text-sm font-bold text-[var(--cetso-text)]">{activeStudent.fullName}</div>
                 <div className="mt-0.5 text-xs font-medium text-[var(--cetso-text-2)]">{activeStudent.programCode}</div>
               </div>
             </div>
 
-            <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-[var(--cetso-text-2)]">
+            <div className="mt-6 rounded-2xl border border-[var(--cetso-card-border-inset)] bg-[var(--cetso-card-bg-inset)] p-4 text-sm text-[var(--cetso-text-2)]">
               The profile photo area follows the student registry record.
             </div>
           </GlassCard>
@@ -236,7 +233,7 @@ export default function ProfileSettingsPage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)]">Account Details</div>
-                <div className="mt-1.5 text-xl font-black text-white">Synced from the database</div>
+                <div className="mt-1.5 text-xl font-black text-[var(--cetso-text)]">Synced from the database</div>
                 <p className="mt-1 text-sm font-medium text-[var(--cetso-text-2)]">This view now reads the latest student row from Supabase.</p>
               </div>
               <Button
@@ -260,16 +257,15 @@ export default function ProfileSettingsPage() {
               ].map((item) => (
                 <div
                   key={item.label}
-                  className="rounded-2xl p-4"
-                  style={{ background: 'rgba(0,0,0,0.20)', border: '1px solid rgba(255,255,255,0.06)' }}
+                  className="rounded-2xl p-4 border border-[var(--cetso-card-border-inset)] bg-[var(--cetso-card-bg-inset)]"
                 >
                   <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)]">{item.label}</div>
-                  <div className="mt-1 break-words text-sm font-bold text-white">{item.value}</div>
+                  <div className="mt-1 break-words text-sm font-bold text-[var(--cetso-text)]">{item.value}</div>
                 </div>
               ))}
             </div>
 
-            <div className="mt-5 rounded-2xl border border-orange-500/20 bg-orange-500/8 p-4 text-sm text-[var(--cetso-text-2)]">
+            <div className="mt-5 rounded-2xl border border-orange-500/20 bg-orange-500/10 p-4 text-sm text-[var(--cetso-text-2)]">
               If the student record changes in Supabase, this page will reflect the updated name, program, year level, and email after refresh or next login.
             </div>
           </GlassCard>

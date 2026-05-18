@@ -816,7 +816,7 @@ export default function CandidateManagementPage() {
                         placeholder="Enter Candidate biography, platform, or description..."
                         value={bio}
                         onChange={(e) => setBio(e.target.value)}
-                        className="w-full rounded-2xl px-4 py-3 text-sm text-[var(--cetso-text)] bg-[rgba(255,255,255,0.04)] backdrop-blur-sm border border-[var(--cetso-border)] hover:border-[rgba(255,255,255,0.18)] focus:border-[var(--cetso-border-strong)] focus:bg-[rgba(255,122,24,0.04)] focus:outline-none transition-all resize-none"
+                        className="w-full rounded-2xl px-4 py-3 text-sm text-[var(--cetso-text)] bg-[var(--cetso-input-bg)] shadow-[var(--cetso-input-shadow)] border border-[var(--cetso-border)] hover:border-[var(--cetso-input-border-hover)] focus:border-[var(--cetso-border-strong)] focus:bg-[rgba(255,122,24,0.04)] focus:shadow-[var(--cetso-input-focus-shadow)] focus:outline-none transition-all resize-none"
                      />
                   </div>
 

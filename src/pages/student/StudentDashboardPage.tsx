@@ -121,7 +121,7 @@ export default function StudentDashboardPage() {
           >
             <LockKeyhole className="h-8 w-8 text-[var(--cetso-orange)]" />
           </div>
-          <div className="mt-6 text-2xl font-black text-white italic uppercase tracking-tighter">Access Required</div>
+          <div className="mt-6 text-2xl font-black text-[var(--cetso-text)] italic uppercase tracking-tighter">Access Required</div>
           <div className="mt-2 text-sm font-medium text-[var(--cetso-text-2)]">
             Please log in with your student credentials to continue.
           </div>
@@ -183,19 +183,19 @@ export default function StudentDashboardPage() {
             className="italic tracking-tighter uppercase break-words"
             style={{ fontFamily: 'var(--font-h1)', fontSize: 'clamp(28px, 8vw, 64px)', lineHeight: 0.9 }}
           >
-            STUDENT <span className="text-white/40">PORTAL</span>
+            STUDENT <span className="text-[var(--cetso-text)] opacity-40">PORTAL</span>
           </h1>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 sm:gap-4">
           <div className="text-right hidden sm:block">
-            <div className="text-[10px] font-black uppercase tracking-widest text-white/30">Current Time</div>
-            <div className="text-sm font-black text-white italic">{time.toLocaleTimeString()}</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-[var(--cetso-text-3)]">Current Time</div>
+            <div className="text-sm font-black text-[var(--cetso-text)] italic">{time.toLocaleTimeString()}</div>
           </div>
-          <div className="h-10 w-[1px] bg-white/10 hidden sm:block" />
-          <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 sm:px-4">
+          <div className="h-10 w-[1px] bg-[var(--cetso-border-2)] hidden sm:block" />
+          <div className="flex items-center gap-3 rounded-2xl border border-[var(--cetso-border)] bg-[var(--cetso-card-bg-inset)] px-3 py-2 sm:px-4">
             <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-white/60">System: Online</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--cetso-text-2)]">System: Online</span>
           </div>
         </div>
       </div>
@@ -204,16 +204,16 @@ export default function StudentDashboardPage() {
       <motion.div
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="relative overflow-hidden rounded-3xl border border-white/5 p-4 shadow-2xl sm:rounded-[40px] sm:p-8"
-        style={{ background: 'rgba(20,20,25,0.4)', backdropFilter: 'blur(30px)' }}
+        className="relative overflow-hidden rounded-3xl border border-[var(--cetso-card-border-default)] bg-[var(--cetso-card-bg-default)] p-4 shadow-[var(--cetso-card-shadow-default)] sm:rounded-[40px] sm:p-8"
+        style={{ backdropFilter: 'blur(30px)' }}
       >
         {/* Animated Background Elements */}
         <div className="absolute -right-20 -top-20 h-80 w-80 rounded-full bg-[var(--cetso-orange)]/5 blur-[100px]" />
         <div className="absolute -left-20 -bottom-20 h-80 w-80 rounded-full bg-blue-500/5 blur-[100px]" />
         
         {/* Tactical Overlay */}
-        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-        <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[var(--cetso-border)] to-transparent" />
+        <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[var(--cetso-border)] to-transparent" />
 
         <div className="relative flex flex-col items-stretch gap-6 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
           <div className="flex min-w-0 flex-col items-center gap-4 sm:flex-row sm:gap-6">
@@ -229,23 +229,23 @@ export default function StudentDashboardPage() {
               >
                 {initials}
               </div>
-              <div className="absolute -bottom-1 -right-1 h-8 w-8 rounded-xl bg-[rgb(15,15,20)] border border-white/10 flex items-center justify-center">
+              <div className="absolute -bottom-1 -right-1 h-8 w-8 rounded-xl bg-[var(--cetso-card-bg)] border border-[var(--cetso-border)] flex items-center justify-center">
                  <Activity className="h-4 w-4 text-[var(--cetso-orange)]" />
               </div>
             </div>
 
             <div className="text-center sm:text-left">
-              <h2 className="break-words text-2xl font-black italic uppercase tracking-tighter text-white sm:text-3xl">
+              <h2 className="break-words text-2xl font-black italic uppercase tracking-tighter text-[var(--cetso-text)] sm:text-3xl">
                 {ctx.studentName}
               </h2>
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-2">
-                <span className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-white/50">
+                <span className="px-3 py-1 rounded-lg bg-[var(--cetso-card-bg-inset)] border border-[var(--cetso-border)] text-[10px] font-black uppercase tracking-widest text-[var(--cetso-text-2)]">
                   {ctx.studentId}
                 </span>
                 <span className="px-3 py-1 rounded-lg bg-[var(--cetso-orange)]/10 border border-[var(--cetso-orange)]/20 text-[10px] font-black uppercase tracking-widest text-[var(--cetso-orange)]">
                   {ctx.programCode}
                 </span>
-                <span className="px-3 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-[10px] font-black uppercase tracking-widest text-blue-400">
+                <span className="px-3 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-400">
                   Year {ctx.yearLevel}
                 </span>
               </div>
@@ -253,12 +253,12 @@ export default function StudentDashboardPage() {
           </div>
 
           <div className="grid w-full grid-cols-2 gap-3 lg:w-auto lg:gap-4">
-             <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center sm:rounded-3xl sm:p-4">
-                <div className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-1">Status</div>
-                <div className="text-sm font-black text-white uppercase italic">Active</div>
+             <div className="rounded-2xl border border-[var(--cetso-card-border-default)] bg-[var(--cetso-card-bg-default)] p-3 text-center sm:rounded-3xl sm:p-4 animate-fade-up">
+                <div className="text-[9px] font-black uppercase tracking-widest text-[var(--cetso-text-3)] mb-1">Status</div>
+                <div className="text-sm font-black text-[var(--cetso-text)] uppercase italic">Active</div>
              </div>
-             <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center sm:rounded-3xl sm:p-4">
-                <div className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-1">Session</div>
+             <div className="rounded-2xl border border-[var(--cetso-card-border-default)] bg-[var(--cetso-card-bg-default)] p-3 text-center sm:rounded-3xl sm:p-4 animate-fade-up">
+                <div className="text-[9px] font-black uppercase tracking-widest text-[var(--cetso-text-3)] mb-1">Session</div>
                 <div className="text-sm font-black text-green-500 uppercase italic">Active</div>
              </div>
           </div>
@@ -273,20 +273,20 @@ export default function StudentDashboardPage() {
           <GlassCard className="group relative overflow-hidden p-4 sm:p-8">
              {/* Tactical Decoration */}
              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                <Activity className="h-24 w-24 text-white" />
+                <Activity className="h-24 w-24 text-[var(--cetso-text)]" />
              </div>
 
              <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
-                   <h3 className="text-xl font-black text-white italic uppercase tracking-tight">Voting Status</h3>
-                   <p className="text-xs font-medium text-white/40">Check if you have voted yet</p>
+                   <h3 className="text-xl font-black text-[var(--cetso-text)] italic uppercase tracking-tight">Voting Status</h3>
+                   <p className="text-xs font-medium text-[var(--cetso-text-3)]">Check if you have voted yet</p>
                 </div>
                 <div className={`flex w-full items-center justify-center gap-2 rounded-2xl border px-3 py-2 sm:w-auto sm:gap-3 sm:px-4 ${
                   submitted 
-                    ? 'bg-green-500/10 border-green-500/30 text-green-400' 
+                    ? 'bg-green-500/10 border-green-500/30 text-green-500 dark:text-green-400' 
                     : (!isVotingOpen 
-                        ? 'bg-red-500/10 border-red-500/30 text-red-400' 
-                        : 'bg-orange-500/10 border-orange-500/30 text-orange-400')
+                        ? 'bg-red-500/10 border-red-500/30 text-red-500 dark:text-red-400' 
+                        : 'bg-orange-500/10 border-orange-500/30 text-[var(--cetso-orange)]')
                 }`}>
                    {submitted ? <CheckCircle2 className="h-4 w-4" /> : (!isVotingOpen ? <LockKeyhole className="h-4 w-4" /> : <Clock className="h-4 w-4" />)}
                    <span className="text-center text-[10px] font-black uppercase tracking-[0.16em] sm:tracking-[0.2em]">{
@@ -304,18 +304,18 @@ export default function StudentDashboardPage() {
              </div>
 
              <div className="mb-6 grid grid-cols-1 gap-3 sm:mb-8 md:grid-cols-2 md:gap-4">
-                <div className="group/item relative rounded-2xl border border-white/5 bg-black/40 p-4 sm:rounded-3xl sm:p-5">
-                   <div className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-2">Account Hash</div>
-                   <div className="text-xs font-mono text-white/60 truncate">0x{ctx.studentId}F92E10B3A4</div>
+                <div className="group/item relative rounded-2xl border border-[var(--cetso-card-border-inset)] bg-[var(--cetso-card-bg-inset)] p-4 sm:rounded-3xl sm:p-5">
+                   <div className="text-[10px] font-black uppercase tracking-widest text-[var(--cetso-text-3)] mb-2">Account Hash</div>
+                   <div className="text-xs font-mono text-[var(--cetso-text-2)] truncate">0x{ctx.studentId}F92E10B3A4</div>
                 </div>
-                <div className="group/item relative rounded-2xl border border-white/5 bg-black/40 p-4 sm:rounded-3xl sm:p-5">
-                   <div className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-2">Vote Weight</div>
+                <div className="group/item relative rounded-2xl border border-[var(--cetso-card-border-inset)] bg-[var(--cetso-card-bg-inset)] p-4 sm:rounded-3xl sm:p-5">
+                   <div className="text-[10px] font-black uppercase tracking-widest text-[var(--cetso-text-3)] mb-2">Vote Weight</div>
                    <div className="text-xs font-black text-[var(--cetso-orange)] italic uppercase">25% Program Share</div>
                 </div>
              </div>
 
              {configError ? (
-               <div className="mb-6 rounded-2xl border border-red-500/25 bg-red-500/10 p-4 text-xs font-bold text-red-200">
+               <div className="mb-6 rounded-2xl border border-[var(--cetso-error-border)] bg-[var(--cetso-error-bg)] p-4 text-xs font-bold text-[var(--cetso-error-text)]">
                  Could not fetch live voting status: {configError}
                </div>
              ) : null}
@@ -359,7 +359,7 @@ export default function StudentDashboardPage() {
              <div className="flex items-center justify-between px-2">
                 <div className="flex items-center gap-3">
                    <Bell className="h-4 w-4 text-[var(--cetso-orange)]" />
-                   <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Announcements</h4>
+                   <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--cetso-text-3)]">Announcements</h4>
                 </div>
                 <button className="text-[9px] font-black uppercase tracking-widest text-[var(--cetso-orange)] hover:underline">Clear</button>
              </div>
@@ -374,14 +374,14 @@ export default function StudentDashboardPage() {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.4 + i * 0.1 }}
-                    className="group flex flex-col gap-2 rounded-2xl border border-white/5 bg-white/[0.02] p-4 transition-colors hover:bg-white/[0.05] sm:flex-row sm:items-center sm:gap-4 sm:rounded-3xl"
+                    className="group flex flex-col gap-2 rounded-2xl border border-[var(--cetso-card-border-inset)] bg-[var(--cetso-card-bg-inset)] p-4 transition-colors hover:bg-[var(--cetso-card-bg-default)] sm:flex-row sm:items-center sm:gap-4 sm:rounded-3xl"
                   >
                     <div className="flex items-center gap-3 sm:contents">
-                    <div className="shrink-0 text-[9px] font-mono text-white/20">{log.time}</div>
+                    <div className="shrink-0 text-[9px] font-mono text-[var(--cetso-text-3)]">{log.time}</div>
                     <div className="h-1 w-1 rounded-full bg-[var(--cetso-orange)]/40" />
                     <div className="w-16 text-[9px] font-black uppercase text-[var(--cetso-orange)]/60">{log.type}</div>
                     </div>
-                    <div className="text-xs font-medium text-white/60">{log.msg}</div>
+                    <div className="text-xs font-medium text-[var(--cetso-text-2)]">{log.msg}</div>
                   </motion.div>
                 ))}
              </div>
@@ -393,7 +393,7 @@ export default function StudentDashboardPage() {
           
           {/* Quick Access Nodes */}
           <div className="space-y-4">
-             <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 px-2">Quick Links</div>
+             <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--cetso-text-3)] px-2">Quick Links</div>
              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
                 {quickActions.map((action, i) => {
                   const Icon = action.icon
@@ -404,11 +404,11 @@ export default function StudentDashboardPage() {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.3 + i * 0.05 }}
                       onClick={action.onClick}
-                      className="group relative flex items-center gap-3 overflow-hidden rounded-3xl p-3 text-left transition-all hover:scale-[1.02] active:scale-[0.98] sm:gap-4 sm:p-4 sm:rounded-[28px]"
-                      style={{
-                        background: action.highlight ? 'rgba(255,122,24,0.08)' : 'rgba(255,255,255,0.03)',
-                        border: action.highlight ? '1.5px solid rgba(255,122,24,0.3)' : '1px solid rgba(255,255,255,0.08)',
-                      }}
+                      className={`group relative flex items-center gap-3 overflow-hidden rounded-3xl p-3 text-left transition-all hover:scale-[1.02] active:scale-[0.98] sm:gap-4 sm:p-4 sm:rounded-[28px] border ${
+                        action.highlight 
+                          ? 'bg-[var(--cetso-orange)]/10 border-[var(--cetso-orange)]/30' 
+                          : 'bg-[var(--cetso-card-bg-inset)] border-[var(--cetso-card-border-inset)] hover:bg-[var(--cetso-card-bg-default)]'
+                      }`}
                     >
                       {/* Selection Glow */}
                       {action.highlight && (
@@ -416,26 +416,25 @@ export default function StudentDashboardPage() {
                       )}
 
                       <div 
-                        className="grid h-12 w-12 place-items-center rounded-2xl shrink-0 transition-transform group-hover:rotate-6"
-                        style={{
-                          background: action.highlight ? 'rgba(255,122,24,0.15)' : 'rgba(255,255,255,0.05)',
-                          border: '1px solid rgba(255,255,255,0.1)',
-                          color: action.highlight ? 'var(--cetso-orange)' : 'rgba(255,255,255,0.4)'
-                        }}
+                        className={`grid h-12 w-12 place-items-center rounded-2xl shrink-0 transition-transform group-hover:rotate-6 border ${
+                          action.highlight 
+                            ? 'bg-[var(--cetso-orange)]/20 border-[var(--cetso-orange)]/40 text-[var(--cetso-orange)]' 
+                            : 'bg-[var(--cetso-card-bg-default)] border-[var(--cetso-card-border-default)] text-[var(--cetso-text-2)]'
+                        }`}
                       >
                         <Icon className="h-5 w-5" />
                       </div>
                       
                       <div className="min-w-0 flex-1">
-                        <div className="text-sm font-black text-white italic uppercase tracking-tighter group-hover:text-[var(--cetso-orange)] transition-colors">
+                        <div className="text-sm font-black text-[var(--cetso-text)] italic uppercase tracking-tighter group-hover:text-[var(--cetso-orange)] transition-colors">
                           {action.title}
                         </div>
-                        <div className="text-[10px] font-medium text-white/40 truncate uppercase tracking-widest mt-0.5">
+                        <div className="text-[10px] font-medium text-[var(--cetso-text-3)] truncate uppercase tracking-widest mt-0.5">
                           {action.sub}
                         </div>
                       </div>
                       
-                      <ChevronRight className="h-4 w-4 text-white/20 group-hover:text-[var(--cetso-orange)] group-hover:translate-x-1 transition-all" />
+                      <ChevronRight className="h-4 w-4 text-[var(--cetso-text-3)] group-hover:text-[var(--cetso-orange)] group-hover:translate-x-1 transition-all" />
                     </motion.button>
                   )
                 })}
@@ -444,17 +443,17 @@ export default function StudentDashboardPage() {
 
           {/* Voting Rules Summary */}
           <GlassCard variant="orange" className="p-6 relative overflow-hidden group">
-             <Terminal className="absolute -right-4 -bottom-4 h-24 w-24 text-white/[0.03] -rotate-12" />
+             <Terminal className="absolute -right-4 -bottom-4 h-24 w-24 text-[var(--cetso-text)]/5 -rotate-12" />
              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--cetso-orange)] mb-4">Voting Rules</div>
-             <h4 className="mb-3 text-base font-black uppercase italic leading-tight text-white sm:text-lg sm:leading-none">Weighting Distribution</h4>
+             <h4 className="mb-3 text-base font-black uppercase italic leading-tight text-[var(--cetso-text)] sm:text-lg sm:leading-none">Weighting Distribution</h4>
              <div className="space-y-3">
                 {['BSIT', 'BLIS', 'BSCpE', 'BSECE'].map((prog) => (
                   <div key={prog} className="space-y-1.5">
                     <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
-                       <span className="text-white/60">{prog}</span>
+                       <span className="text-[var(--cetso-text-3)]">{prog}</span>
                        <span className="text-[var(--cetso-orange)]">25%</span>
                     </div>
-                    <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-1 w-full bg-[var(--cetso-border)] rounded-full overflow-hidden">
                        <motion.div 
                           initial={{ width: 0 }}
                           animate={{ width: '25%' }}
@@ -465,7 +464,7 @@ export default function StudentDashboardPage() {
                   </div>
                 ))}
              </div>
-             <p className="mt-6 text-[10px] font-medium text-white/40 leading-relaxed italic">
+             <p className="mt-6 text-[10px] font-medium text-[var(--cetso-text-3)] leading-relaxed italic">
                *All programs have an equal 25% share in the final result.
              </p>
           </GlassCard>
@@ -501,14 +500,14 @@ export default function StudentDashboardPage() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-white/5 bg-white/5 p-4 space-y-2 text-left">
+          <div className="rounded-2xl border border-[var(--cetso-card-border-inset)] bg-[var(--cetso-card-bg-inset)] p-4 space-y-2 text-left">
             <div className="flex justify-between items-center text-xs">
-              <span className="font-bold text-white/40 uppercase">STATUS</span>
+              <span className="font-bold text-[var(--cetso-text-3)] uppercase">STATUS</span>
               <span className="font-black text-red-500 uppercase tracking-wider">LOCKED OUT</span>
             </div>
             <div className="flex justify-between items-center text-xs">
-              <span className="font-bold text-white/40 uppercase">VOTER HASH</span>
-              <span className="font-mono text-white/60">0x{ctx?.studentId}</span>
+              <span className="font-bold text-[var(--cetso-text-3)] uppercase">VOTER HASH</span>
+              <span className="font-mono text-[var(--cetso-text-2)]">0x{ctx?.studentId}</span>
             </div>
           </div>
 
