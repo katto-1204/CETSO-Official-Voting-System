@@ -245,21 +245,13 @@ export default function LoginPage() {
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.5 }}
-              className="relative mx-auto mb-6 w-fit"
+              className="relative mx-auto mb-6 max-w-[200px]"
             >
-              <div
-                className="grid h-24 w-24 place-items-center rounded-[28px] rotate-3 group-hover:rotate-6 transition-transform duration-500 overflow-hidden bg-black/20"
-                style={{
-                  border: `1.5px solid ${isAdminMode ? 'rgba(59,130,246,0.4)' : 'rgba(255,122,24,0.4)'}`,
-                  boxShadow: `0 0 50px ${isAdminMode ? 'rgba(59,130,246,0.15)' : 'rgba(255,122,24,0.15)'}`,
-                }}
-              >
-                <img
-                  src="/CETSO ELECTION.png"
-                  alt="CETSO Election Logo"
-                  className="h-20 w-20 object-contain -rotate-3 group-hover:-rotate-6 transition-transform duration-500"
-                />
-              </div>
+              <img
+                src="/Copy of CET Logotype (White).png"
+                alt="CET Logotype"
+                className="h-16 w-auto mx-auto object-contain drop-shadow-[0_4px_16px_rgba(255,255,255,0.12)]"
+              />
             </motion.div>
 
             <AnimatePresence mode="wait">
@@ -285,7 +277,7 @@ export default function LoginPage() {
             </AnimatePresence>
 
             <p className="mt-3 text-[10px] font-black uppercase tracking-[0.3em] text-white/30">
-              CETSO Voting System
+              CET Voting System
             </p>
           </div>
 
@@ -394,7 +386,7 @@ export default function LoginPage() {
 
         {/* Footer legal subtle */}
         <div className="mt-6 text-center text-[9px] font-black uppercase tracking-widest text-white/20 italic">
-          Official CETSO System • All activity is recorded
+          Official CET System • All activity is recorded
         </div>
       </motion.div>
     </div>

@@ -69,20 +69,11 @@ export default function SplashPage() {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.6, ease: [0.34, 1.56, 0.64, 1] }}
           >
-            <div
-              className="grid h-20 w-20 place-items-center rounded-3xl"
-              style={{
-                background: 'linear-gradient(135deg, rgba(255,122,24,0.24), rgba(255,178,74,0.14))',
-                border: '1px solid rgba(255,122,24,0.42)',
-                boxShadow: '0 0 60px rgba(255,122,24,0.35), 0 0 120px rgba(255,122,24,0.15), 0 8px 32px rgba(0,0,0,0.40)',
-              }}
-            >
-              <img
-                src="/CETLOGO.png"
-                alt="CET Logo"
-                className="h-12 w-12 object-contain"
-              />
-            </div>
+            <img
+              src="/Copy of CET Logotype (White).png"
+              alt="CET Logotype"
+              className="h-28 w-auto object-contain drop-shadow-[0_4px_24px_rgba(255,255,255,0.12)]"
+            />
           </motion.div>
 
           <motion.div

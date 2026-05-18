@@ -62,27 +62,16 @@ export default function AppShell() {
         }}
       >
         {/* Logo area */}
-        <div className="px-5 py-5 flex items-center gap-3" style={{ borderBottom: '1px solid var(--cetso-border)' }}>
+        <div className="px-5 py-5 flex items-center" style={{ borderBottom: '1px solid var(--cetso-border)' }}>
           <Link to="/" className="flex items-center gap-2.5">
-            <div
-              className="grid h-9 w-9 place-items-center rounded-xl font-black text-white text-sm"
-              style={{ background: 'var(--cetso-orange)', boxShadow: '0 0 20px rgba(255,122,24,0.35)' }}
-            >
-              <img
-                src="/CETLOGO.png"
-                alt="CET Logo"
-                className="h-6 w-6 object-contain"
-              />
-            </div>
+            <img
+              src="/Copy of CET Logotype (White).png"
+              alt="CET Logotype"
+              className="h-12 w-auto object-contain drop-shadow-[0_2px_8px_rgba(255,255,255,0.08)]"
+            />
             <div>
               <div
-                className="text-xs font-black uppercase tracking-widest leading-none"
-                style={{ fontFamily: 'var(--font-h1)', fontSize: 16, color: 'var(--cetso-text)' }}
-              >
-                CETSO
-              </div>
-              <div
-                className="text-[9px] font-bold uppercase tracking-widest mt-0.5"
+                className="text-[9px] font-bold uppercase tracking-widest"
                 style={{ color: 'var(--cetso-text-3)', fontFamily: 'var(--font-h2)' }}
               >
                 Student Portal
@@ -224,23 +213,12 @@ export default function AppShell() {
           }}
         >
           {/* Mobile: logo */}
-          <Link to="/" className="flex items-center gap-2 lg:hidden">
-            <div
-              className="grid h-8 w-8 place-items-center rounded-lg font-black text-white text-xs"
-              style={{ background: 'var(--cetso-orange)' }}
-            >
-              <img
-                src="/CETLOGO.png"
-                alt="CET Logo"
-                className="h-5 w-5 object-contain"
-              />
-            </div>
-            <span
-              className="font-black uppercase tracking-widest text-xs"
-              style={{ fontFamily: 'var(--font-h1)', fontSize: 15, color: 'var(--cetso-text)' }}
-            >
-              CETSO
-            </span>
+          <Link to="/" className="flex items-center lg:hidden">
+            <img
+              src="/Copy of CET Logotype (White).png"
+              alt="CET Logotype"
+              className="h-11 w-auto object-contain drop-shadow-[0_2px_8px_rgba(255,255,255,0.08)]"
+            />
           </Link>
 
           {/* Desktop: page breadcrumb area */}

@@ -232,19 +232,11 @@ export default function RegisterPage() {
 
           {/* Header */}
           <div className="text-center mb-6">
-            <div
-              className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-2xl overflow-hidden bg-black/20"
-              style={{
-                border: '1px solid rgba(255,122,24,0.35)',
-                boxShadow: '0 0 40px rgba(255,122,24,0.20)',
-              }}
-            >
-              <img
-                src="/CETSO ELECTION.png"
-                alt="CETSO Election Logo"
-                className="h-14 w-14 object-contain"
-              />
-            </div>
+            <img
+              src="/Copy of CET Logotype (White).png"
+              alt="CET Logotype"
+              className="mx-auto mb-6 h-16 w-auto object-contain drop-shadow-[0_4px_16px_rgba(255,255,255,0.12)]"
+            />
             <h1
               style={{
                 fontFamily: 'var(--font-h1)',

@@ -75,32 +75,16 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
         />
 
         {/* Logo Section */}
-        <div className="px-6 py-8 relative">
-          <Link to="/" className="flex items-center gap-4 group/logo">
-            <div
-              className="relative grid h-12 w-12 place-items-center rounded-2xl font-black text-white text-xl overflow-hidden"
-              style={{ background: 'var(--cetso-orange)', boxShadow: '0 0 30px rgba(255,122,24,0.4)' }}
-            >
-              <img
-                src="/CETLOGO.png"
-                alt="CET Logo"
-                className="h-8 w-8 object-contain relative z-10"
-              />
-              <motion.div
-                className="absolute inset-0 bg-white/20"
-                animate={{ x: ['-100%', '100%'] }}
-                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-              />
-            </div>
+        <div className="px-6 py-6 relative">
+          <Link to="/" className="flex items-center gap-3 group/logo">
+            <img
+              src="/Copy of CET Logotype (White).png"
+              alt="CET Logotype"
+              className="h-15 w-auto object-contain drop-shadow-[0_2px_8px_rgba(255,255,255,0.08)]"
+            />
             <div>
               <div
-                className="font-black italic uppercase tracking-tighter leading-none"
-                style={{ fontFamily: 'var(--font-h1)', fontSize: 24, color: 'var(--cetso-text)' }}
-              >
-                CETSO
-              </div>
-              <div
-                className="text-[10px] font-black uppercase tracking-[0.2em] mt-1 flex items-center gap-2"
+                className="text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2"
                 style={{ color: 'rgba(255,178,74,0.85)', fontFamily: 'var(--font-h2)' }}
               >
                 <div className="h-1 w-1 rounded-full bg-orange-500 animate-pulse" />
@@ -255,18 +239,12 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
             backdropFilter: 'blur(32px)',
           }}
         >
-          <Link to="/" className="flex items-center gap-3">
+          <Link to="/" className="flex items-center">
             <img
-              src="/CETLOGO.png"
-              alt="CET Logo"
-              className="h-6 w-6 object-contain"
+              src="/Copy of CET Logotype (White).png"
+              alt="CET Logotype"
+              className="h-12 w-auto object-contain drop-shadow-[0_2px_8px_rgba(255,255,255,0.08)]"
             />
-            <span
-              className="font-black italic uppercase tracking-tighter"
-              style={{ fontFamily: 'var(--font-h1)', fontSize: 20, color: 'var(--cetso-text)' }}
-            >
-              CETSO ADMIN
-            </span>
           </Link>
 
           <div className="flex items-center gap-2">
