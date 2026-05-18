@@ -16,6 +16,8 @@ export default function StudentDashboardPage() {
   const [receipt, setReceipt] = useState<VoteSubmission | null>(null)
   const [time, setTime] = useState(() => new Date())
   const [electionConfig, setElectionConfig] = useState<ElectionConfig | null>(null)
+  const [configLoading, setConfigLoading] = useState(true)
+  const [configError, setConfigError] = useState('')
   const [showEndedModal, setShowEndedModal] = useState(false)
 
   useEffect(() => {
@@ -24,32 +26,72 @@ export default function StudentDashboardPage() {
   }, [])
 
   useEffect(() => {
-    // Subscribe to database changes for real-time sync across tabs/devices
     const unsubscribe = subscribeToElectionConfig((config) => {
       setElectionConfig(config)
+      setConfigError('')
+      setConfigLoading(false)
+    }, (error) => {
+      setConfigError(error.message)
+      setConfigLoading(false)
     })
     return () => unsubscribe()
   }, [])
 
   const isVotingOpen = useMemo(() => {
-    const enabled = electionConfig ? electionConfig.enabled : (localStorage.getItem('cetso_election_enabled') !== 'false')
-    const startStr = electionConfig ? electionConfig.startDate : localStorage.getItem('cetso_election_start_date')
-    const endStr = electionConfig ? electionConfig.endDate : localStorage.getItem('cetso_election_end_date')
+    if (!electionConfig) return false
     
     const nowMs = time.getTime()
-    const startDate = startStr ? new Date(startStr).getTime() : nowMs
-    const endDate = endStr ? new Date(endStr).getTime() : nowMs + 1000 * 60 * 60 * 24
+    const startDate = new Date(electionConfig.startDate).getTime()
+    const endDate = new Date(electionConfig.endDate).getTime()
     
-    return enabled && nowMs >= startDate && nowMs < endDate
+    return electionConfig.enabled && Number.isFinite(startDate) && Number.isFinite(endDate) && nowMs >= startDate && nowMs < endDate
   }, [electionConfig, time])
 
   const submitted = Boolean(receipt)
 
+  const lockoutMessage = useMemo(() => {
+    if (configError || !electionConfig) {
+      return {
+        title: 'BALLOT SYSTEM LOCKED',
+        description: 'The voting status could not be verified. Please try again or contact an administrator.',
+      }
+    }
+
+    const startDate = new Date(electionConfig.startDate).getTime()
+    const endDate = new Date(electionConfig.endDate).getTime()
+
+    if (!Number.isFinite(startDate) || !Number.isFinite(endDate)) {
+      return {
+        title: 'BALLOT SYSTEM LOCKED',
+        description: 'The voting schedule could not be verified. Please try again or contact an administrator.',
+      }
+    }
+
+    if (!electionConfig.enabled) {
+      return {
+        title: 'VOTING IS CURRENTLY CLOSED',
+        description: 'The administrator has manually closed the voting window. Any unsubmitted ballots are locked until voting is opened again.',
+      }
+    }
+
+    if (time.getTime() < startDate) {
+      return {
+        title: 'VOTING HAS NOT STARTED YET',
+        description: 'The voting window is scheduled to open later. Please return when the official start time has arrived.',
+      }
+    }
+
+    return {
+      title: 'VOTING HAS OFFICIALLY ENDED',
+      description: 'The scheduled election time has elapsed. Any unsubmitted ballots have been locked.',
+    }
+  }, [configError, electionConfig, time])
+
   useEffect(() => {
-    if (electionConfig && !isVotingOpen && !submitted) {
+    if (!configLoading && electionConfig && !isVotingOpen && !submitted) {
       setShowEndedModal(true)
     }
-  }, [isVotingOpen, submitted, electionConfig])
+  }, [configLoading, isVotingOpen, submitted, electionConfig])
 
 
   useEffect(() => {
@@ -97,10 +139,10 @@ export default function StudentDashboardPage() {
     {
       icon: Vote,
       title: 'Your Vote',
-      sub: submitted ? 'Vote Secured' : (!isVotingOpen ? 'Voting Closed' : 'Action Required'),
+      sub: submitted ? 'Vote Secured' : (configLoading ? 'Checking Status' : configError ? 'Status Error' : !isVotingOpen ? 'Voting Closed' : 'Action Required'),
       onClick: () => navigate('/student/vote'),
       highlight: !submitted && isVotingOpen,
-      status: submitted ? 'complete' : (!isVotingOpen ? 'closed' : 'pending')
+      status: submitted ? 'complete' : (configLoading ? 'checking' : !isVotingOpen ? 'closed' : 'pending')
     },
     {
       icon: FileText,
@@ -250,7 +292,11 @@ export default function StudentDashboardPage() {
                    <span className="text-center text-[10px] font-black uppercase tracking-[0.16em] sm:tracking-[0.2em]">{
                      submitted 
                        ? 'VOTED SUCCESSFULLY' 
-                       : (!isVotingOpen 
+                       : configLoading
+                           ? 'CHECKING VOTING STATUS'
+                           : configError
+                           ? 'STATUS CHECK FAILED'
+                           : (!isVotingOpen 
                            ? 'VOTING IS CLOSED' 
                            : 'VOTE PENDING')
                    }</span>
@@ -267,6 +313,12 @@ export default function StudentDashboardPage() {
                    <div className="text-xs font-black text-[var(--cetso-orange)] italic uppercase">25% Program Share</div>
                 </div>
              </div>
+
+             {configError ? (
+               <div className="mb-6 rounded-2xl border border-red-500/25 bg-red-500/10 p-4 text-xs font-bold text-red-200">
+                 Could not fetch live voting status: {configError}
+               </div>
+             ) : null}
 
              <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
                 {!submitted ? (
@@ -442,10 +494,10 @@ export default function StudentDashboardPage() {
 
           <div className="space-y-2">
             <h3 className="text-xl sm:text-2xl font-black text-red-500 uppercase tracking-tight italic">
-              THE VOTINGS HAS OFFICIALLY ENDED
+              {lockoutMessage.title}
             </h3>
             <p className="text-sm font-semibold text-[var(--cetso-text-2)] leading-relaxed">
-              The administrator has closed the voting window, or the scheduled election time has elapsed. Any unsaved selections or unsubmitted ballots have been locked.
+              {lockoutMessage.description}
             </p>
           </div>
 

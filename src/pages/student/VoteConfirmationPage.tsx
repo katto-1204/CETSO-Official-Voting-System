@@ -274,10 +274,14 @@ export default function VoteConfirmationPage() {
                                                })
 
                                                if (voteError) {
-                                                  console.error('Error saving vote:', voteError)
-                                                  throw new Error(voteError.code === '42501'
-                                                     ? 'SUPABASE BLOCKED VOTE SAVING. RUN supabase/fix-live-database.sql.'
-                                                     : voteError.message || 'VOTE COULD NOT BE SAVED TO SUPABASE.')
+                                                  console.error('[votes] insert failed:', JSON.stringify(voteError))
+                                                  const msg =
+                                                    voteError.code === 'PGRST204'
+                                                      ? `Schema error: "${voteError.message}" — run supabase/fix-missing-selections-column.sql in the Supabase SQL Editor.`
+                                                      : voteError.code === '42501'
+                                                      ? 'Permission denied — run supabase/fix-live-database.sql in the Supabase SQL Editor.'
+                                                      : `Vote save failed [${voteError.code}]: ${voteError.message}`
+                                                  throw new Error(msg)
                                                }
 
                                                localStorage.removeItem(DRAFT_KEY)

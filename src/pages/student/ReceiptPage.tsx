@@ -185,8 +185,8 @@ export default function ReceiptPage() {
     if (!ctx) throw new Error('Canvas is not available')
     const canvasCtx = ctx
 
-    // Dark background for presentation
-    ctx.fillStyle = '#171717'
+    // White export background so PDF/image receipts are print-friendly.
+    ctx.fillStyle = '#ffffff'
     ctx.fillRect(0, 0, canvasWidth, canvasHeight)
 
     // Draw paper with zig-zag edges
@@ -217,9 +217,9 @@ export default function ReceiptPage() {
     ctx.lineTo(startX, startY + zigZagSize);
     ctx.closePath();
     
-    // Add shadow
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-    ctx.shadowBlur = 30;
+    // Keep a subtle edge without adding a dark page background.
+    ctx.shadowColor = 'rgba(15, 23, 42, 0.12)';
+    ctx.shadowBlur = 18;
     ctx.shadowOffsetX = 0;
     ctx.shadowOffsetY = 15;
 
@@ -359,21 +359,18 @@ export default function ReceiptPage() {
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
       const pageWidth = pdf.internal.pageSize.getWidth()
       const pageHeight = pdf.internal.pageSize.getHeight()
-      const margin = 10
-      const imgWidth = pageWidth - margin * 2
-      const imgHeight = (canvas.height * imgWidth) / canvas.width
-      let remainingHeight = imgHeight
-      let y = margin
+      const margin = 8
+      const maxWidth = pageWidth - margin * 2
+      const maxHeight = pageHeight - margin * 2
+      const scale = Math.min(maxWidth / canvas.width, maxHeight / canvas.height)
+      const imgWidth = canvas.width * scale
+      const imgHeight = canvas.height * scale
+      const x = (pageWidth - imgWidth) / 2
+      const y = (pageHeight - imgHeight) / 2
 
-      pdf.addImage(img, 'PNG', margin, y, imgWidth, imgHeight, undefined, 'FAST')
-      remainingHeight -= pageHeight - margin * 2
-
-      while (remainingHeight > 0) {
-        y = remainingHeight - imgHeight + margin
-        pdf.addPage()
-        pdf.addImage(img, 'PNG', margin, y, imgWidth, imgHeight, undefined, 'FAST')
-        remainingHeight -= pageHeight - margin * 2
-      }
+      pdf.setFillColor(255, 255, 255)
+      pdf.rect(0, 0, pageWidth, pageHeight, 'F')
+      pdf.addImage(img, 'PNG', x, y, imgWidth, imgHeight, undefined, 'FAST')
 
       pdf.save(`${receiptFileName}.pdf`)
       goeyToast.success('PDF receipt generated.')

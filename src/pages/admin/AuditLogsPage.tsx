@@ -137,9 +137,9 @@ export default function AuditLogsPage() {
                 })}
               </div>
 
-              <div className="mt-5 text-xs font-medium text-[var(--cetso-text-3)]">
-                More filters and detailed views coming soon.
-              </div>
+            <div className="mt-5 text-xs font-medium text-[var(--cetso-text-3)]">
+              Current filters cover the live audit categories available in the system.
+            </div>
             </GlassCard>
           </motion.div>
 

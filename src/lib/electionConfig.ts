@@ -6,114 +6,119 @@ export interface ElectionConfig {
   endDate: string
 }
 
+// Official CETSO Elections 2026 schedule
+// May 19, 2026 8:00 AM PHT → May 20, 2026 8:00 AM PHT
+// PHT = UTC+8, so 8:00 AM PHT = 00:00 UTC
 const DEFAULT_CONFIG: ElectionConfig = {
   enabled: true,
-  startDate: new Date().toISOString().slice(0, 16),
-  endDate: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString().slice(0, 16)
+  startDate: '2026-05-19T08:00',   // datetime-local format (browser interprets as local PHT)
+  endDate:   '2026-05-20T08:00'
 }
 
-// Memory cache to return immediately
 let cachedConfig: ElectionConfig | null = null
 
-export async function fetchElectionConfig(): Promise<ElectionConfig> {
-  try {
-    // 1. Try to read from the election_config table in Supabase
-    const { data, error } = await supabase
-      .from('election_config')
-      .select('*')
+function normalizeConfigRows(data: Array<{ key: string; value: string }>): ElectionConfig {
+  const configMap: Record<string, string> = {}
+  data.forEach((row) => {
+    configMap[row.key] = row.value
+  })
 
-    if (error) {
-      throw error
-    }
-
-    if (data && data.length > 0) {
-      const configMap: Record<string, string> = {}
-      data.forEach((row: any) => {
-        configMap[row.key] = row.value
-      })
-
-      const config: ElectionConfig = {
-        enabled: configMap['enabled'] !== 'false',
-        startDate: configMap['start_date'] || DEFAULT_CONFIG.startDate,
-        endDate: configMap['end_date'] || DEFAULT_CONFIG.endDate
-      }
-      
-      // Update localStorage to sync local state
-      localStorage.setItem('cetso_election_enabled', config.enabled ? 'true' : 'false')
-      localStorage.setItem('cetso_election_start_date', config.startDate)
-      localStorage.setItem('cetso_election_end_date', config.endDate)
-      
-      cachedConfig = config
-      return config
-    }
-  } catch (err: any) {
-    // Table might not exist yet, fallback to localStorage
-    console.warn('election_config table not found or not accessible. Falling back to localStorage.', err.message)
+  const missingKeys = ['enabled', 'start_date', 'end_date'].filter((key) => !(key in configMap))
+  if (missingKeys.length > 0) {
+    throw new Error(`Election config is incomplete. Missing: ${missingKeys.join(', ')}`)
   }
 
-  // Fallback to localStorage
-  const enabled = localStorage.getItem('cetso_election_enabled') !== 'false'
-  const startDate = localStorage.getItem('cetso_election_start_date') || DEFAULT_CONFIG.startDate
-  const endDate = localStorage.getItem('cetso_election_end_date') || DEFAULT_CONFIG.endDate
+  return {
+    enabled: configMap.enabled === 'true',
+    startDate: configMap.start_date,
+    endDate: configMap.end_date,
+  }
+}
 
-  const config = { enabled, startDate, endDate }
+function cacheConfig(config: ElectionConfig) {
+  localStorage.setItem('cetso_election_enabled', config.enabled ? 'true' : 'false')
+  localStorage.setItem('cetso_election_start_date', config.startDate)
+  localStorage.setItem('cetso_election_end_date', config.endDate)
   cachedConfig = config
+}
+
+export async function fetchElectionConfig(): Promise<ElectionConfig> {
+  const { data, error } = await supabase
+    .from('election_config')
+    .select('key, value')
+    .in('key', ['enabled', 'start_date', 'end_date'])
+
+  if (error) {
+    throw new Error(`Could not fetch election status: ${error.message}`)
+  }
+
+  if (!data || data.length === 0) {
+    throw new Error('Election status is not configured. Run supabase/add-election-config.sql in Supabase.')
+  }
+
+  const config = normalizeConfigRows(data)
+  cacheConfig(config)
   return config
 }
 
 export async function updateElectionConfig(config: Partial<ElectionConfig>): Promise<void> {
-  const current = cachedConfig || {
-    enabled: localStorage.getItem('cetso_election_enabled') !== 'false',
-    startDate: localStorage.getItem('cetso_election_start_date') || DEFAULT_CONFIG.startDate,
-    endDate: localStorage.getItem('cetso_election_end_date') || DEFAULT_CONFIG.endDate
+  let current = cachedConfig
+  if (!current) {
+    try {
+      current = await fetchElectionConfig()
+    } catch {
+      current = DEFAULT_CONFIG
+    }
   }
 
   const next = { ...current, ...config }
-  
-  // 1. Update localStorage first (instant local response)
-  localStorage.setItem('cetso_election_enabled', next.enabled ? 'true' : 'false')
-  localStorage.setItem('cetso_election_start_date', next.startDate)
-  localStorage.setItem('cetso_election_end_date', next.endDate)
-  window.dispatchEvent(new Event('storage'))
 
-  cachedConfig = next
+  const rows = [
+    { key: 'enabled', value: next.enabled ? 'true' : 'false' },
+    { key: 'start_date', value: next.startDate },
+    { key: 'end_date', value: next.endDate }
+  ]
 
-  // 2. Try to write to Supabase
-  try {
-    const rows = [
-      { key: 'enabled', value: next.enabled ? 'true' : 'false' },
-      { key: 'start_date', value: next.startDate },
-      { key: 'end_date', value: next.endDate }
-    ]
+  for (const row of rows) {
+    const { error } = await supabase
+      .from('election_config')
+      .upsert(row, { onConflict: 'key' })
 
-    for (const row of rows) {
-      await supabase
-        .from('election_config')
-        .upsert(row, { onConflict: 'key' })
+    if (error) {
+      throw new Error(`Could not update election status: ${error.message}`)
     }
-  } catch (err: any) {
-    console.error('Failed to update election_config table in Supabase:', err.message)
   }
+
+  cacheConfig(next)
+  window.dispatchEvent(new CustomEvent('cetso-election-config-updated', { detail: next }))
 }
 
-// Set up a real-time subscription for live sync!
-export function subscribeToElectionConfig(onUpdate: (config: ElectionConfig) => void) {
-  // Initial fetch
-  fetchElectionConfig().then(onUpdate)
+export function subscribeToElectionConfig(
+  onUpdate: (config: ElectionConfig) => void,
+  onError?: (error: Error) => void
+) {
+  const refresh = () => {
+    fetchElectionConfig()
+      .then(onUpdate)
+      .catch((error) => onError?.(error instanceof Error ? error : new Error(String(error))))
+  }
 
-  // Real-time channel subscription
+  refresh()
+
+  const handleLocalUpdate = () => refresh()
+  window.addEventListener('cetso-election-config-updated', handleLocalUpdate)
+
   const channel = supabase
     .channel('public:election_config')
     .on(
       'postgres_changes',
       { event: '*', schema: 'public', table: 'election_config' },
-      () => {
-        fetchElectionConfig().then(onUpdate)
-      }
+      refresh
     )
     .subscribe()
 
   return () => {
+    window.removeEventListener('cetso-election-config-updated', handleLocalUpdate)
     supabase.removeChannel(channel)
   }
 }

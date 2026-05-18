@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from './supabase'
+import { CANDIDATES } from './electionData'
 
 export type SupabaseCandidate = {
   id: string
@@ -8,10 +9,22 @@ export type SupabaseCandidate = {
   partylist: string
   tagline: string
   bio: string
+  image_url?: string | null
 }
 
 // Map from DB snake_case to Frontend camelCase
 export function mapCandidate(dbCandidate: SupabaseCandidate) {
+  // Find matching candidate in the official seed list to grab fallback image_url if empty/null
+  const cleanDbName = dbCandidate.full_name.trim().toUpperCase().replace('JHON', 'JOHN')
+  const seedMatch = CANDIDATES.find(
+    (c) => c.fullName.trim().toUpperCase().replace('JHON', 'JOHN') === cleanDbName
+  )
+
+  let finalImageUrl = dbCandidate.image_url
+  if (!finalImageUrl || finalImageUrl === 'null' || finalImageUrl === 'NULL') {
+    finalImageUrl = seedMatch ? seedMatch.imageUrl : ''
+  }
+
   return {
     candidateId: dbCandidate.id,
     positionCode: dbCandidate.position_code,
@@ -19,6 +32,7 @@ export function mapCandidate(dbCandidate: SupabaseCandidate) {
     partylist: dbCandidate.partylist || '',
     tagline: dbCandidate.tagline || '',
     bio: dbCandidate.bio || '',
+    imageUrl: finalImageUrl || '',
   }
 }
 
@@ -73,7 +87,8 @@ export function useUpdateCandidate() {
           full_name: candidate.full_name,
           partylist: candidate.partylist,
           tagline: candidate.tagline,
-          bio: candidate.bio
+          bio: candidate.bio,
+          image_url: candidate.image_url || null
         })
         .eq('id', candidate.id)
         .select()
@@ -109,4 +124,3 @@ export function useDeleteCandidate() {
     }
   })
 }
-

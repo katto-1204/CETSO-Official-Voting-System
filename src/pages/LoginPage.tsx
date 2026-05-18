@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Eye, EyeOff, LogIn, ShieldCheck, ArrowLeft, Terminal, ShieldAlert, Info, Settings, User, UserX } from 'lucide-react'
+import { Eye, EyeOff, LogIn, ShieldCheck, ArrowLeft, Terminal, ShieldAlert, Info } from 'lucide-react'
 import Button from '../components/ui/Button'
 import TextField from '../components/ui/TextField'
 import GlassCard from '../components/ui/GlassCard'
@@ -9,7 +9,7 @@ import Modal from '../components/ui/Modal'
 import { setMockSession } from '../lib/mockSession'
 import { supabase } from '../lib/supabase'
 import { goeyToast } from 'goey-toast'
-import { generatePassword, isValidStudentId } from '../lib/studentTypes'
+import { generatePassword, isValidStudentId, normalizeProgramCode } from '../lib/studentTypes'
 import { useTransaction } from '../lib/TransactionContext'
 
 export default function LoginPage() {
@@ -19,9 +19,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [isAdminMode, setIsAdminMode] = useState(false)
   const [invalidCredentialsOpen, setInvalidCredentialsOpen] = useState(false)
   const [studentNotFoundOpen, setStudentNotFoundOpen] = useState(false)
+
+  // Auto-detect admin: any ID starting with "598ADMIN" (case-insensitive) triggers admin mode
+  const isAdminMode = useMemo(
+    () => studentId.trim().toUpperCase().startsWith('598ADMIN'),
+    [studentId]
+  )
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -64,7 +69,7 @@ export default function LoginPage() {
             role: 'student',
             studentId: identity,
             studentName: foundStudent.full_name,
-            programCode: foundStudent.program_code || 'BSIT',
+            programCode: normalizeProgramCode(foundStudent.program_code),
             yearLevel: foundStudent.year_level || 1
           })
 
@@ -84,32 +89,25 @@ export default function LoginPage() {
           return
         }
 
-        const role = isAdminMode ? 'admin' : 'student'
-
         // Upsert into public.users table so all users appear in Table Editor
         await supabase.from('users').upsert({
           auth_uid: data.user?.id,
           email,
           student_id: null,
           display_name: identity,
-          role
+          role: 'admin'
         }, { onConflict: 'auth_uid' })
 
         setMockSession({
-          role,
+          role: 'admin',
           studentId: identity,
           studentName: identity,
           programCode: 'BSIT',
           yearLevel: 1
         })
 
-        goeyToast.success(`Welcome back, ${role === 'admin' ? 'Administrator' : 'Voter'}.`)
-
-        if (role === 'admin') {
-          navigate('/admin/dashboard')
-        } else {
-          navigate('/student/dashboard')
-        }
+        goeyToast.success('Welcome back, Administrator.')
+        navigate('/admin/dashboard')
       }, `AUTHENTICATING ${isAdminMode ? 'ADMINISTRATOR' : 'VOTER'}`)
     } catch (err: any) {
       goeyToast.error(err.message || 'Authentication error')
@@ -155,7 +153,7 @@ export default function LoginPage() {
       >
         <div className="space-y-6 text-center">
           <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl border border-orange-500/20 bg-orange-500/10">
-            <UserX className="h-8 w-8 text-orange-400" />
+            <ShieldAlert className="h-8 w-8 text-orange-400" />
           </div>
           <div>
             <p className="text-sm font-semibold leading-relaxed text-white/70">
@@ -195,7 +193,7 @@ export default function LoginPage() {
         }}
       >
         {/* Animated Scanline */}
-        <motion.div 
+        <motion.div
           className="absolute inset-0 w-full h-[2px] bg-[var(--cetso-orange)]/5 z-10"
           animate={{ y: ['-100%', '200%'] }}
           transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
@@ -238,7 +236,7 @@ export default function LoginPage() {
           </div>
 
           <div
-            className={`absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-${isAdminMode ? 'blue-500' : '[var(--cetso-orange)]'} to-transparent opacity-50`}
+            className={`absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent ${isAdminMode ? 'via-blue-500' : 'via-[var(--cetso-orange)]'} to-transparent opacity-50`}
           />
 
           {/* Header */}
@@ -264,49 +262,41 @@ export default function LoginPage() {
               </div>
             </motion.div>
 
-            <h1
-              className="italic uppercase tracking-tighter"
-              style={{
-                fontFamily: 'var(--font-h1)',
-                fontSize: 'clamp(28px, 5vw, 48px)',
-                lineHeight: 0.8,
-                color: 'var(--cetso-text)',
-              }}
-            >
-              {isAdminMode ? 'ADMIN' : 'SECURE'}<br />
-              <span className={isAdminMode ? 'text-blue-500' : 'text-[var(--cetso-orange)]'}>
-                {isAdminMode ? 'LOGIN' : 'LOGIN'}
-              </span>
-            </h1>
+            <AnimatePresence mode="wait">
+              <motion.h1
+                key={isAdminMode ? 'admin-title' : 'voter-title'}
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 6 }}
+                transition={{ duration: 0.25 }}
+                className="italic uppercase tracking-tighter"
+                style={{
+                  fontFamily: 'var(--font-h1)',
+                  fontSize: 'clamp(28px, 5vw, 48px)',
+                  lineHeight: 0.8,
+                  color: 'var(--cetso-text)',
+                }}
+              >
+                {isAdminMode ? 'ADMIN' : 'STUDENT'}<br />
+                <span className={isAdminMode ? 'text-blue-500' : 'text-[var(--cetso-orange)]'}>
+                  LOGIN
+                </span>
+              </motion.h1>
+            </AnimatePresence>
+
             <p className="mt-3 text-[10px] font-black uppercase tracking-[0.3em] text-white/30">
               CETSO Voting System
             </p>
           </div>
 
-          {/* Mode Switcher */}
-          <div className="flex gap-2 p-1 rounded-2xl bg-black/40 border border-white/5 mb-8">
-            <button
-              onClick={() => setIsAdminMode(false)}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${!isAdminMode ? 'bg-white/5 text-white border border-white/10 shadow-lg' : 'text-white/30 hover:text-white/50'}`}
-            >
-              <User className="h-3 w-3" /> Voter
-            </button>
-            <button
-              onClick={() => setIsAdminMode(true)}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${isAdminMode ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20 shadow-lg' : 'text-white/30 hover:text-white/50'}`}
-            >
-              <Settings className="h-3 w-3" /> Administrator
-            </button>
-          </div>
-
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             <TextField
-              label={isAdminMode ? "Admin Username" : "Student ID"}
+              label={isAdminMode ? 'Admin Username' : 'Student ID'}
               name="studentId"
               value={studentId}
               onChange={(e) => setStudentId(e.target.value)}
-              placeholder={isAdminMode ? "ADMIN_NAME" : "598XXXXX"}
+              placeholder={isAdminMode ? '598ADMIN...' : '598XXXXX'}
               autoComplete="username"
             />
 
@@ -341,9 +331,9 @@ export default function LoginPage() {
                 <LogIn className="h-5 w-5" />
                 <span className="italic tracking-tighter">{isAdminMode ? 'ADMIN LOGIN' : 'LOG IN'}</span>
               </div>
-              
+
               {/* Button shimmer */}
-              <motion.div 
+              <motion.div
                 className="absolute inset-0 bg-white/10"
                 initial={{ x: '-100%' }}
                 whileHover={{ x: '100%' }}
@@ -356,13 +346,13 @@ export default function LoginPage() {
           <div className="mt-10 mb-6 flex items-center gap-4">
             <div className="flex-1 h-px bg-white/5" />
             <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/20">
-              Help & Support
+              Help &amp; Support
             </span>
             <div className="flex-1 h-px bg-white/5" />
           </div>
 
           <div className="flex flex-col gap-3">
-             <Link to="/" className="w-full">
+            <Link to="/" className="w-full">
               <Button variant="ghost" size="sm" className="w-full bg-white/5 border border-white/5 group/home">
                 <ArrowLeft className="h-3 w-3 group-hover/home:-translate-x-1 transition-transform" /> Home
               </Button>
@@ -391,11 +381,11 @@ export default function LoginPage() {
                 <div className="flex items-center gap-2 mb-2">
                   <ShieldCheck className="h-3 w-3 text-blue-400" />
                   <div className="text-[9px] font-black uppercase tracking-widest text-blue-400">
-                    Admin Notice
+                    Admin Mode Active
                   </div>
                 </div>
                 <div className="text-[11px] font-medium text-white/40 leading-relaxed">
-                  Use your registered administrator credentials.
+                  Admin credentials detected. Use your registered administrator password.
                 </div>
               </motion.div>
             ) : (
@@ -420,7 +410,7 @@ export default function LoginPage() {
             )}
           </AnimatePresence>
         </GlassCard>
-        
+
         {/* Footer legal subtle */}
         <div className="mt-6 text-center text-[9px] font-black uppercase tracking-widest text-white/20 italic">
           Official CETSO System • All activity is recorded

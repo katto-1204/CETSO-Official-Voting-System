@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Trash2, Search, X, UserPlus, Filter, Terminal, Fingerprint, Activity, User, Edit2, ChevronRight, RefreshCw } from 'lucide-react'
 import * as Dialog from '@radix-ui/react-dialog'
@@ -6,11 +6,12 @@ import GlassCard from '../../components/ui/GlassCard'
 import Button from '../../components/ui/Button'
 import TextField from '../../components/ui/TextField'
 import Modal from '../../components/ui/Modal'
-import { POSITIONS, CANDIDATES } from '../../lib/electionData'
+import { POSITIONS, CANDIDATES, POSITION_GROUP_LABELS, getPositionGroupLabel } from '../../lib/electionData'
 import { useCandidates, useCreateCandidate, useUpdateCandidate, useDeleteCandidate } from '../../lib/queries'
 import { supabase } from '../../lib/supabase'
 import { useQueryClient } from '@tanstack/react-query'
 import { goeyToast } from 'goey-toast'
+import imageCompression from 'browser-image-compression'
 
 const AVATAR_COLORS = [
   ['rgba(255,122,24,0.16)', 'rgba(255,122,24,0.35)', '#ff7a18'],
@@ -20,8 +21,34 @@ const AVATAR_COLORS = [
   ['rgba(236,72,153,0.16)', 'rgba(236,72,153,0.35)', '#f472b6'],
 ]
 
+const positionByCode = new Map(POSITIONS.map((position) => [position.positionCode, position]))
+const executivePositions = POSITIONS.filter((position) => position.positionGroup === 'executive_officers')
+const representativePositions = POSITIONS.filter((position) => position.positionGroup === 'year_level_representatives')
+const pioPositions = POSITIONS.filter((position) => position.positionGroup === 'public_information_officers')
+
+function getPositionLabel(positionCode: string) {
+  return positionByCode.get(positionCode)?.title ?? positionCode.replaceAll('_', ' ')
+}
+
+function getPositionSortOrder(positionCode: string) {
+  return positionByCode.get(positionCode)?.sortOrder ?? Number.MAX_SAFE_INTEGER
+}
+
+function getCandidateCategory(positionCode: string) {
+  return getPositionGroupLabel(positionCode)
+}
+
 function initialsOf(name: string) {
   return name.split(' ').filter(Boolean).slice(0, 2).map((p) => p[0]).join('')
+}
+
+function fileToDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result ?? ''))
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(file)
+  })
 }
 
 export default function CandidateManagementPage() {
@@ -34,6 +61,7 @@ export default function CandidateManagementPage() {
   const [fullName, setFullName] = useState('')
   const [selectedPosition, setSelectedPosition] = useState(POSITIONS[0]?.positionCode ?? '')
   const [bio, setBio] = useState('')
+  const [imageUrl, setImageUrl] = useState('')
 
   const queryClient = useQueryClient()
   const { data: dbCandidates = [] } = useCandidates()
@@ -153,13 +181,39 @@ export default function CandidateManagementPage() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return dbCandidates
-    return dbCandidates.filter(
+    const candidates = q ? dbCandidates.filter(
       (c) =>
         c.fullName.toLowerCase().includes(q) ||
-        c.positionCode.toLowerCase().includes(q)
-    )
+        c.positionCode.toLowerCase().includes(q) ||
+        getPositionLabel(c.positionCode).toLowerCase().includes(q)
+    ) : dbCandidates
+
+    return candidates.slice().sort((a, b) => {
+      const positionSort = getPositionSortOrder(a.positionCode) - getPositionSortOrder(b.positionCode)
+      if (positionSort !== 0) return positionSort
+      return a.fullName.localeCompare(b.fullName)
+    })
   }, [query, dbCandidates])
+
+  const groupedCandidates = useMemo(() => {
+    return [
+      {
+        category: POSITION_GROUP_LABELS.executive_officers,
+        description: 'President to Business Managers',
+        candidates: filtered.filter((candidate) => getCandidateCategory(candidate.positionCode) === POSITION_GROUP_LABELS.executive_officers),
+      },
+      {
+        category: POSITION_GROUP_LABELS.year_level_representatives,
+        description: 'Program and year-level representatives',
+        candidates: filtered.filter((candidate) => getCandidateCategory(candidate.positionCode) === POSITION_GROUP_LABELS.year_level_representatives),
+      },
+      {
+        category: POSITION_GROUP_LABELS.public_information_officers,
+        description: 'Program public information officers',
+        candidates: filtered.filter((candidate) => getCandidateCategory(candidate.positionCode) === POSITION_GROUP_LABELS.public_information_officers),
+      },
+    ].filter((group) => group.candidates.length > 0)
+  }, [filtered])
 
   const currentInitials = initialsOf(fullName)
 
@@ -174,6 +228,7 @@ export default function CandidateManagementPage() {
           partylist: '',
           tagline: '',
           bio: c.bio,
+          image_url: c.imageUrl || null,
         }))
       )
       if (error) throw error
@@ -192,6 +247,7 @@ export default function CandidateManagementPage() {
     setFullName('')
     setSelectedPosition(POSITIONS[0]?.positionCode ?? '')
     setBio('')
+    setImageUrl('')
     setOpen(true)
   }
 
@@ -201,7 +257,29 @@ export default function CandidateManagementPage() {
     setFullName(candidate.fullName)
     setSelectedPosition(candidate.positionCode)
     setBio(candidate.bio)
+    setImageUrl(candidate.imageUrl || '')
     setOpen(true)
+  }
+
+  async function handleImageUpload(file: File | undefined) {
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      goeyToast.error('Please upload an image file.')
+      return
+    }
+
+    try {
+      const options = {
+        maxSizeMB: 0.9,
+        maxWidthOrHeight: 1024,
+        useWebWorker: true,
+      }
+      const compressedFile = await imageCompression(file, options)
+      setImageUrl(await fileToDataUrl(compressedFile))
+      goeyToast.success('Candidate photo loaded and compressed.')
+    } catch {
+      goeyToast.error('Could not read or compress image file.')
+    }
   }
 
   async function handleSave() {
@@ -219,6 +297,7 @@ export default function CandidateManagementPage() {
           partylist: '',
           tagline: '',
           bio: bio.trim(),
+          image_url: imageUrl || null,
         })
         goeyToast.success('Candidate updated successfully!')
       } else {
@@ -228,6 +307,7 @@ export default function CandidateManagementPage() {
           partylist: '',
           tagline: '',
           bio: bio.trim(),
+          image_url: imageUrl || null,
         })
         goeyToast.success('Candidate added successfully!')
       }
@@ -515,7 +595,7 @@ export default function CandidateManagementPage() {
                                  className="h-4 w-4 rounded border-white/15 bg-white/5 text-orange-500 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-orange-500"
                               />
                            </th>
-                           {['Candidate', 'Position', 'Actions'].map((h, i) => (
+                           {['Candidate', 'Position', 'Category', 'Actions'].map((h, i) => (
                               <th key={i} className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.3em] italic" style={{ color: 'var(--cetso-text-3)' }}>
                                  {h}
                               </th>
@@ -523,77 +603,110 @@ export default function CandidateManagementPage() {
                         </tr>
                      </thead>
                      <tbody className="divide-y divide-white/5">
-                        {filtered.map((c, i) => {
-                           const [bg, border, text] = AVATAR_COLORS[i % AVATAR_COLORS.length]
-                           return (
-                              <motion.tr 
-                                 key={c.candidateId}
-                                 initial={{ opacity: 0, x: -10 }}
-                                 animate={{ opacity: 1, x: 0 }}
-                                 transition={{ delay: 0.2 + i * 0.05 }}
-                                 className={`group hover:bg-[var(--cetso-surface-2)] transition-colors ${selectedCandidateIds.has(c.candidateId) ? 'bg-orange-500/5 hover:bg-orange-500/10' : ''}`}
-                              >
-                                 <td className="px-8 py-6 w-10">
-                                    <input
-                                       type="checkbox"
-                                       checked={selectedCandidateIds.has(c.candidateId)}
-                                       onChange={(e) => {
-                                          const next = new Set(selectedCandidateIds)
-                                          if (e.target.checked) {
-                                             next.add(c.candidateId)
-                                          } else {
-                                             next.delete(c.candidateId)
-                                          }
-                                          setSelectedCandidateIds(next)
-                                       }}
-                                       className="h-4 w-4 rounded border-white/15 bg-white/5 text-orange-500 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-orange-500"
-                                    />
-                                 </td>
-                                 <td className="px-8 py-6">
-                                    <div className="flex items-center gap-5">
-                                       <div 
-                                          className="h-12 w-12 rounded-2xl grid place-items-center font-black text-sm relative group-hover:scale-110 transition-transform duration-500"
-                                          style={{ background: bg, border: `1.5px solid ${border}`, color: text }}
-                                       >
-                                          <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                          {initialsOf(c.fullName)}
-                                       </div>
+                        {groupedCandidates.map((group) => (
+                           <Fragment key={group.category}>
+                              <tr>
+                                 <td colSpan={5} className="px-8 py-4" style={{ background: 'rgba(255,122,24,0.04)', borderTop: '1px solid var(--cetso-border)', borderBottom: '1px solid var(--cetso-border)' }}>
+                                    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                                        <div>
-                                          <div className="text-base font-black italic uppercase tracking-tighter" style={{ color: 'var(--cetso-text)' }}>{c.fullName}</div>
+                                          <div className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-500">{group.category}</div>
+                                          <div className="mt-1 text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: 'var(--cetso-text-3)' }}>{group.description}</div>
+                                       </div>
+                                       <div className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>
+                                          {group.candidates.length} candidate{group.candidates.length !== 1 ? 's' : ''}
                                        </div>
                                     </div>
                                  </td>
-                                 <td className="px-8 py-6">
-                                    <div className="inline-flex items-center gap-3 px-4 py-2 rounded-xl group-hover:border-orange-500/20 transition-colors" style={{ background: 'var(--cetso-surface-2)', border: '1px solid var(--cetso-border)' }}>
-                                       <Terminal className="h-3 w-3 text-orange-500" />
-                                       <span className="text-[10px] font-black uppercase tracking-[0.15em]" style={{ color: 'var(--cetso-text-2)' }}>{c.positionCode.replaceAll('_', ' ')}</span>
-                                    </div>
-                                 </td>
-                                 <td className="px-8 py-6">
-                                    <div className="flex items-center gap-3">
-                                       <Button 
-                                          variant="ghost" 
-                                          size="sm" 
-                                          className="h-10 w-10 p-0 hover:bg-orange-500/10 hover:border-orange-500/20" 
-                                          style={{ background: 'var(--cetso-surface-2)', border: '1px solid var(--cetso-border)' }}
-                                          onClick={() => handleOpenEdit(c)}
-                                       >
-                                          <Edit2 className="h-4 w-4" style={{ color: 'var(--cetso-text-3)' }} />
-                                       </Button>
-                                       <Button 
-                                          variant="danger" 
-                                          size="sm" 
-                                          className="bg-red-500/10 border-red-500/20 text-red-500 h-10 px-4 group/del"
-                                          onClick={() => handleDelete(c.candidateId, c.fullName)}
-                                       >
-                                          <Trash2 className="h-4 w-4 group-hover/del:scale-110 transition-transform" />
-                                          <span className="text-[10px] font-black uppercase">Purge</span>
-                                       </Button>
-                                    </div>
-                                 </td>
-                              </motion.tr>
-                           )
-                        })}
+                              </tr>
+                              {group.candidates.map((c, i) => {
+                                 const [bg, border, text] = AVATAR_COLORS[(getPositionSortOrder(c.positionCode) + i) % AVATAR_COLORS.length]
+                                 return (
+                                    <motion.tr 
+                                       key={c.candidateId}
+                                       initial={{ opacity: 0, x: -10 }}
+                                       animate={{ opacity: 1, x: 0 }}
+                                       transition={{ delay: 0.2 + i * 0.04 }}
+                                       className={`group hover:bg-[var(--cetso-surface-2)] transition-colors ${selectedCandidateIds.has(c.candidateId) ? 'bg-orange-500/5 hover:bg-orange-500/10' : ''}`}
+                                    >
+                                       <td className="px-8 py-6 w-10">
+                                          <input
+                                             type="checkbox"
+                                             checked={selectedCandidateIds.has(c.candidateId)}
+                                             onChange={(e) => {
+                                                const next = new Set(selectedCandidateIds)
+                                                if (e.target.checked) {
+                                                   next.add(c.candidateId)
+                                                } else {
+                                                   next.delete(c.candidateId)
+                                                }
+                                                setSelectedCandidateIds(next)
+                                             }}
+                                             className="h-4 w-4 rounded border-white/15 bg-white/5 text-orange-500 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-orange-500"
+                                          />
+                                       </td>
+                                       <td className="px-8 py-6">
+                                          <div className="flex items-center gap-5">
+                                             <div 
+                                                className="h-12 w-12 rounded-2xl grid place-items-center font-black text-sm relative group-hover:scale-110 transition-transform duration-500 overflow-hidden"
+                                                style={{ background: bg, border: `1.5px solid ${border}`, color: text }}
+                                             >
+                                                <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                {c.imageUrl ? (
+                                                   <img src={c.imageUrl} alt={c.fullName} className="h-full w-full object-cover" />
+                                                ) : (
+                                                   initialsOf(c.fullName)
+                                                )}
+                                             </div>
+                                             <div>
+                                                <div className="text-base font-black italic uppercase tracking-tighter" style={{ color: 'var(--cetso-text)' }}>{c.fullName}</div>
+                                             </div>
+                                          </div>
+                                       </td>
+                                       <td className="px-8 py-6">
+                                          <div className="inline-flex items-center gap-3 px-4 py-2 rounded-xl group-hover:border-orange-500/20 transition-colors" style={{ background: 'var(--cetso-surface-2)', border: '1px solid var(--cetso-border)' }}>
+                                             <Terminal className="h-3 w-3 text-orange-500" />
+                                             <span className="text-[10px] font-black uppercase tracking-[0.15em]" style={{ color: 'var(--cetso-text-2)' }}>{getPositionLabel(c.positionCode)}</span>
+                                          </div>
+                                       </td>
+                                       <td className="px-8 py-6">
+                                          <span
+                                             className="inline-flex rounded-full px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.16em]"
+                                             style={{
+                                    background: getCandidateCategory(c.positionCode) === POSITION_GROUP_LABELS.year_level_representatives ? 'rgba(20,184,166,0.12)' : 'rgba(255,122,24,0.10)',
+                                    border: getCandidateCategory(c.positionCode) === POSITION_GROUP_LABELS.year_level_representatives ? '1px solid rgba(20,184,166,0.24)' : '1px solid rgba(255,122,24,0.22)',
+                                    color: getCandidateCategory(c.positionCode) === POSITION_GROUP_LABELS.year_level_representatives ? '#2dd4bf' : 'var(--cetso-orange)',
+                                             }}
+                                          >
+                                             {getCandidateCategory(c.positionCode)}
+                                          </span>
+                                       </td>
+                                       <td className="px-8 py-6">
+                                          <div className="flex items-center gap-3">
+                                             <Button 
+                                                variant="ghost" 
+                                                size="sm" 
+                                                className="h-10 w-10 p-0 hover:bg-orange-500/10 hover:border-orange-500/20" 
+                                                style={{ background: 'var(--cetso-surface-2)', border: '1px solid var(--cetso-border)' }}
+                                                onClick={() => handleOpenEdit(c)}
+                                             >
+                                                <Edit2 className="h-4 w-4" style={{ color: 'var(--cetso-text-3)' }} />
+                                             </Button>
+                                             <Button 
+                                                variant="danger" 
+                                                size="sm" 
+                                                className="bg-red-500/10 border-red-500/20 text-red-500 h-10 px-4 group/del"
+                                                onClick={() => handleDelete(c.candidateId, c.fullName)}
+                                             >
+                                                <Trash2 className="h-4 w-4 group-hover/del:scale-110 transition-transform" />
+                                                <span className="text-[10px] font-black uppercase">Purge</span>
+                                             </Button>
+                                          </div>
+                                       </td>
+                                    </motion.tr>
+                                 )
+                              })}
+                           </Fragment>
+                        ))}
                      </tbody>
                   </table>
                </div>
@@ -663,11 +776,27 @@ export default function CandidateManagementPage() {
                            className="w-full rounded-2xl py-4 px-6 text-sm font-bold uppercase tracking-widest focus:outline-none focus:border-orange-500/30 transition-all appearance-none"
                            style={{ background: 'var(--cetso-surface-2)', border: '1px solid var(--cetso-border)', color: 'var(--cetso-text)' }}
                         >
-                           {POSITIONS.map((p) => (
-                              <option key={p.positionCode} value={p.positionCode} className="bg-[#0b0b10]">
-                                 {p.title}
-                              </option>
-                           ))}
+                           <optgroup label="Executive Officers" className="bg-[#0b0b10]">
+                              {executivePositions.map((p) => (
+                                 <option key={p.positionCode} value={p.positionCode} className="bg-[#0b0b10]">
+                                    {p.title}
+                                 </option>
+                              ))}
+                           </optgroup>
+                           <optgroup label="Year Level Representatives" className="bg-[#0b0b10]">
+                              {representativePositions.map((p) => (
+                                 <option key={p.positionCode} value={p.positionCode} className="bg-[#0b0b10]">
+                                    {p.title}
+                                 </option>
+                              ))}
+                           </optgroup>
+                           <optgroup label="Public Information Officers" className="bg-[#0b0b10]">
+                              {pioPositions.map((p) => (
+                                 <option key={p.positionCode} value={p.positionCode} className="bg-[#0b0b10]">
+                                    {p.title}
+                                 </option>
+                              ))}
+                           </optgroup>
                         </select>
                         <ChevronRight className="absolute right-6 top-1/2 -translate-y-1/2 h-5 w-5 transition-colors rotate-90" style={{ color: 'var(--cetso-text-3)' }} />
                      </div>
@@ -692,10 +821,12 @@ export default function CandidateManagementPage() {
                   </div>
 
                   <div className="space-y-4">
-                     <label className="text-[10px] font-black uppercase tracking-[0.2em] ml-1" style={{ color: 'var(--cetso-text-3)' }}>Candidate Photo (Auto-Generated Avatar)</label>
+                     <label className="text-[10px] font-black uppercase tracking-[0.2em] ml-1" style={{ color: 'var(--cetso-text-3)' }}>Candidate Photo</label>
                      <div className="flex items-center gap-4">
-                        <div className="aspect-square w-28 rounded-3xl flex flex-col items-center justify-center gap-3" style={{ background: 'var(--cetso-surface-2)', border: '1px solid var(--cetso-border)' }}>
-                           {fullName ? (
+                        <div className="aspect-square w-28 rounded-3xl flex flex-col items-center justify-center gap-3 overflow-hidden" style={{ background: 'var(--cetso-surface-2)', border: '1px solid var(--cetso-border)' }}>
+                           {imageUrl ? (
+                              <img src={imageUrl} alt="Candidate preview" className="h-full w-full object-cover" />
+                           ) : fullName ? (
                               <div className="h-16 w-16 rounded-2xl bg-orange-500/10 border border-orange-500/30 text-orange-500 grid place-items-center font-black text-xl">
                                  {currentInitials}
                               </div>
@@ -705,9 +836,34 @@ export default function CandidateManagementPage() {
                               </div>
                            )}
                         </div>
-                        <p className="text-[10px] font-medium leading-relaxed uppercase tracking-wider text-[var(--cetso-text-3)] max-w-xs">
-                           Candidate avatar initials are auto-generated based on the name. A premium vector photo silhouette will render on the ballot card.
-                        </p>
+                        <div className="space-y-3">
+                           <p className="text-[10px] font-medium leading-relaxed uppercase tracking-wider text-[var(--cetso-text-3)] max-w-xs">
+                              Upload a square or portrait image. Students will see this photo in the candidate list and voting ballot.
+                           </p>
+                           <div className="flex flex-wrap gap-2">
+                              <label className="inline-flex h-10 cursor-pointer items-center rounded-xl border border-orange-500/20 bg-orange-500/10 px-4 text-[10px] font-black uppercase tracking-widest text-orange-400 transition hover:bg-orange-500/20">
+                                 Upload Photo
+                                 <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={(event) => {
+                                       void handleImageUpload(event.target.files?.[0])
+                                       event.target.value = ''
+                                    }}
+                                 />
+                              </label>
+                              {imageUrl && (
+                                 <button
+                                    type="button"
+                                    onClick={() => setImageUrl('')}
+                                    className="h-10 rounded-xl border border-white/10 bg-white/5 px-4 text-[10px] font-black uppercase tracking-widest text-white/50 transition hover:bg-white/10"
+                                 >
+                                    Remove
+                                 </button>
+                              )}
+                           </div>
+                        </div>
                      </div>
                   </div>
                </div>

@@ -1,3 +1,4 @@
+
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { type ReactNode, useEffect } from 'react'
 import { motion } from 'framer-motion'
@@ -47,10 +48,10 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
 
   return (
     <div className="flex min-h-screen relative overflow-hidden" style={{ background: 'var(--cetso-bg)' }}>
-      
+
       {/* Background Cyberpunk decoration */}
       <div className="fixed inset-0 pointer-events-none opacity-[0.02]">
-        <div 
+        <div
           className="absolute inset-0"
           style={{
             backgroundImage: `linear-gradient(rgba(255,122,24,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,122,24,0.1) 1px, transparent 1px)`,
@@ -69,7 +70,7 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
         }}
       >
         {/* Animated Scanline Sidebar */}
-        <motion.div 
+        <motion.div
           className="absolute left-0 right-0 h-[1px] bg-[var(--cetso-orange)]/10 z-10"
           animate={{ y: ['0%', '1000%'] }}
           transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
@@ -87,7 +88,7 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
                 alt="CET Logo"
                 className="h-8 w-8 object-contain relative z-10"
               />
-              <motion.div 
+              <motion.div
                 className="absolute inset-0 bg-white/20"
                 animate={{ x: ['-100%', '100%'] }}
                 transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
@@ -136,14 +137,14 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
                 </div>
                 <div className="flex items-center gap-2 mt-1">
                   <div className="flex gap-0.5">
-                    {[1,2,3].map(i => <div key={i} className="h-1 w-2 rounded-full bg-orange-500" />)}
+                    {[1, 2, 3].map(i => <div key={i} className="h-1 w-2 rounded-full bg-orange-500" />)}
                     <div className="h-1 w-2 rounded-full bg-[var(--cetso-border)]" />
                   </div>
                   <span className="text-[9px] font-black uppercase tracking-widest text-[var(--cetso-text-3)]">Secure</span>
                 </div>
               </div>
             </div>
-            
+
             {/* Background pattern */}
             <div className="absolute top-0 right-0 p-2 opacity-[0.03]">
               <Terminal className="h-12 w-12" />
@@ -161,7 +162,7 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
             Navigation
             <div className="h-px flex-1 bg-[var(--cetso-border)]" />
           </div>
-          
+
           {navItems.map((item) => {
             const active = pathname === item.to || pathname.startsWith(item.to + '/')
             const Icon = item.icon
@@ -173,15 +174,15 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
                 style={
                   active
                     ? {
-                        background: 'rgba(255,122,24,0.08)',
-                        border: '1px solid rgba(255,122,24,0.25)',
-                        color: 'var(--cetso-text)',
-                        boxShadow: 'inset 0 0 20px rgba(255,122,24,0.05)'
-                      }
+                      background: 'rgba(255,122,24,0.08)',
+                      border: '1px solid rgba(255,122,24,0.25)',
+                      color: 'var(--cetso-text)',
+                      boxShadow: 'inset 0 0 20px rgba(255,122,24,0.05)'
+                    }
                     : {
-                        border: '1px solid transparent',
-                        color: 'var(--cetso-text-2)',
-                      }
+                      border: '1px solid transparent',
+                      color: 'var(--cetso-text-2)',
+                    }
                 }
               >
                 <div
@@ -197,7 +198,7 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
                 <span className={`transition-transform duration-300 ${active ? 'translate-x-1' : 'group-hover/nav:translate-x-1'}`}>
                   {item.label}
                 </span>
-                
+
                 {active && (
                   <motion.div
                     layoutId="active-nav"
@@ -210,25 +211,25 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
           })}
         </nav>
 
-        {/* System Status */ }
+        {/* System Status */}
         <div className="p-5 mt-auto">
           <div className="rounded-2xl bg-[var(--cetso-surface-2)] border border-[var(--cetso-border)] p-4 space-y-3">
-             <div className="flex justify-between items-end">
-                <div className="text-[9px] font-black uppercase tracking-widest text-[var(--cetso-text-3)]">System Load</div>
-                <div className="text-[10px] font-mono text-orange-500">24.2ms</div>
-             </div>
-             <div className="h-1 w-full bg-[var(--cetso-border)] rounded-full overflow-hidden">
-                <motion.div 
-                  className="h-full bg-orange-500/50"
-                  initial={{ width: '0%' }}
-                  animate={{ width: '45%' }}
-                  transition={{ duration: 1 }}
-                />
-             </div>
-             <div className="flex gap-2 text-[8px] font-black uppercase tracking-widest text-[var(--cetso-text-3)] opacity-60">
-                <span className="flex items-center gap-1"><Wifi className="h-2 w-2" /> Encrypted</span>
-                <span className="flex items-center gap-1"><Database className="h-2 w-2" /> Sync</span>
-             </div>
+            <div className="flex justify-between items-end">
+              <div className="text-[9px] font-black uppercase tracking-widest text-[var(--cetso-text-3)]">System Load</div>
+              <div className="text-[10px] font-mono text-orange-500">24.2ms</div>
+            </div>
+            <div className="h-1 w-full bg-[var(--cetso-border)] rounded-full overflow-hidden">
+              <motion.div
+                className="h-full bg-orange-500/50"
+                initial={{ width: '0%' }}
+                animate={{ width: '45%' }}
+                transition={{ duration: 1 }}
+              />
+            </div>
+            <div className="flex gap-2 text-[8px] font-black uppercase tracking-widest text-[var(--cetso-text-3)] opacity-60">
+              <span className="flex items-center gap-1"><Wifi className="h-2 w-2" /> Encrypted</span>
+              <span className="flex items-center gap-1"><Database className="h-2 w-2" /> Sync</span>
+            </div>
           </div>
         </div>
 
@@ -265,11 +266,11 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
           }}
         >
           <Link to="/" className="flex items-center gap-3">
-              <img
-                src="/CETLOGO.png"
-                alt="CET Logo"
-                className="h-6 w-6 object-contain"
-              />
+            <img
+              src="/CETLOGO.png"
+              alt="CET Logo"
+              className="h-6 w-6 object-contain"
+            />
             <span
               className="font-black italic uppercase tracking-tighter"
               style={{ fontFamily: 'var(--font-h1)', fontSize: 20, color: 'var(--cetso-text)' }}
@@ -297,34 +298,34 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
         </header>
 
         {/* Admin Header for Desktop */}
-        <div 
+        <div
           className="hidden lg:flex items-center justify-between px-8 py-4 border-b sticky top-0 z-30 backdrop-blur-md"
-          style={{ 
-            background: 'var(--cetso-header-bg)', 
-            borderColor: 'var(--cetso-border)' 
+          style={{
+            background: 'var(--cetso-header-bg)',
+            borderColor: 'var(--cetso-border)'
           }}
         >
-           <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                  <Cpu className="h-4 w-4 text-orange-500" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--cetso-text-3)]">Server 01</span>
-               </div>
-               <div className="h-4 w-px bg-[var(--cetso-border)]" />
-               <div className="flex items-center gap-2 text-green-500">
-                  <div className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em]">Live Stream Active</span>
-              </div>
-           </div>
-           
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                 <div className="text-[10px] font-black uppercase tracking-widest opacity-40" style={{ color: 'var(--cetso-text)' }}>Admin</div>
-                 <div className="text-[11px] font-bold text-[var(--cetso-orange)] uppercase italic tracking-tighter">ADMIN</div>
-              </div>
-              <div className="h-10 w-10 rounded-2xl bg-[var(--cetso-orange)]/10 border border-[var(--cetso-orange)]/20 grid place-items-center">
-                 <User className="h-5 w-5 text-[var(--cetso-orange)]" />
-              </div>
-           </div>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <Cpu className="h-4 w-4 text-orange-500" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--cetso-text-3)]">Server 01</span>
+            </div>
+            <div className="h-4 w-px bg-[var(--cetso-border)]" />
+            <div className="flex items-center gap-2 text-green-500">
+              <div className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em]">Live Stream Active</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <div className="text-[10px] font-black uppercase tracking-widest opacity-40" style={{ color: 'var(--cetso-text)' }}>Admin</div>
+              <div className="text-[11px] font-bold text-[var(--cetso-orange)] uppercase italic tracking-tighter">ADMIN</div>
+            </div>
+            <div className="h-10 w-10 rounded-2xl bg-[var(--cetso-orange)]/10 border border-[var(--cetso-orange)]/20 grid place-items-center">
+              <User className="h-5 w-5 text-[var(--cetso-orange)]" />
+            </div>
+          </div>
         </div>
 
         {/* Page content */}

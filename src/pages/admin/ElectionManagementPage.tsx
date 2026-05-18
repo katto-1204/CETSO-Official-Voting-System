@@ -5,6 +5,20 @@ import GlassCard from '../../components/ui/GlassCard'
 import Button from '../../components/ui/Button'
 import { ELECTION } from '../../lib/electionData'
 import { updateElectionConfig, subscribeToElectionConfig } from '../../lib/electionConfig'
+import type { ElectionConfig } from '../../lib/electionConfig'
+import { goeyToast } from 'goey-toast'
+
+function toDateTimeLocal(value: Date) {
+  const offsetMs = value.getTimezoneOffset() * 60_000
+  return new Date(value.getTime() - offsetMs).toISOString().slice(0, 16)
+}
+
+function isNowInsideWindow(startDate: string, endDate: string) {
+  const now = Date.now()
+  const start = new Date(startDate).getTime()
+  const end = new Date(endDate).getTime()
+  return Number.isFinite(start) && Number.isFinite(end) && now >= start && now < end
+}
 
 export default function ElectionManagementPage() {
   const [enabled, setEnabled] = useState(() => localStorage.getItem('cetso_election_enabled') !== 'false')
@@ -13,6 +27,10 @@ export default function ElectionManagementPage() {
     localStorage.getItem('cetso_election_end_date') || new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString().slice(0, 16)
   )
   const [saved, setSaved] = useState(false)
+  const [loadingConfig, setLoadingConfig] = useState(true)
+  const [configError, setConfigError] = useState('')
+  const [savingConfig, setSavingConfig] = useState(false)
+  const votingEffectiveOpen = enabled && isNowInsideWindow(startDate, endDate)
 
   useEffect(() => {
     // Subscribe to database changes for real-time admin sync across tabs/devices
@@ -20,20 +38,59 @@ export default function ElectionManagementPage() {
       setEnabled(config.enabled)
       setStartDate(config.startDate)
       setEndDate(config.endDate)
+      setConfigError('')
+      setLoadingConfig(false)
+    }, (error) => {
+      setConfigError(error.message)
+      setLoadingConfig(false)
     })
     return () => unsubscribe()
   }, [])
 
   async function handleToggleEnabled() {
     const nextVal = !enabled
+    const previousVal = enabled
+    const previousStartDate = startDate
+    const previousEndDate = endDate
+    setSavingConfig(true)
     setEnabled(nextVal)
-    await updateElectionConfig({ enabled: nextVal })
+    try {
+      let nextConfig: Partial<ElectionConfig> = { enabled: nextVal }
+      if (nextVal && !isNowInsideWindow(startDate, endDate)) {
+        const activeStartDate = toDateTimeLocal(new Date())
+        const activeEndDate = toDateTimeLocal(new Date(Date.now() + 24 * 60 * 60 * 1000))
+        nextConfig = { enabled: true, startDate: activeStartDate, endDate: activeEndDate }
+        setStartDate(activeStartDate)
+        setEndDate(activeEndDate)
+      }
+
+      await updateElectionConfig(nextConfig)
+      setConfigError('')
+      goeyToast.success(nextVal ? 'Voting is now open for students.' : 'Voting is now closed.')
+    } catch (error: any) {
+      setEnabled(previousVal)
+      setStartDate(previousStartDate)
+      setEndDate(previousEndDate)
+      setConfigError(error.message || 'Could not update voting status.')
+      goeyToast.error(error.message || 'Could not update voting status.')
+    } finally {
+      setSavingConfig(false)
+    }
   }
 
   async function saveSchedule() {
-    await updateElectionConfig({ startDate, endDate })
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2500)
+    setSavingConfig(true)
+    try {
+      await updateElectionConfig({ startDate, endDate })
+      setConfigError('')
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2500)
+    } catch (error: any) {
+      setConfigError(error.message || 'Could not save schedule.')
+      goeyToast.error(error.message || 'Could not save schedule.')
+    } finally {
+      setSavingConfig(false)
+    }
   }
 
   async function resetSchedule() {
@@ -41,7 +98,16 @@ export default function ElectionManagementPage() {
     const defaultEnd = new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString().slice(0, 16)
     setStartDate(defaultStart)
     setEndDate(defaultEnd)
-    await updateElectionConfig({ startDate: defaultStart, endDate: defaultEnd })
+    setSavingConfig(true)
+    try {
+      await updateElectionConfig({ startDate: defaultStart, endDate: defaultEnd })
+      setConfigError('')
+    } catch (error: any) {
+      setConfigError(error.message || 'Could not reset schedule.')
+      goeyToast.error(error.message || 'Could not reset schedule.')
+    } finally {
+      setSavingConfig(false)
+    }
   }
 
 
@@ -128,20 +194,27 @@ export default function ElectionManagementPage() {
                       : <LockKeyhole className="h-4 w-4 text-[rgba(252,165,165,0.80)]" />
                     }
                   </div>
-                  <div>
-                    <div className="text-sm font-bold text-[var(--cetso-text)]">
-                      Voting is {enabled ? 'Open' : 'Closed'}
-                    </div>
-                    <div className="text-xs font-medium text-[var(--cetso-text-2)]">
-                      {enabled ? 'Students can submit votes now.' : 'Voting has been disabled.'}
-                    </div>
+                <div>
+                  <div className="text-sm font-bold text-[var(--cetso-text)]">
+                      {loadingConfig ? 'Checking voting status...' : `Voting is ${votingEffectiveOpen ? 'Open' : 'Closed'}`}
                   </div>
+                  <div className="text-xs font-medium text-[var(--cetso-text-2)]">
+                      {loadingConfig
+                        ? 'Reading latest status from Supabase.'
+                        : votingEffectiveOpen
+                        ? 'Students can submit votes now.'
+                        : enabled
+                        ? 'Voting is enabled, but the schedule window is not active.'
+                        : 'Voting has been disabled.'}
+                  </div>
+                </div>
                 </div>
 
                 {/* Toggle */}
                 <button
                   type="button"
                   onClick={handleToggleEnabled}
+                  disabled={loadingConfig || savingConfig}
                   className="relative flex items-center"
                   aria-label={enabled ? 'Close voting' : 'Open voting'}
                 >
@@ -198,7 +271,7 @@ export default function ElectionManagementPage() {
                           }}
                         >
                           <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                          {enabled ? 'Open' : 'Closed'}
+                          {votingEffectiveOpen ? 'Open' : 'Closed'}
                         </span>
                       </td>
                       <td className="p-3">
@@ -206,6 +279,7 @@ export default function ElectionManagementPage() {
                           variant={enabled ? 'danger' : 'primary'}
                           size="sm"
                           onClick={handleToggleEnabled}
+                          disabled={loadingConfig || savingConfig}
                         >
                           {enabled ? <LockKeyhole className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
                           {enabled ? 'Close' : 'Open'} Voting
@@ -215,6 +289,15 @@ export default function ElectionManagementPage() {
                   </tbody>
                 </table>
               </div>
+
+              {configError ? (
+                <div
+                  className="mt-4 rounded-2xl p-4 text-xs font-bold text-red-200"
+                  style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}
+                >
+                  Supabase election status error: {configError}
+                </div>
+              ) : null}
 
               {/* Rule */}
               <div
@@ -280,10 +363,10 @@ export default function ElectionManagementPage() {
                 </div>
 
                 <div className="flex gap-3">
-                  <Button variant="primary" size="lg" className="flex-1" onClick={saveSchedule}>
+                  <Button variant="primary" size="lg" className="flex-1" onClick={saveSchedule} disabled={loadingConfig || savingConfig}>
                     Save Schedule
                   </Button>
-                  <Button variant="secondary" size="lg" className="flex-1" onClick={resetSchedule}>
+                  <Button variant="secondary" size="lg" className="flex-1" onClick={resetSchedule} disabled={loadingConfig || savingConfig}>
                     Reset
                   </Button>
                 </div>

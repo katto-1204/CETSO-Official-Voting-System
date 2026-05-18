@@ -1,21 +1,21 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { CheckCircle2, ChevronLeft, ChevronRight, LockKeyhole, Vote, Info, ShieldCheck, AlertCircle, User } from 'lucide-react'
+import { CheckCircle2, ChevronLeft, ChevronRight, LockKeyhole, Vote, Info, ShieldCheck, AlertCircle, User, CircleSlash, RotateCcw } from 'lucide-react'
 import Button from '../../components/ui/Button'
 import GlassCard from '../../components/ui/GlassCard'
 import Modal from '../../components/ui/Modal'
 import { getStudentContext } from '../../lib/studentContext'
 import { supabase } from '../../lib/supabase'
-import { getEligiblePositions } from '../../lib/electionData'
+import { POSITIONS, getPositionSelectionLimit } from '../../lib/electionData'
 import { buildVoteSubmission, getVoteSubmission, hasVoteSubmission } from '../../lib/voteRecords'
 import type { VoteSelection } from '../../lib/voteRecords'
 import type { Candidate, Position } from '../../lib/electionData'
-import { ELECTION, CANDIDATES } from '../../lib/electionData'
+import { ELECTION, mergeCandidatesWithOfficialSeed } from '../../lib/electionData'
 import { goeyToast } from 'goey-toast'
 import { useCandidates } from '../../lib/queries'
 import { useTransaction } from '../../lib/TransactionContext'
-import { subscribeToElectionConfig, type ElectionConfig } from '../../lib/electionConfig'
+import { fetchElectionConfig, subscribeToElectionConfig, type ElectionConfig } from '../../lib/electionConfig'
 
 const DRAFT_KEY = 'cetso_vote_draft'
 
@@ -35,38 +35,15 @@ function saveDraft(d: Draft) {
   localStorage.setItem(DRAFT_KEY, JSON.stringify(d))
 }
 
-const AVATAR_COLORS = [
-  ['rgba(255,122,24,0.15)', 'rgba(255,122,24,0.35)', '#ff7a18'],
-  ['rgba(139,92,246,0.15)', 'rgba(139,92,246,0.35)', '#a78bfa'],
-  ['rgba(20,184,166,0.15)', 'rgba(20,184,166,0.35)', '#2dd4bf'],
-  ['rgba(59,130,246,0.15)', 'rgba(59,130,246,0.35)', '#60a5fa'],
-]
-
 export default function VotingPage() {
   const navigate = useNavigate()
   const ctx = getStudentContext()
   const { runTransaction } = useTransaction()
   const [time, setTime] = useState(() => new Date())
   const [dbConfig, setDbConfig] = useState<ElectionConfig | null>(null)
-
-  const [storageTrigger, setStorageTrigger] = useState(0)
-  const [showEndedModal, setShowEndedModal] = useState(() => {
-    const enabled = localStorage.getItem('cetso_election_enabled') !== 'false'
-    const endStr = localStorage.getItem('cetso_election_end_date')
-    const now = Date.now()
-    const endDate = endStr ? new Date(endStr).getTime() : now + 1000 * 60 * 60 * 24
-    
-    const isClosed = !enabled || now >= endDate
-    return isClosed
-  })
-
-  useEffect(() => {
-    const handleStorage = () => {
-      setStorageTrigger((prev) => prev + 1)
-    }
-    window.addEventListener('storage', handleStorage)
-    return () => window.removeEventListener('storage', handleStorage)
-  }, [])
+  const [configLoading, setConfigLoading] = useState(true)
+  const [configError, setConfigError] = useState('')
+  const [showEndedModal, setShowEndedModal] = useState(false)
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000)
@@ -74,41 +51,68 @@ export default function VotingPage() {
   }, [])
 
   useEffect(() => {
-    // Subscribe to election config changes in real-time
     const unsubscribe = subscribeToElectionConfig((config) => {
       setDbConfig(config)
+      setConfigError('')
+      setConfigLoading(false)
+    }, (error) => {
+      setConfigError(error.message)
+      setConfigLoading(false)
     })
     return () => unsubscribe()
   }, [])
 
   const electionConfig = useMemo(() => {
-    const enabled = dbConfig ? dbConfig.enabled : (localStorage.getItem('cetso_election_enabled') !== 'false')
-    const startStr = dbConfig ? dbConfig.startDate : localStorage.getItem('cetso_election_start_date')
-    const endStr = dbConfig ? dbConfig.endDate : localStorage.getItem('cetso_election_end_date')
+    if (!dbConfig) return null
     
-    const nowMs = time.getTime()
-    const startDate = startStr ? new Date(startStr).getTime() : nowMs
-    const endDate = endStr ? new Date(endStr).getTime() : nowMs + 1000 * 60 * 60 * 24
+    const startDate = new Date(dbConfig.startDate).getTime()
+    const endDate = new Date(dbConfig.endDate).getTime()
     
-    return { enabled, startDate, endDate }
-  }, [dbConfig, time, storageTrigger])
+    return { enabled: dbConfig.enabled, startDate, endDate, validDates: Number.isFinite(startDate) && Number.isFinite(endDate) }
+  }, [dbConfig, time])
 
   const isVotingClosed = useMemo(() => {
+    if (!electionConfig || !electionConfig.validDates) return true
     const nowMs = time.getTime()
     return !electionConfig.enabled || nowMs < electionConfig.startDate || nowMs >= electionConfig.endDate
   }, [electionConfig, time])
 
-  const [lastElectionState, setLastElectionState] = useState(() => {
-    const enabled = localStorage.getItem('cetso_election_enabled') !== 'false'
-    const startStr = localStorage.getItem('cetso_election_start_date')
-    const endStr = localStorage.getItem('cetso_election_end_date')
-    const now = Date.now()
-    const startDate = startStr ? new Date(startStr).getTime() : now
-    const endDate = endStr ? new Date(endStr).getTime() : now
-    return enabled && now >= startDate && now < endDate
-  })
+  const lockoutMessage = useMemo(() => {
+    if (!electionConfig || !electionConfig.validDates) {
+      return {
+        reason: 'VOTING STATUS UNAVAILABLE',
+        title: 'BALLOT SYSTEM LOCKED',
+        description: 'The voting status could not be verified. Please try again or contact an administrator.',
+      }
+    }
+
+    if (!electionConfig.enabled) {
+      return {
+        reason: 'ELECTION SUSPENDED BY ADMINISTRATOR',
+        title: 'VOTING IS CURRENTLY CLOSED',
+        description: 'The administrator has manually closed the voting window. Any unsaved selections or unsubmitted ballots are locked until voting is opened again.',
+      }
+    }
+
+    if (time.getTime() < electionConfig.startDate) {
+      return {
+        reason: 'ELECTION HAS NOT STARTED YET',
+        title: 'VOTING HAS NOT STARTED YET',
+        description: 'The voting window is scheduled to open later. Please return when the official start time has arrived.',
+      }
+    }
+
+    return {
+      reason: 'ELECTION HAS ENDED',
+      title: 'VOTING HAS OFFICIALLY ENDED',
+      description: 'The scheduled election time has elapsed. Any unsaved selections or unsubmitted ballots have been locked.',
+    }
+  }, [electionConfig, time])
+
+  const [lastElectionState, setLastElectionState] = useState<boolean | null>(null)
 
   useEffect(() => {
+    if (configLoading) return
     const currentOpenState = !isVotingClosed
     if (lastElectionState && !currentOpenState) {
       setShowEndedModal(true)
@@ -116,16 +120,29 @@ export default function VotingPage() {
       setShowIntro(false)
     }
     setLastElectionState(currentOpenState)
-  }, [isVotingClosed, lastElectionState])
+  }, [configLoading, isVotingClosed, lastElectionState])
+
+  async function refreshElectionStatus() {
+    setConfigLoading(true)
+    try {
+      const config = await fetchElectionConfig()
+      setDbConfig(config)
+      setConfigError('')
+    } catch (error: any) {
+      setConfigError(error.message || 'Could not fetch voting status.')
+    } finally {
+      setConfigLoading(false)
+    }
+  }
 
 
   const eligiblePositions: Position[] = useMemo(() => {
     if (!ctx) return []
-    return getEligiblePositions({ programCode: ctx.programCode, yearLevel: ctx.yearLevel })
+    return POSITIONS
   }, [ctx])
 
   const [activeIdx, setActiveIdx] = useState(0)
-  const [selectionsByPosition, setSelectionsByPosition] = useState<Record<string, string>>({})
+  const [selectionsByPosition, setSelectionsByPosition] = useState<Record<string, string[]>>({})
   const [submitting, setSubmitting] = useState(false)
   const [showIntro, setShowIntro] = useState(true)
   const [showConfirm, setShowConfirm] = useState(false)
@@ -150,8 +167,10 @@ export default function VotingPage() {
     if (!ctx?.studentId) return
     const draft = loadDraft(ctx.studentId)
     if (!draft) return
-    const next: Record<string, string> = {}
-    for (const s of draft.selections) next[s.positionCode] = s.candidateId
+    const next: Record<string, string[]> = {}
+    for (const s of draft.selections) {
+      next[s.positionCode] = [...(next[s.positionCode] ?? []), s.candidateId]
+    }
     setSelectionsByPosition(next)
     
     // If they have a draft, they probably already saw the intro
@@ -163,41 +182,107 @@ export default function VotingPage() {
   useEffect(() => { setActiveIdx(0) }, [ctx?.studentId])
 
   const { data: dbCandidates } = useCandidates()
+  const sourceCandidates = useMemo(
+    () => mergeCandidatesWithOfficialSeed(dbCandidates),
+    [dbCandidates]
+  )
 
   const currentPosition = eligiblePositions[activeIdx]
   const candidates: Candidate[] = useMemo(() => {
     if (!currentPosition) return []
-    const sourceCandidates = (dbCandidates && dbCandidates.length > 0) ? dbCandidates : CANDIDATES
-    return sourceCandidates.filter((c) => c.positionCode === currentPosition.positionCode)
-  }, [currentPosition, dbCandidates])
+    const posCandidates = sourceCandidates.filter((c) => c.positionCode === currentPosition.positionCode)
+    return [
+      ...posCandidates,
+      {
+        candidateId: `ABSTAIN_${currentPosition.positionCode}`,
+        positionCode: currentPosition.positionCode,
+        fullName: 'Abstain',
+        partylist: 'None',
+        tagline: 'No candidate selected for this position',
+        bio: 'Choose this if you prefer not to vote for any candidate in this position.',
+        imageUrl: ''
+      }
+    ]
+  }, [currentPosition, sourceCandidates])
 
   const isComplete = useMemo(() => {
     if (!eligiblePositions.length) return false
-    return eligiblePositions.every((p) => Boolean(selectionsByPosition[p.positionCode]))
+    return eligiblePositions.every((p) => {
+      const sels = selectionsByPosition[p.positionCode] ?? []
+      if (sels.includes(`ABSTAIN_${p.positionCode}`)) return true
+      return sels.length === getPositionSelectionLimit(p)
+    })
   }, [eligiblePositions, selectionsByPosition])
 
-  const selectedCount = eligiblePositions.filter((p) => Boolean(selectionsByPosition[p.positionCode])).length
+  const selectedCount = eligiblePositions.reduce((sum, p) => {
+    const sels = selectionsByPosition[p.positionCode] ?? []
+    if (sels.includes(`ABSTAIN_${p.positionCode}`)) {
+      return sum + getPositionSelectionLimit(p)
+    }
+    return sum + Math.min(sels.length, getPositionSelectionLimit(p))
+  }, 0)
+  const requiredSelectionCount = eligiblePositions.reduce((sum, p) => sum + getPositionSelectionLimit(p), 0)
+  const canClearBallot = selectedCount > 0 && !alreadySubmitted && !submitting
+
+  function handleClearBallot() {
+    if (!canClearBallot) return
+    setSelectionsByPosition({})
+    setActiveIdx(0)
+    setShowConfirm(false)
+    localStorage.removeItem(DRAFT_KEY)
+    goeyToast.success('Ballot cleared. You can start selecting again.')
+  }
 
   function onSelectCandidate(candidate: Candidate) {
     if (!currentPosition) return
     const posCode = currentPosition.positionCode
+    const limit = getPositionSelectionLimit(currentPosition)
+    const getUpdatedSelections = (current: string[]) => {
+      const alreadySelected = current.includes(candidate.candidateId)
+      const isAbstain = candidate.candidateId.startsWith('ABSTAIN_')
+
+      if (alreadySelected) {
+        return current.filter((id) => id !== candidate.candidateId)
+      }
+
+      if (isAbstain) {
+        return [candidate.candidateId]
+      }
+
+      const currentWithoutAbstain = current.filter(id => !id.startsWith('ABSTAIN_'))
+      if (limit === 1) {
+        return [candidate.candidateId]
+      }
+      if (currentWithoutAbstain.length < limit) {
+        return [...currentWithoutAbstain, candidate.candidateId]
+      }
+      return [...currentWithoutAbstain.slice(1), candidate.candidateId]
+    }
+
+    const currentSelections = selectionsByPosition[posCode] ?? []
+    const wasAlreadySelected = currentSelections.includes(candidate.candidateId)
+    const nextSelections = getUpdatedSelections(currentSelections)
+    const shouldAutoAdvance =
+      !wasAlreadySelected &&
+      activeIdx < eligiblePositions.length - 1 &&
+      (nextSelections.includes(`ABSTAIN_${posCode}`) || nextSelections.length >= limit)
     
-    // Toggle logic: if clicking same one, maybe deselect? User didn't specify, but usually you select.
     setSelectionsByPosition((prev) => {
-      const next = { ...prev, [posCode]: candidate.candidateId }
+      const current = prev[posCode] ?? []
+      const updatedForPosition = getUpdatedSelections(current)
+      
+      const next = { ...prev, [posCode]: updatedForPosition }
       if (ctx) {
         const draftSelections: VoteSelection[] = eligiblePositions
-          .map((p) => ({ positionCode: p.positionCode, candidateId: next[p.positionCode] }))
-          .filter((x) => Boolean(x.candidateId))
+          .flatMap((p) => (next[p.positionCode] ?? []).map((candidateId) => ({ positionCode: p.positionCode, candidateId })))
         saveDraft({ studentId: ctx.studentId, selections: draftSelections })
       }
       return next
     })
 
-    goeyToast.success(`Selected ${candidate.fullName} for ${currentPosition.title}`)
+    goeyToast.success(`${limit === 1 ? 'Selected' : 'Updated'} ${candidate.fullName} for ${currentPosition.title}`)
     
-    // Auto-advance if not last
-    if (activeIdx < eligiblePositions.length - 1) {
+    if (shouldAutoAdvance) {
       setTimeout(() => setActiveIdx(activeIdx + 1), 600)
     }
   }
@@ -207,10 +292,28 @@ export default function VotingPage() {
     setSubmitting(true)
     
     try {
-      const selections: VoteSelection[] = eligiblePositions.map((p) => ({
-        positionCode: p.positionCode,
-        candidateId: selectionsByPosition[p.positionCode],
-      }))
+      const latestConfig = await fetchElectionConfig()
+      const latestStart = new Date(latestConfig.startDate).getTime()
+      const latestEnd = new Date(latestConfig.endDate).getTime()
+      const nowMs = Date.now()
+      const latestClosed =
+        !latestConfig.enabled ||
+        !Number.isFinite(latestStart) ||
+        !Number.isFinite(latestEnd) ||
+        nowMs < latestStart ||
+        nowMs >= latestEnd
+
+      setDbConfig(latestConfig)
+      if (latestClosed) {
+        throw new Error('Voting is currently closed. Your ballot was not submitted.')
+      }
+
+      const selections: VoteSelection[] = eligiblePositions.flatMap((p) =>
+        (selectionsByPosition[p.positionCode] ?? []).map((candidateId) => ({
+          positionCode: p.positionCode,
+          candidateId,
+        }))
+      )
       
       await runTransaction(async () => {
         if (await hasVoteSubmission(ctx.studentId)) {
@@ -233,9 +336,14 @@ export default function VotingPage() {
         })
 
         if (voteError) {
-          throw new Error(voteError.code === '42501'
-            ? 'Supabase blocked vote saving. Run supabase/fix-live-database.sql.'
-            : voteError.message || 'Vote could not be saved to Supabase.')
+          console.error('[votes] insert failed:', JSON.stringify(voteError))
+          const msg =
+            voteError.code === 'PGRST204'
+              ? `Schema error: "${voteError.message}" — run supabase/fix-missing-selections-column.sql in the Supabase SQL Editor.`
+              : voteError.code === '42501'
+              ? 'Permission denied — run supabase/fix-live-database.sql in the Supabase SQL Editor.'
+              : `Vote save failed [${voteError.code}]: ${voteError.message}`
+          throw new Error(msg)
         }
 
         localStorage.removeItem(DRAFT_KEY)
@@ -262,19 +370,43 @@ export default function VotingPage() {
     )
   }
 
-  if (isVotingClosed) {
-    const isSuspended = !electionConfig.enabled
-    const hasNotStarted = time.getTime() < electionConfig.startDate
-    
-    let reason = "Voting window is currently closed"
-    if (isSuspended) {
-      reason = "ELECTION SUSPENDED BY ADMINISTRATOR"
-    } else if (hasNotStarted) {
-      reason = "ELECTION HAS NOT STARTED YET"
-    } else {
-      reason = "ELECTION HAS ENDED"
-    }
+  if (configLoading) {
+    return (
+      <div className="flex min-h-[70vh] items-center justify-center py-10 px-4">
+        <GlassCard className="max-w-md w-full p-8 text-center">
+          <div className="mx-auto mb-5 h-10 w-10 animate-spin rounded-full border-2 border-white/10 border-t-[var(--cetso-orange)]" />
+          <div className="text-xl font-black text-white uppercase italic tracking-tighter">Checking Voting Status</div>
+          <div className="mt-2 text-sm font-medium text-[var(--cetso-text-2)]">
+            Reading the latest election status from Supabase.
+          </div>
+        </GlassCard>
+      </div>
+    )
+  }
 
+  if (configError || !electionConfig || !electionConfig.validDates) {
+    return (
+      <div className="flex min-h-[70vh] items-center justify-center py-10 px-4">
+        <GlassCard className="max-w-xl w-full p-8 text-center border-red-500/30">
+          <AlertCircle className="mx-auto mb-5 h-10 w-10 text-red-500" />
+          <div className="text-xl font-black text-white uppercase italic tracking-tighter">Voting Status Unavailable</div>
+          <div className="mt-3 text-sm font-semibold leading-relaxed text-red-200">
+            {configError || 'Election schedule dates are invalid. Ask an admin to save the voting schedule again.'}
+          </div>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+            <Button variant="primary" size="lg" className="flex-1" onClick={refreshElectionStatus}>
+              Retry Status Check
+            </Button>
+            <Button variant="secondary" size="lg" className="flex-1" onClick={() => navigate('/student/dashboard')}>
+              Back to Dashboard
+            </Button>
+          </div>
+        </GlassCard>
+      </div>
+    )
+  }
+
+  if (isVotingClosed) {
     return (
       <div className="flex min-h-[70vh] items-center justify-center py-10 px-4">
         <GlassCard className="max-w-xl w-full p-6 sm:p-10 text-center relative overflow-hidden group">
@@ -297,7 +429,7 @@ export default function VotingPage() {
             Ballot System Locked
           </h2>
           <p className="mt-3 text-xs font-black uppercase tracking-[0.2em] text-red-500/80 max-w-md mx-auto">
-            {reason}
+            {lockoutMessage.reason}
           </p>
 
           <div className="mt-8 border border-white/5 bg-black/40 rounded-2xl p-5 text-left space-y-4">
@@ -347,10 +479,10 @@ export default function VotingPage() {
 
             <div className="space-y-2">
               <h3 className="text-xl sm:text-2xl font-black text-red-500 uppercase tracking-tight italic">
-                THE VOTINGS HAS OFFICIALLY ENDED
+                {lockoutMessage.title}
               </h3>
               <p className="text-sm font-semibold text-[var(--cetso-text-2)] leading-relaxed">
-                The administrator has closed the voting window, or the scheduled election time has elapsed. Any unsaved selections or unsubmitted ballots have been locked.
+                {lockoutMessage.description}
               </p>
             </div>
 
@@ -415,7 +547,7 @@ export default function VotingPage() {
 
   return (
     <div className="space-y-4 pb-28 lg:pb-0">
-      
+
       {/* Intro Modal */}
       <Modal isOpen={showIntro} onClose={() => setShowIntro(false)} title="Welcome to CETSO Portal" maxWidth="max-w-xl">
         <div className="space-y-6">
@@ -501,8 +633,10 @@ export default function VotingPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
             {eligiblePositions.map((p) => {
-              const candId = selectionsByPosition[p.positionCode]
-              const candidate = candId ? ((dbCandidates && dbCandidates.length > 0 ? dbCandidates : CANDIDATES).find(c => c.candidateId === candId) || null) : null
+              const candIds = selectionsByPosition[p.positionCode] ?? []
+            const candidates = candIds
+              .map((candId) => sourceCandidates.find(c => c.candidateId === candId) || null)
+                .filter((candidate): candidate is Candidate => Boolean(candidate))
               return (
                 <div key={p.positionCode} className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/10 transition-all hover:bg-white/[0.08]">
                   <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/5 border border-white/10">
@@ -510,7 +644,9 @@ export default function VotingPage() {
                   </div>
                   <div className="min-w-0">
                     <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)] truncate">{p.title}</div>
-                    <div className="text-sm font-black text-[var(--cetso-orange)] truncate">{candidate?.fullName || 'No selection'}</div>
+                    <div className="text-sm font-black text-[var(--cetso-orange)] truncate">
+                      {candidates.length ? candidates.map((candidate) => candidate.fullName).join(', ') : 'No selection'}
+                    </div>
                   </div>
                 </div>
               )
@@ -526,6 +662,10 @@ export default function VotingPage() {
           <div className="flex flex-col sm:flex-row gap-3">
             <Button variant="secondary" size="lg" className="flex-1" onClick={() => setShowConfirm(false)} disabled={submitting}>
               Edit Selections
+            </Button>
+            <Button variant="danger" size="lg" className="flex-1" onClick={handleClearBallot} disabled={!canClearBallot}>
+              <RotateCcw className="h-4 w-4" />
+              Clear Ballot
             </Button>
             <Button variant="primary" size="lg" className="flex-1" onClick={handleFinalSubmit} loading={submitting}>
               Confirm & Submit
@@ -559,10 +699,10 @@ export default function VotingPage() {
 
           <div className="space-y-2">
             <h3 className="text-xl sm:text-2xl font-black text-red-500 uppercase tracking-tight italic">
-              THE VOTINGS HAS OFFICIALLY ENDED
+              {lockoutMessage.title}
             </h3>
             <p className="text-sm font-semibold text-[var(--cetso-text-2)] leading-relaxed">
-              The administrator has closed the voting window, or the scheduled election time has elapsed. Any unsaved selections or unsubmitted ballots have been locked.
+              {lockoutMessage.description}
             </p>
           </div>
 
@@ -632,28 +772,20 @@ export default function VotingPage() {
                 marginTop: 6,
               }}
             >
-              {selectedCount}<span className="text-[var(--cetso-text-3)] text-[0.6em] mx-1">/</span>{eligiblePositions.length}
+              {selectedCount}<span className="text-[var(--cetso-text-3)] text-[0.6em] mx-1">/</span>{requiredSelectionCount}
             </div>
           </div>
 
           <div className="flex gap-2">
             <Button
-              variant="ghost"
+              variant="danger"
               size="sm"
-              disabled={activeIdx === 0}
-              onClick={() => setActiveIdx((i) => Math.max(0, i - 1))}
-              className="bg-white/5 hover:bg-white/10 border border-white/5"
+              disabled={!canClearBallot}
+              onClick={handleClearBallot}
+              className="bg-red-500/10"
             >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={activeIdx >= eligiblePositions.length - 1}
-              onClick={() => setActiveIdx((i) => Math.min(eligiblePositions.length - 1, i + 1))}
-              className="bg-white/5 hover:bg-white/10 border border-white/5"
-            >
-              <ChevronRight className="h-4 w-4" />
+              <RotateCcw className="h-4 w-4" />
+              Clear
             </Button>
           </div>
         </div>
@@ -664,7 +796,7 @@ export default function VotingPage() {
             className="h-full rounded-full"
             style={{ background: 'linear-gradient(90deg, #ff7a18, #ffb24a)', boxShadow: '0 0 12px rgba(255,122,24,0.30)' }}
             initial={{ width: '0%' }}
-            animate={{ width: eligiblePositions.length ? `${(selectedCount / eligiblePositions.length) * 100}%` : '0%' }}
+            animate={{ width: requiredSelectionCount ? `${(selectedCount / requiredSelectionCount) * 100}%` : '0%' }}
             transition={{ duration: 0.4, ease: 'easeOut' }}
           />
         </div>
@@ -672,7 +804,10 @@ export default function VotingPage() {
         {/* Position dots */}
         <div className="mt-4 flex flex-wrap gap-2">
           {eligiblePositions.map((p, idx) => {
-            const selected = Boolean(selectionsByPosition[p.positionCode])
+            const positionSelections = selectionsByPosition[p.positionCode] ?? []
+            const selected =
+              positionSelections.includes(`ABSTAIN_${p.positionCode}`) ||
+              positionSelections.length === getPositionSelectionLimit(p)
             const active = idx === activeIdx
             return (
               <button
@@ -699,6 +834,10 @@ export default function VotingPage() {
                 {idx + 1}
                 {selected && !active && (
                   <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-green-500 border-2 border-[rgb(10,10,15)]" />
+                )}
+                {/* Abstain Indicator */}
+                {!active && !selected && (selectionsByPosition[p.positionCode] ?? []).includes(`ABSTAIN_${p.positionCode}`) && (
+                  <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-yellow-500 border-2 border-[rgb(10,10,15)]" />
                 )}
               </button>
             )
@@ -734,7 +873,9 @@ export default function VotingPage() {
                 </div>
               </div>
               <div className="mt-2 text-3xl font-black text-white italic tracking-tighter uppercase">{currentPosition?.title}</div>
-              <div className="mt-1 text-xs font-bold text-[var(--cetso-text-3)] uppercase tracking-wider">Candidate Authorization Required</div>
+              <div className="mt-1 text-xs font-bold text-[var(--cetso-text-3)] uppercase tracking-wider">
+                Select {currentPosition ? getPositionSelectionLimit(currentPosition) : 1} candidate{currentPosition && getPositionSelectionLimit(currentPosition) !== 1 ? 's' : ''}
+              </div>
             </div>
             <div
               className="shrink-0 rounded-xl px-4 py-2 text-[12px] font-black text-white italic"
@@ -744,83 +885,142 @@ export default function VotingPage() {
             </div>
           </div>
 
-          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="mt-8 flex flex-wrap justify-center gap-4">
             {candidates.map((c, i) => {
-              const selected = selectionsByPosition[currentPosition?.positionCode ?? ''] === c.candidateId
-              const [bg, border, textColor] = AVATAR_COLORS[i % AVATAR_COLORS.length]
+              const selected = (selectionsByPosition[currentPosition?.positionCode ?? ''] ?? []).includes(c.candidateId)
+              const ZZZ_COLORS = [
+                { bg: '#ff3131', accent: '#ff8a8a', text: 'text-white' },
+                { bg: '#e032d9', accent: '#f07bf0', text: 'text-white' },
+                { bg: '#00d2ff', accent: '#8ce6ff', text: 'text-black' },
+                { bg: '#ffb800', accent: '#ffd252', text: 'text-black' },
+                { bg: '#00ff66', accent: '#8affb8', text: 'text-black' },
+              ]
+              const isAbstain = c.candidateId.startsWith('ABSTAIN_')
+              const theme = isAbstain
+                ? { bg: '#ff7a18', accent: '#ffb24a', text: 'text-black' }
+                : ZZZ_COLORS[i % ZZZ_COLORS.length]
 
               return (
-                <motion.button
-                  key={c.candidateId}
-                  type="button"
-                  onClick={() => onSelectCandidate(c)}
-                  whileHover={{ y: -4, scale: 1.01 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="group relative overflow-hidden transition-all duration-300"
-                  aria-pressed={selected}
-                >
-                  <div 
-                    className="relative rounded-[24px] p-5 text-left h-full"
-                    style={selected ? {
-                      background: 'rgba(255,122,24,0.08)',
-                      border: '2px solid rgba(255,122,24,0.8)',
-                      boxShadow: '0 0 30px rgba(255,122,24,0.15)',
-                    } : {
-                      background: 'rgba(255,255,255,0.02)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                    }}
+                <div key={c.candidateId} className="w-[calc(50%-0.5rem)] sm:w-[calc(33.333%-0.666rem)] lg:w-[calc(25%-0.75rem)] xl:w-[calc(20%-0.8rem)]">
+                  <motion.button
+                    type="button"
+                    onClick={() => onSelectCandidate(c)}
+                    whileHover={{ scale: 1.03, y: -5 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="group relative w-full aspect-[3/4] outline-none"
+                    aria-pressed={selected}
                   >
-                    {/* Card Corners */}
-                    {selected && (
-                      <>
-                        <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-[var(--cetso-orange)]" />
-                        <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-[var(--cetso-orange)]" />
-                        <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-[var(--cetso-orange)]" />
-                        <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-[var(--cetso-orange)]" />
-                      </>
-                    )}
-
-                    <div className="flex items-start gap-4">
-                      <div className="relative">
-                        <div
-                          className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl overflow-hidden"
-                          style={{ background: bg, border: `2px solid ${selected ? border : 'rgba(255,255,255,0.1)'}` }}
-                        >
-                          <User className="h-8 w-8" style={{ color: selected ? textColor : 'rgba(255,255,255,0.2)' }} />
-                        </div>
-                        {selected && (
-                          <div className="absolute -bottom-1 -right-1 bg-[var(--cetso-orange)] rounded-lg p-1 shadow-lg shadow-orange-500/40">
-                            <CheckCircle2 className="h-3.5 w-3.5 text-white" />
+                    <div
+                      className={`absolute inset-0 overflow-hidden transition-all duration-300 z-10 ${selected ? 'animate-pulse' : ''}`}
+                      style={{ 
+                        transform: 'skew(-8deg)',
+                        background: theme.bg,
+                        borderRadius: '1.5rem',
+                        border: selected ? '3px solid white' : '1px solid rgba(255,255,255,0.1)',
+                        boxShadow: selected ? `0 0 30px ${theme.accent}60` : '0 10px 30px rgba(0,0,0,0.5)'
+                      }}
+                    >
+                      {/* Unskewed Content Wrapper */}
+                      <div 
+                        className="absolute inset-0 w-full h-full flex flex-col justify-end origin-center"
+                        style={{ transform: 'skew(8deg) scale(1.15)' }}
+                      >
+                        {/* Character Image */}
+                        {c.imageUrl ? (
+                          <img 
+                            src={c.imageUrl} 
+                            alt={c.fullName} 
+                            className="absolute inset-0 w-full h-full object-cover object-center filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.4)] transition-transform duration-700 group-hover:scale-110" 
+                          />
+                        ) : c.candidateId.startsWith('ABSTAIN_') ? (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center opacity-40 bg-black/40">
+                            <CircleSlash className="w-24 h-24 mb-4 text-white" />
+                          </div>
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center opacity-20">
+                            <User className="w-32 h-32" />
                           </div>
                         )}
-                      </div>
 
-                      <div className="min-w-0 flex-1">
-                        <div className={`text-base font-black uppercase italic tracking-tight transition-colors ${selected ? 'text-white' : 'text-white/80'}`}>
-                          {c.fullName}
+                        {/* Half-tone dot pattern overlay */}
+                        <div className="absolute inset-0 opacity-10 pointer-events-none" 
+                             style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '10px 10px' }} />
+
+                        {/* Top Right Position Badge */}
+                        <div className="absolute top-6 right-8 z-20 flex items-center gap-1.5 bg-black/80 backdrop-blur-md rounded-md px-2.5 py-1 border border-white/10 shadow-lg" style={{ borderBottom: `2px solid ${theme.accent}` }}>
+                          <span className="text-xs font-black italic uppercase" style={{ color: theme.accent }}>
+                            {c.positionCode.slice(0, 1).toUpperCase()}
+                          </span>
+                          <span className="text-[10px] font-bold text-white uppercase tracking-widest opacity-90">
+                            {c.positionCode.replace(/_/g, ' ')}
+                          </span>
+                        </div>
+
+                        {/* Bottom Gradient for Text Legibility */}
+                        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none" />
+
+                        {/* Info Container */}
+                        <div className="relative z-10 px-8 pb-10 pt-4 w-full flex flex-col justify-end text-left pr-16 md:pr-20 md:pb-12">
+                          <div className={`text-xl md:text-2xl font-black italic tracking-tighter uppercase drop-shadow-xl leading-tight text-white break-words`}>
+                            {c.fullName.split(' ')[0]}
+                            {c.fullName.split(' ').length > 1 && (
+                              <span className="block text-sm md:text-base opacity-90 mt-1 break-words">
+                                {c.fullName.substring(c.fullName.indexOf(' ') + 1)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Hover Overlay */}
+                        <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 transition-opacity duration-300 pointer-events-none opacity-0 group-hover:opacity-100">
+                          <div className="bg-black text-white px-5 py-2.5 rounded-full font-black text-sm tracking-widest border border-white/20 shadow-xl">
+                            {selected ? '- DESELECT' : '+ SELECT'}
+                          </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="mt-4 space-y-3">
-                      <p className="text-[11px] font-medium text-white/40 leading-relaxed line-clamp-3">
-                        {c.bio}
-                      </p>
-                    </div>
-
-                    <div className="mt-5 flex items-center justify-between border-t border-white/5 pt-4">
-                      <div className="flex items-center gap-1.5">
-                        <div className={`h-1.5 w-1.5 rounded-full ${selected ? 'bg-[var(--cetso-orange)] animate-pulse' : 'bg-white/20'}`} />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-white/30">Candidate Profile</span>
-                      </div>
+                    {/* Top Left Selected Checkmark (Unskewed) */}
+                    <AnimatePresence>
                       {selected && (
-                        <span className="text-[10px] font-black uppercase tracking-widest text-[var(--cetso-orange)]">Primary Target</span>
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.5, y: 10 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.5, y: 10 }}
+                          className="absolute -top-3 -left-3 h-10 w-10 bg-black rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] flex items-center justify-center z-40"
+                          style={{ border: `2px solid ${theme.accent}`, transform: 'rotate(-8deg)' }}
+                        >
+                          <CheckCircle2 className="h-5 w-5" style={{ color: theme.accent }} strokeWidth={3} />
+                        </motion.div>
                       )}
-                    </div>
-                  </div>
-                </motion.button>
+                    </AnimatePresence>
+                  </motion.button>
+                </div>
               )
             })}
+          </div>
+
+          <div className="relative mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <Button
+              variant="secondary"
+              size="lg"
+              disabled={activeIdx === 0}
+              onClick={() => setActiveIdx((i) => Math.max(0, i - 1))}
+              className="w-full sm:w-auto bg-white/5 hover:bg-white/10 border border-white/10"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </Button>
+            <Button
+              variant="secondary"
+              size="lg"
+              disabled={activeIdx >= eligiblePositions.length - 1}
+              onClick={() => setActiveIdx((i) => Math.min(eligiblePositions.length - 1, i + 1))}
+              className="w-full sm:w-auto bg-white/5 hover:bg-white/10 border border-white/10"
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
         </motion.div>
       </AnimatePresence>
@@ -830,23 +1030,45 @@ export default function VotingPage() {
         className="fixed inset-x-0 bottom-0 z-50 border-t border-[rgba(255,255,255,0.06)] p-4 lg:hidden"
         style={{ background: 'rgba(7,7,12,0.85)', backdropFilter: 'blur(28px)' }}
       >
-        <Button
-          variant="primary"
-          size="lg"
-          className="w-full"
-          disabled={!isComplete || submitting}
-          onClick={() => setShowConfirm(true)}
-        >
-          <Vote className="h-4 w-4" />
-          {isComplete ? 'Review Lineup' : `Select all ${eligiblePositions.length} positions`}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="danger"
+            size="lg"
+            className="shrink-0 px-4"
+            disabled={!canClearBallot}
+            onClick={handleClearBallot}
+            title="Clear ballot selections"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="primary"
+            size="lg"
+            className="flex-1"
+            disabled={!isComplete || submitting}
+            onClick={() => setShowConfirm(true)}
+          >
+            <Vote className="h-4 w-4" />
+            {isComplete ? 'Review Lineup' : `Select all ${requiredSelectionCount} choices`}
+          </Button>
+        </div>
         <div className="mt-2 text-center text-[11px] font-medium text-[var(--cetso-text-3)]">
-          {selectedCount} of {eligiblePositions.length} selected • Ballot submission is final.
+          {selectedCount} of {requiredSelectionCount} selected • Ballot submission is final.
         </div>
       </div>
 
       {/* Desktop submit */}
-      <div className="hidden lg:block">
+      <div className="hidden lg:flex gap-3">
+        <Button
+          variant="danger"
+          size="lg"
+          className="w-full sm:w-auto"
+          disabled={!canClearBallot}
+          onClick={handleClearBallot}
+        >
+          <RotateCcw className="h-4 w-4" />
+          Clear Ballot
+        </Button>
         <Button
           variant="primary"
           size="lg"
@@ -855,7 +1077,7 @@ export default function VotingPage() {
           onClick={() => setShowConfirm(true)}
         >
           <Vote className="h-4 w-4" />
-          {isComplete ? 'Review & Submit Ballot' : `Complete all ${eligiblePositions.length} selections`}
+          {isComplete ? 'Review & Submit Ballot' : `Complete all ${requiredSelectionCount} selections`}
         </Button>
       </div>
     </div>

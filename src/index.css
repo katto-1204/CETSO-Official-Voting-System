@@ -60,7 +60,7 @@
 
   --font-heading: 'Bebas Neue', 'Anton', system-ui, sans-serif;
   --font-h1: 'Raider Crusader', 'Bebas Neue', system-ui, sans-serif;
-  --font-h2: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --font-h2: 'Inter', system-ui, -apple-system, sans-serif;
   --font-ui: 'Inter', 'Poppins', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }

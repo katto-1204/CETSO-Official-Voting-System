@@ -1,197 +1,95 @@
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Search, X, Filter, Crosshair, Zap } from 'lucide-react'
 import GlassCard from '../../components/ui/GlassCard'
 import TextField from '../../components/ui/TextField'
 import Button from '../../components/ui/Button'
 import { getStudentContext } from '../../lib/studentContext'
-import { getEligiblePositions } from '../../lib/electionData'
+import { POSITIONS, getPositionGroupLabel, mergeCandidatesWithOfficialSeed } from '../../lib/electionData'
 import type { Candidate, Position } from '../../lib/electionData'
 import { useCandidates } from '../../lib/queries'
+import Modal from '../../components/ui/Modal'
 
-function initialsOf(name: string) {
-  return name.split(' ').filter(Boolean).slice(0, 2).map((p) => p[0]).join('')
-}
-
-/* ── Cyberpunk / Valorant-style colour palettes per card ─── */
-const CARD_THEMES = [
-  { accent: '#ff4655', glow: 'rgba(255,70,85,0.5)', gradient: 'linear-gradient(135deg, #ff4655 0%, #0f1923 60%)', bg: '#0f1923' },
-  { accent: '#00e5ff', glow: 'rgba(0,229,255,0.5)', gradient: 'linear-gradient(135deg, #00e5ff 0%, #0a1628 60%)', bg: '#0a1628' },
-  { accent: '#bd00ff', glow: 'rgba(189,0,255,0.5)', gradient: 'linear-gradient(135deg, #bd00ff 0%, #12051f 60%)', bg: '#12051f' },
-  { accent: '#ffe500', glow: 'rgba(255,229,0,0.5)', gradient: 'linear-gradient(135deg, #ffe500 0%, #1a1600 60%)', bg: '#1a1600' },
-  { accent: '#00ff88', glow: 'rgba(0,255,136,0.5)', gradient: 'linear-gradient(135deg, #00ff88 0%, #041f10 60%)', bg: '#041f10' },
+const ZZZ_COLORS = [
+  { bg: '#ff3131', accent: '#ff8a8a', text: 'text-white' }, // Red (Lucifer style)
+  { bg: '#e032d9', accent: '#f07bf0', text: 'text-white' }, // Pink (Gracy style)
+  { bg: '#00d2ff', accent: '#8ce6ff', text: 'text-black' }, // Cyan
+  { bg: '#ffb800', accent: '#ffd252', text: 'text-black' }, // Yellow
+  { bg: '#00ff66', accent: '#8affb8', text: 'text-black' }, // Green
 ]
 
-function CandidateCard({ c, index }: { c: Candidate; index: number }) {
-  const inits = initialsOf(c.fullName)
-  const theme = CARD_THEMES[index % CARD_THEMES.length]
+function CandidateCard({ c, index, onClick }: { c: Candidate; index: number, onClick?: () => void }) {
+  const theme = ZZZ_COLORS[index % ZZZ_COLORS.length]
 
   return (
-    <motion.div
+    <motion.button
+      type="button"
+      onClick={onClick}
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.4, delay: index * 0.05, ease: [0.16, 1, 0.3, 1] }}
-      whileHover={{ y: -6, scale: 1.02 }}
-      className="cursor-default group"
+      whileHover={{ scale: 1.03, y: -5 }}
+      whileTap={{ scale: 0.98 }}
+      className="group relative w-full aspect-[3/4] outline-none text-left"
     >
-      <div
-        className="relative overflow-hidden rounded-lg"
-        style={{
+      {/* Skewed Container */}
+      <div 
+        className="absolute inset-0 overflow-hidden transition-all duration-300 ring-2 ring-transparent group-hover:ring-white/40 shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
+        style={{ 
+          transform: 'skew(-8deg)',
           background: theme.bg,
-          border: `1px solid ${theme.accent}40`,
-          boxShadow: `0 0 20px ${theme.accent}15, 0 20px 60px rgba(0,0,0,0.60)`,
-          clipPath: 'polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))',
+          borderRadius: '1.5rem',
         }}
       >
-        {/* ── Scan-line overlay ───────────────── */}
-        <div
-          className="pointer-events-none absolute inset-0 z-10 opacity-[0.03]"
-          style={{
-            backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.1) 2px, rgba(255,255,255,0.1) 4px)',
-          }}
-        />
-
-        {/* ── Top accent bar ─────────────────── */}
-        <div
-          className="h-1 w-full"
-          style={{ background: `linear-gradient(90deg, ${theme.accent}, transparent)` }}
-        />
-
-        {/* ── Avatar area ────────────────────── */}
-        <div
-          className="relative flex items-center justify-center py-10 overflow-hidden"
-          style={{ background: theme.gradient }}
+        {/* Unskewed Content Wrapper */}
+        <div 
+          className="absolute inset-0 w-full h-full flex flex-col justify-end origin-center"
+          style={{ transform: 'skew(8deg) scale(1.15)' }}
         >
-          {/* Hex grid decorative bg */}
-          <div
-            className="absolute inset-0 opacity-[0.06]"
-            style={{
-              backgroundImage: `radial-gradient(circle, ${theme.accent} 1px, transparent 1px)`,
-              backgroundSize: '20px 20px',
-            }}
-          />
-
-          {/* Corner accent */}
-          <div
-            className="absolute top-3 right-3 flex items-center gap-1.5"
-          >
-            <Crosshair className="h-3 w-3" style={{ color: theme.accent, opacity: 0.7 }} />
-            <span
-              className="text-[9px] font-bold uppercase tracking-[0.2em] font-mono"
-              style={{ color: `${theme.accent}99` }}
-            >
-              CET-{c.positionCode.slice(0, 4)}
-            </span>
-          </div>
-
-          {/* CETSO badge top-left */}
-          <div className="absolute top-3 left-3 flex items-center gap-1.5">
-            <div
-              className="grid h-5 w-5 place-items-center rounded text-[8px] font-black text-black"
-              style={{ background: theme.accent }}
-            >
-              C
-            </div>
-          </div>
-
-          {/* Big initials */}
-          <div className="relative z-10">
-            <div
-              className="grid h-24 w-24 place-items-center rounded-lg"
-              style={{
-                background: `${theme.accent}12`,
-                border: `2px solid ${theme.accent}50`,
-                boxShadow: `0 0 40px ${theme.glow}, inset 0 0 30px ${theme.accent}10`,
-              }}
-            >
-              <span
-                style={{
-                  fontFamily: 'var(--font-h1)',
-                  fontSize: 44,
-                  color: theme.accent,
-                  lineHeight: 1,
-                  textShadow: `0 0 20px ${theme.glow}`,
-                }}
-              >
-                {inits}
-              </span>
-            </div>
-            {/* Glow ring on hover */}
-            <div
-              className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-              style={{
-                boxShadow: `0 0 60px ${theme.glow}, 0 0 120px ${theme.accent}30`,
-              }}
+          {/* Character Image */}
+          {c.imageUrl ? (
+            <img 
+              src={c.imageUrl} 
+              alt={c.fullName} 
+              className="absolute inset-0 w-full h-full object-cover object-center filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.4)] transition-transform duration-700 group-hover:scale-110" 
             />
-          </div>
-        </div>
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center opacity-20">
+              <Zap className="w-32 h-32" />
+            </div>
+          )}
 
-        {/* ── Divider with accent ────────────── */}
-        <div className="relative h-px" style={{ background: `${theme.accent}30` }}>
-          <div
-            className="absolute left-0 top-0 h-full w-1/3 transition-all duration-500 group-hover:w-2/3"
-            style={{ background: theme.accent, boxShadow: `0 0 12px ${theme.glow}` }}
-          />
-        </div>
+          {/* Half-tone dot pattern overlay */}
+          <div className="absolute inset-0 opacity-10 pointer-events-none" 
+               style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '10px 10px' }} />
 
-        {/* ── Info section ───────────────────── */}
-        <div className="px-5 py-4" style={{ background: `${theme.bg}` }}>
-          {/* Name */}
-          <div
-            className="text-lg font-black tracking-wide"
-            style={{
-              fontFamily: 'var(--font-h2)',
-              color: '#ffffff',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-            }}
-          >
-            {c.fullName}
-          </div>
-
-          {/* Position row */}
-          <div className="mt-2 flex items-center gap-2 flex-wrap">
-            <div
-              className="inline-flex items-center gap-1 rounded px-2 py-1 text-[10px] font-bold uppercase tracking-wider"
-              style={{
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.10)',
-                color: 'rgba(255,255,255,0.5)',
-              }}
-            >
-              <Zap className="h-2.5 w-2.5" />
+          {/* Top Right Position Badge */}
+          <div className="absolute top-6 right-8 z-20 flex items-center gap-1.5 bg-black/80 backdrop-blur-md rounded-md px-2.5 py-1 border border-white/10 shadow-lg" style={{ borderBottom: `2px solid ${theme.accent}` }}>
+            <span className="text-xs font-black italic uppercase" style={{ color: theme.accent }}>
+              {c.positionCode.slice(0, 1).toUpperCase()}
+            </span>
+            <span className="text-[10px] font-bold text-white uppercase tracking-widest opacity-90">
               {c.positionCode.replace(/_/g, ' ')}
+            </span>
+          </div>
+
+          {/* Bottom Gradient for Text Legibility */}
+          <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none" />
+
+          {/* Info Container */}
+          <div className="relative z-10 px-8 pb-10 pt-4 w-full flex flex-col justify-end text-left pr-16 md:pr-20 md:pb-12">
+            <div className={`text-xl md:text-2xl font-black italic tracking-tighter uppercase drop-shadow-xl leading-tight text-white break-words`}>
+              {c.fullName.split(' ')[0]}
+              {c.fullName.split(' ').length > 1 && (
+                <span className="block text-sm md:text-base opacity-90 mt-1 break-words">
+                  {c.fullName.substring(c.fullName.indexOf(' ') + 1)}
+                </span>
+              )}
             </div>
           </div>
-
-          {/* Bio */}
-          <div
-            className="mt-2 text-xs font-medium leading-relaxed line-clamp-2"
-            style={{ color: 'rgba(255,255,255,0.35)' }}
-          >
-            {c.bio}
-          </div>
-
-          {/* Bottom accent line */}
-          <div className="mt-4 flex items-center gap-2">
-            <div className="flex-1 h-px" style={{ background: `${theme.accent}20` }} />
-            <span
-              className="text-[8px] font-bold uppercase tracking-[0.3em] font-mono"
-              style={{ color: `${theme.accent}50` }}
-            >
-              CETSO 2026
-            </span>
-            <div className="flex-1 h-px" style={{ background: `${theme.accent}20` }} />
-          </div>
         </div>
-
-        {/* ── Bottom accent bar ──────────────── */}
-        <div
-          className="h-0.5 w-full"
-          style={{ background: `linear-gradient(90deg, transparent, ${theme.accent}, transparent)` }}
-        />
       </div>
-    </motion.div>
+    </motion.button>
   )
 }
 
@@ -199,18 +97,20 @@ export default function CandidateListPage() {
   const ctx = getStudentContext()
   const [query, setQuery] = useState('')
   const [positionCode, setPositionCode] = useState<string>('all')
+  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null)
 
-  const eligiblePositions: Position[] = useMemo(() => {
-    if (!ctx) return []
-    return getEligiblePositions({ programCode: ctx.programCode, yearLevel: ctx.yearLevel })
-  }, [ctx])
+  const displayPositions: Position[] = POSITIONS
 
   const { data: dbCandidates, isLoading, isError } = useCandidates()
+  const sourceCandidates = useMemo(
+    () => mergeCandidatesWithOfficialSeed(dbCandidates),
+    [dbCandidates]
+  )
 
   const candidates: Candidate[] = useMemo(() => {
-    if (!ctx || !dbCandidates) return []
-    const allowedPositionCodes = new Set(eligiblePositions.map((p) => p.positionCode))
-    const filtered = dbCandidates.filter((c) => allowedPositionCodes.has(c.positionCode))
+    if (!ctx) return []
+    const allowedPositionCodes = new Set(displayPositions.map((p) => p.positionCode))
+    const filtered = sourceCandidates.filter((c) => allowedPositionCodes.has(c.positionCode))
     const q = query.trim().toLowerCase()
     return filtered.filter((c) => {
       const matchQuery =
@@ -219,7 +119,16 @@ export default function CandidateListPage() {
       const matchPosition = positionCode === 'all' || c.positionCode === positionCode
       return matchQuery && matchPosition
     })
-  }, [ctx, eligiblePositions, positionCode, query, dbCandidates])
+  }, [ctx, displayPositions, positionCode, query, sourceCandidates])
+
+  const candidatesByPosition = useMemo(() => {
+    return displayPositions
+      .map((position) => ({
+        position,
+        candidates: candidates.filter((candidate) => candidate.positionCode === position.positionCode),
+      }))
+      .filter((group) => positionCode === 'all' || group.position.positionCode === positionCode)
+  }, [candidates, displayPositions, positionCode])
 
   if (!ctx) {
     return (
@@ -241,8 +150,8 @@ export default function CandidateListPage() {
   }
 
   const posOptions = [
-    { value: 'all', label: 'All eligible positions' },
-    ...eligiblePositions.map((p) => ({ value: p.positionCode, label: p.title })),
+    { value: 'all', label: 'All positions' },
+    ...displayPositions.map((p) => ({ value: p.positionCode, label: p.title })),
   ]
 
   if (isLoading) {
@@ -270,6 +179,65 @@ export default function CandidateListPage() {
 
   return (
     <div className="space-y-6">
+      {/* Candidate Info Modal */}
+      <Modal
+        isOpen={!!selectedCandidate}
+        onClose={() => setSelectedCandidate(null)}
+        title="CANDIDATE INFORMATION"
+        maxWidth="max-w-4xl"
+      >
+        {selectedCandidate && (
+          <div className="flex flex-col md:flex-row gap-6 md:gap-10 items-stretch">
+            {/* Left: Image */}
+            <div className="w-full md:w-1/2 flex-shrink-0">
+              <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10 bg-black/40">
+                {selectedCandidate.imageUrl ? (
+                  <img
+                    src={selectedCandidate.imageUrl}
+                    alt={selectedCandidate.fullName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center opacity-20">
+                    <Zap className="w-32 h-32 text-white" />
+                  </div>
+                )}
+                {/* Overlay gradient for styling */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Right: Information */}
+            <div className="w-full md:w-1/2 flex flex-col justify-center space-y-6">
+              <div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-[var(--cetso-orange)] mb-2">
+                  {selectedCandidate.positionCode.replace(/_/g, ' ')}
+                </div>
+                <h2 className="text-4xl sm:text-5xl font-black italic uppercase tracking-tighter text-white leading-[0.9]">
+                  {selectedCandidate.fullName}
+                </h2>
+              </div>
+
+              {selectedCandidate.bio && (
+                <div className="bg-white/5 p-5 rounded-xl border border-white/10">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-3">
+                    Biography / Platform
+                  </div>
+                  <p className="text-sm text-white/80 leading-relaxed font-medium whitespace-pre-wrap">
+                    {selectedCandidate.bio}
+                  </p>
+                </div>
+              )}
+
+              <div className="pt-4">
+                <Button variant="secondary" className="w-full" onClick={() => setSelectedCandidate(null)}>
+                  Close Information
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       {/* Header */}
       <motion.div
@@ -295,7 +263,7 @@ export default function CandidateListPage() {
           CANDIDATE LIST
         </h1>
         <p className="mt-2 text-sm font-medium" style={{ color: 'var(--cetso-text-2)' }}>
-          Review all candidates running for your eligible positions.
+          Review all official candidates grouped by position.
         </p>
       </motion.div>
 
@@ -359,34 +327,73 @@ export default function CandidateListPage() {
         </div>
       </GlassCard>
 
-      {/* Candidates grid */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {candidates.map((c, i) => (
-          <CandidateCard key={c.candidateId} c={c} index={i} />
-        ))}
+      {/* Candidates grouped by position */}
+      <div className="space-y-8">
+        {candidatesByPosition.map(({ position, candidates: groupCandidates }, index) => {
+          const groupLabel = getPositionGroupLabel(position.positionCode)
+          const previousGroupLabel = index > 0 ? getPositionGroupLabel(candidatesByPosition[index - 1].position.positionCode) : ''
+          const showGroupHeader = index === 0 || groupLabel !== previousGroupLabel
+
+          return (
+            <Fragment key={position.positionCode}>
+              {showGroupHeader ? (
+                <div className={index === 0 ? 'pt-1' : 'pt-6'}>
+                  <div className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                  <div className="mt-5 text-xs font-black uppercase tracking-[0.3em] text-white/35">
+                    {groupLabel}
+                  </div>
+                </div>
+              ) : null}
+              <section className="space-y-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.25em]" style={{ color: 'var(--cetso-orange)' }}>
+                      {groupCandidates.length} candidate{groupCandidates.length !== 1 ? 's' : ''}
+                    </div>
+                    <h2 className="text-2xl font-black uppercase italic tracking-tighter text-white">
+                      {position.title}
+                    </h2>
+                  </div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-white/35">
+                    {groupLabel}
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap justify-center gap-4">
+                  {groupCandidates.map((c, i) => (
+                    <div key={c.candidateId} className="w-[calc(50%-0.5rem)] sm:w-[calc(33.333%-0.666rem)] lg:w-[calc(25%-0.75rem)] xl:w-[calc(20%-0.8rem)]">
+                      <CandidateCard c={c} index={i} onClick={() => {
+                        console.log('Candidate clicked:', c.fullName);
+                        setSelectedCandidate(c);
+                      }} />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </Fragment>
+          )
+        })}
         {candidates.length === 0 ? (
-          <div className="col-span-full">
-            <GlassCard className="p-10 text-center">
-              <Search className="mx-auto h-10 w-10 text-[var(--cetso-text-3)] mb-3" />
-              <div
-                className="text-3xl font-black uppercase"
-                style={{ fontFamily: 'var(--font-h1)', color: 'var(--cetso-text)' }}
-              >
-                NO RESULTS
-              </div>
-              <div className="mt-2 text-sm font-medium" style={{ color: 'var(--cetso-text-2)' }}>
-                Try clearing your filters or search query.
-              </div>
-              <Button
-                variant="secondary"
-                size="md"
-                className="mt-5"
-                onClick={() => { setQuery(''); setPositionCode('all') }}
-              >
-                Clear Filters
-              </Button>
-            </GlassCard>
-          </div>
+          <GlassCard className="p-10 text-center">
+            <Search className="mx-auto h-10 w-10 text-[var(--cetso-text-3)] mb-3" />
+            <div
+              className="text-3xl font-black uppercase"
+              style={{ fontFamily: 'var(--font-h1)', color: 'var(--cetso-text)' }}
+            >
+              NO RESULTS
+            </div>
+            <div className="mt-2 text-sm font-medium" style={{ color: 'var(--cetso-text-2)' }}>
+              Try clearing your filters or search query.
+            </div>
+            <Button
+              variant="secondary"
+              size="md"
+              className="mt-5"
+              onClick={() => { setQuery(''); setPositionCode('all') }}
+            >
+              Clear Filters
+            </Button>
+          </GlassCard>
         ) : null}
       </div>
     </div>

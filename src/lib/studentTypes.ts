@@ -1,6 +1,14 @@
 export type ProgramCode = 'BSIT' | 'BLIS' | 'BSCpE' | 'BSECE'
 export type YearLevel = 1 | 2 | 3 | 4
 
+export function normalizeProgramCode(value: unknown): ProgramCode {
+  const normalized = String(value ?? '').trim().toUpperCase()
+  if (normalized === 'BSCPE' || normalized === 'BSCpE'.toUpperCase()) return 'BSCpE'
+  if (normalized === 'BLIS') return 'BLIS'
+  if (normalized === 'BSECE') return 'BSECE'
+  return 'BSIT'
+}
+
 export type StudentRecord = {
   studentId: string
   fullName: string
@@ -25,7 +33,7 @@ export function mapDbStudent(row: any): StudentRecord {
     studentId: row.student_id,
     fullName: row.full_name,
     email: row.email,
-    programCode: row.program_code,
+    programCode: normalizeProgramCode(row.program_code),
     yearLevel: row.year_level,
   }
 }

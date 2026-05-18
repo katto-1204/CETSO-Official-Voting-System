@@ -23,6 +23,7 @@ CREATE TABLE candidates (
   partylist VARCHAR(100) NOT NULL,
   tagline TEXT,
   bio TEXT,
+  image_url TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

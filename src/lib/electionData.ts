@@ -1,6 +1,7 @@
 import type { ProgramCode, YearLevel } from './studentTypes'
 
 export type PositionType = 'executive' | 'representative'
+export type PositionGroup = 'executive_officers' | 'year_level_representatives' | 'public_information_officers'
 
 export type PositionEligibility = {
   programCode?: ProgramCode
@@ -11,7 +12,9 @@ export type Position = {
   positionCode: string
   title: string
   positionType: PositionType
+  positionGroup: PositionGroup
   eligibility?: PositionEligibility
+  selectionLimit?: number
   sortOrder: number
 }
 
@@ -22,6 +25,7 @@ export type Candidate = {
   partylist: string
   tagline: string
   bio: string
+  imageUrl?: string
 }
 
 export const ELECTION = {
@@ -32,69 +36,70 @@ export const ELECTION = {
 
 export const PROGRAMS: ProgramCode[] = ['BSIT', 'BLIS', 'BSCpE', 'BSECE']
 
-const POSITIONS_UNSORTED: Position[] = [
-  // Executive
-  { positionCode: 'PRESIDENT', title: 'President', positionType: 'executive', sortOrder: 1 },
-  { positionCode: 'EXT_VICE_PRESIDENT', title: 'External Vice President', positionType: 'executive', sortOrder: 2 },
-  { positionCode: 'INT_VICE_PRESIDENT', title: 'Internal Vice President', positionType: 'executive', sortOrder: 3 },
-  { positionCode: 'SECRETARY', title: 'Secretary', positionType: 'executive', sortOrder: 4 },
-  { positionCode: 'ASSISTANT_SECRETARY', title: 'Assistant Secretary', positionType: 'executive', sortOrder: 5 },
-  { positionCode: 'TREASURER', title: 'Treasurer', positionType: 'executive', sortOrder: 6 },
-  { positionCode: 'ASSISTANT_TREASURER', title: 'Assistant Treasurer', positionType: 'executive', sortOrder: 7 },
-  { positionCode: 'AUDITOR', title: 'Auditor', positionType: 'executive', sortOrder: 8 },
-  { positionCode: 'BUSINESS_MANAGER_1', title: 'Business Manager', positionType: 'executive', sortOrder: 9 },
-  { positionCode: 'BUSINESS_MANAGER_2', title: 'Business Manager', positionType: 'executive', sortOrder: 10 },
+export const POSITION_GROUP_LABELS: Record<PositionGroup, string> = {
+  executive_officers: 'Executive Officers',
+  year_level_representatives: 'Year Level Representatives',
+  public_information_officers: 'Public Information Officers',
+}
 
-  // PIO (program-restricted)
+const POSITIONS_UNSORTED: Position[] = [
+  // Executive Officers
+  { positionCode: 'PRESIDENT', title: 'President', positionType: 'executive', positionGroup: 'executive_officers', sortOrder: 1 },
+  { positionCode: 'INT_VICE_PRESIDENT', title: 'Internal Vice President', positionType: 'executive', positionGroup: 'executive_officers', sortOrder: 2 },
+  { positionCode: 'EXT_VICE_PRESIDENT', title: 'External Vice President', positionType: 'executive', positionGroup: 'executive_officers', sortOrder: 3 },
+  { positionCode: 'SECRETARY', title: 'Secretary', positionType: 'executive', positionGroup: 'executive_officers', sortOrder: 4 },
+  { positionCode: 'ASSISTANT_SECRETARY', title: 'Assistant Secretary', positionType: 'executive', positionGroup: 'executive_officers', sortOrder: 5 },
+  { positionCode: 'TREASURER', title: 'Treasurer', positionType: 'executive', positionGroup: 'executive_officers', sortOrder: 6 },
+  { positionCode: 'ASSISTANT_TREASURER', title: 'Assistant Treasurer', positionType: 'executive', positionGroup: 'executive_officers', sortOrder: 7 },
+  { positionCode: 'AUDITOR', title: 'Auditor', positionType: 'executive', positionGroup: 'executive_officers', sortOrder: 8 },
+  { positionCode: 'BUSINESS_MANAGER', title: 'Business Managers', positionType: 'executive', positionGroup: 'executive_officers', selectionLimit: 2, sortOrder: 9 },
+
+  // Year-level Representatives
+  // BSCpE
+  { positionCode: 'BSCpE_REP_2', title: 'BSCPE 2nd Year Representative', positionType: 'representative', positionGroup: 'year_level_representatives', eligibility: { programCode: 'BSCpE', yearLevel: 2 }, sortOrder: 10 },
+  { positionCode: 'BSCpE_REP_3', title: 'BSCPE 3rd Year Representative', positionType: 'representative', positionGroup: 'year_level_representatives', eligibility: { programCode: 'BSCpE', yearLevel: 3 }, sortOrder: 11 },
+  { positionCode: 'BSCpE_REP_4', title: 'BSCPE 4th Year Representative', positionType: 'representative', positionGroup: 'year_level_representatives', eligibility: { programCode: 'BSCpE', yearLevel: 4 }, sortOrder: 12 },
+
+  // BSEcE
+  { positionCode: 'BSECE_REP_2', title: 'BSECE 2nd Year Representative', positionType: 'representative', positionGroup: 'year_level_representatives', eligibility: { programCode: 'BSECE', yearLevel: 2 }, sortOrder: 13 },
+
+  // BSIT
+  { positionCode: 'BSIT_REP_2', title: 'BSIT 2nd Year Representative', positionType: 'representative', positionGroup: 'year_level_representatives', eligibility: { programCode: 'BSIT', yearLevel: 2 }, sortOrder: 14 },
+  { positionCode: 'BSIT_REP_3', title: 'BSIT 3rd Year Representative', positionType: 'representative', positionGroup: 'year_level_representatives', eligibility: { programCode: 'BSIT', yearLevel: 3 }, sortOrder: 15 },
+  { positionCode: 'BSIT_REP_4', title: 'BSIT 4th Year Representative', positionType: 'representative', positionGroup: 'year_level_representatives', eligibility: { programCode: 'BSIT', yearLevel: 4 }, sortOrder: 16 },
+
+  // BLIS
+  { positionCode: 'BLIS_REP_3', title: 'BLIS 3rd Year Representative', positionType: 'representative', positionGroup: 'year_level_representatives', eligibility: { programCode: 'BLIS', yearLevel: 3 }, sortOrder: 17 },
+
+  // Public Information Officers
   {
     positionCode: 'PIO_BSIT',
-    title: 'Public Information Officer (BSIT)',
+    title: 'PIO BSIT',
     positionType: 'executive',
+    positionGroup: 'public_information_officers',
     eligibility: { programCode: 'BSIT' },
-    sortOrder: 11,
-  },
-  {
-    positionCode: 'PIO_BLIS',
-    title: 'Public Information Officer (BLIS)',
-    positionType: 'executive',
-    eligibility: { programCode: 'BLIS' },
-    sortOrder: 12,
+    sortOrder: 18,
   },
   {
     positionCode: 'PIO_BSCpE',
-    title: 'Public Information Officer (BSCpE)',
+    title: 'PIO BSCPE',
     positionType: 'executive',
+    positionGroup: 'public_information_officers',
     eligibility: { programCode: 'BSCpE' },
-    sortOrder: 13,
+    sortOrder: 19,
   },
-
-  // Year-level Representatives
-  // BSIT
-  { positionCode: 'BSIT_REP_1', title: 'Representative for BSIT 1', positionType: 'representative', eligibility: { programCode: 'BSIT', yearLevel: 1 }, sortOrder: 14 },
-  { positionCode: 'BSIT_REP_2', title: 'Representative for BSIT 2', positionType: 'representative', eligibility: { programCode: 'BSIT', yearLevel: 2 }, sortOrder: 15 },
-  { positionCode: 'BSIT_REP_3', title: 'Representative for BSIT 3', positionType: 'representative', eligibility: { programCode: 'BSIT', yearLevel: 3 }, sortOrder: 16 },
-  { positionCode: 'BSIT_REP_4', title: 'Representative for BSIT 4', positionType: 'representative', eligibility: { programCode: 'BSIT', yearLevel: 4 }, sortOrder: 17 },
-
-  // BLIS
-  { positionCode: 'BLIS_REP_1', title: 'Representative for BLIS 1', positionType: 'representative', eligibility: { programCode: 'BLIS', yearLevel: 1 }, sortOrder: 18 },
-  { positionCode: 'BLIS_REP_2', title: 'Representative for BLIS 2', positionType: 'representative', eligibility: { programCode: 'BLIS', yearLevel: 2 }, sortOrder: 19 },
-  { positionCode: 'BLIS_REP_3', title: 'Representative for BLIS 3', positionType: 'representative', eligibility: { programCode: 'BLIS', yearLevel: 3 }, sortOrder: 20 },
-  { positionCode: 'BLIS_REP_4', title: 'Representative for BLIS 4', positionType: 'representative', eligibility: { programCode: 'BLIS', yearLevel: 4 }, sortOrder: 21 },
-
-  // BSCpE
-  { positionCode: 'BSCpE_REP_1', title: 'Representative for BSCpE 1', positionType: 'representative', eligibility: { programCode: 'BSCpE', yearLevel: 1 }, sortOrder: 22 },
-  { positionCode: 'BSCpE_REP_2', title: 'Representative for BSCpE 2', positionType: 'representative', eligibility: { programCode: 'BSCpE', yearLevel: 2 }, sortOrder: 23 },
-  { positionCode: 'BSCpE_REP_3', title: 'Representative for BSCpE 3', positionType: 'representative', eligibility: { programCode: 'BSCpE', yearLevel: 3 }, sortOrder: 24 },
-  { positionCode: 'BSCpE_REP_4', title: 'Representative for BSCpE 4', positionType: 'representative', eligibility: { programCode: 'BSCpE', yearLevel: 4 }, sortOrder: 25 },
-
-  // BSEcE
-  { positionCode: 'BSEcE_REP_1', title: 'Representative for BSEcE 1', positionType: 'representative', eligibility: { programCode: 'BSECE', yearLevel: 1 }, sortOrder: 26 },
-  { positionCode: 'BSEcE_REP_2', title: 'Representative for BSEcE 2', positionType: 'representative', eligibility: { programCode: 'BSECE', yearLevel: 2 }, sortOrder: 27 },
-  { positionCode: 'BSEcE_REP_3', title: 'Representative for BSEcE 3', positionType: 'representative', eligibility: { programCode: 'BSECE', yearLevel: 3 }, sortOrder: 28 },
-  { positionCode: 'BSEcE_REP_4', title: 'Representative for BSEcE 4', positionType: 'representative', eligibility: { programCode: 'BSECE', yearLevel: 4 }, sortOrder: 29 },
 ]
 
 export const POSITIONS = POSITIONS_UNSORTED.slice().sort((a, b) => a.sortOrder - b.sortOrder)
+
+export function getPositionGroupLabel(positionCode: string) {
+  const position = POSITIONS.find((p) => p.positionCode === positionCode)
+  return position ? POSITION_GROUP_LABELS[position.positionGroup] : 'Other Positions'
+}
+
+export function getPositionSelectionLimit(position: Position) {
+  return position.selectionLimit ?? 1
+}
 
 export function getEligiblePositions(params: {
   programCode: ProgramCode
@@ -110,39 +115,71 @@ export function getEligiblePositions(params: {
   })
 }
 
-const CANDIDATE_PARTY = ['CETSO', 'CETSO Unite', 'CETSO Vision']
+const DEFAULT_PARTYLIST = 'Independent'
+const DEFAULT_TAGLINE = 'Official CETSO Candidate'
 
-function makeCandidateName(positionTitle: string, variant: 'A' | 'B') {
-  const suffix = variant === 'A' ? 'I' : 'II'
-  return `${positionTitle.split(' ')[0]} Candidate ${suffix}`
+function makeCandidate(positionCode: string, fullName: string): Candidate {
+  const position = POSITIONS.find((p) => p.positionCode === positionCode)
+  const candidateId = `${positionCode}-${fullName.replace(/[^A-Z0-9]+/gi, '-').replace(/^-|-$/g, '').toUpperCase()}`
+  return {
+    candidateId,
+    positionCode,
+    fullName,
+    partylist: DEFAULT_PARTYLIST,
+    tagline: DEFAULT_TAGLINE,
+    bio: `Official candidate for ${position?.title ?? positionCode}.`,
+    imageUrl: `/CANDIDATES/${fullName}.png`,
+  }
 }
 
-export const CANDIDATES: Candidate[] = POSITIONS.flatMap((pos) => {
-  const baseName = pos.title
-  const partylist = CANDIDATE_PARTY[pos.sortOrder % CANDIDATE_PARTY.length]
-  const bio = `Committed to campus excellence and transparent leadership for ${baseName}.`
-  return [
-    {
-      candidateId: `${pos.positionCode}-A`,
-      positionCode: pos.positionCode,
-      fullName: makeCandidateName(baseName, 'A'),
-      partylist,
-      tagline: `Deliver. Lead. Serve.`,
-      bio,
-    },
-    {
-      candidateId: `${pos.positionCode}-B`,
-      positionCode: pos.positionCode,
-      fullName: makeCandidateName(baseName, 'B'),
-      partylist,
-      tagline: `Better governance, stronger students.`,
-      bio,
-    },
-  ]
-})
+export const CANDIDATES: Candidate[] = [
+  makeCandidate('PRESIDENT', 'KYLLE KIAN GIMENA'),
+  makeCandidate('INT_VICE_PRESIDENT', 'MICHELLE CAPITAN'),
+  makeCandidate('EXT_VICE_PRESIDENT', 'CASSIEL FLORES'),
+  makeCandidate('SECRETARY', 'KEAN JAYCEE D. GUTIERREZ'),
+  makeCandidate('ASSISTANT_SECRETARY', 'KRISH KHINOBI BAYALAN'),
+  makeCandidate('ASSISTANT_SECRETARY', 'SHELBY HANIEL G. CODILLA'),
+  makeCandidate('TREASURER', 'RACHEL MAE PARAGAS'),
+  makeCandidate('TREASURER', 'EDELJOEL R. MACABULOS'),
+  makeCandidate('ASSISTANT_TREASURER', 'JIREH MAE D. TUMALA'),
+  makeCandidate('ASSISTANT_TREASURER', 'JOHN TROY V. MAGHANOY'),
+  makeCandidate('AUDITOR', 'DEXTER MAGUINSAY'),
+  makeCandidate('BUSINESS_MANAGER', 'CARL JOSHUA D. BALCITA'),
+  makeCandidate('BUSINESS_MANAGER', 'NATHANIEL DATAS'),
+  makeCandidate('BUSINESS_MANAGER', 'NOEL IVAN CLAMOR'),
+  makeCandidate('BSCpE_REP_2', 'JULYLYN C. GOREZ'),
+  makeCandidate('BSCpE_REP_3', 'JOHN DALE M. CARIN'),
+  makeCandidate('BSCpE_REP_4', 'VAL JOSEPH OLAVIDES ANDAL'),
+  makeCandidate('BSCpE_REP_4', 'GLEZA MARIE GAMUTAN'),
+  makeCandidate('BSECE_REP_2', 'NATHANIEL S. GUILLAMASO'),
+  makeCandidate('BSIT_REP_2', 'NATHALIA MAE B. BAGNES'),
+  makeCandidate('BSIT_REP_3', 'JUSTINE AUDREY P. ROLLENAS'),
+  makeCandidate('BSIT_REP_4', 'RHONAN MADARANG'),
+  makeCandidate('BLIS_REP_3', 'RISCIA LOYGI H. BURGOS'),
+  makeCandidate('PIO_BSIT', 'JARED SETH R. LO'),
+  makeCandidate('PIO_BSCpE', 'HINGPIT, MARY GRACE B.'),
+  makeCandidate('PIO_BSCpE', 'EANNE MARKEISHA A. MORENO'),
+]
 
 export function getCandidatesForPosition(positionCode: string) {
   return CANDIDATES.filter((c) => c.positionCode === positionCode)
+}
+
+export function mergeCandidatesWithOfficialSeed(dbCandidates?: Candidate[] | null) {
+  if (!dbCandidates?.length) return CANDIDATES
+
+  const dbKeys = new Set(
+    dbCandidates.map((candidate) =>
+      `${candidate.positionCode}::${candidate.fullName.trim().toUpperCase()}`
+    )
+  )
+
+  const missingOfficialCandidates = CANDIDATES.filter((candidate) => {
+    const key = `${candidate.positionCode}::${candidate.fullName.trim().toUpperCase()}`
+    return !dbKeys.has(key)
+  })
+
+  return [...dbCandidates, ...missingOfficialCandidates]
 }
 
 export function getCandidateById(candidateId: string) {

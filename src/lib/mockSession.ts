@@ -1,4 +1,4 @@
-import type { ProgramCode, YearLevel } from './studentTypes'
+import { normalizeProgramCode, type ProgramCode, type YearLevel } from './studentTypes'
 
 export type MockSession = {
   role: 'student' | 'admin'
@@ -20,7 +20,7 @@ export function getMockSession(): MockSession {
   const role = (localStorage.getItem(KEYS.role) as MockSession['role'] | null) ?? 'student'
   const studentId = localStorage.getItem(KEYS.studentId)
   const studentName = localStorage.getItem(KEYS.studentName)
-  const programCode = localStorage.getItem(KEYS.programCode) as ProgramCode | null
+  const programCodeRaw = localStorage.getItem(KEYS.programCode)
   const yearLevelRaw = localStorage.getItem(KEYS.yearLevel)
   const yearLevel = yearLevelRaw ? (Number(yearLevelRaw) as YearLevel) : null
 
@@ -28,7 +28,7 @@ export function getMockSession(): MockSession {
     role,
     studentId: studentId ?? null,
     studentName: studentName ?? null,
-    programCode: programCode ?? null,
+    programCode: programCodeRaw ? normalizeProgramCode(programCodeRaw) : null,
     yearLevel,
   }
 }
