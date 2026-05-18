@@ -1,144 +1,146 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { Shield, RefreshCw } from 'lucide-react'
 
 export default function SplashPage() {
   const navigate = useNavigate()
+  const [progress, setProgress] = useState(0)
+  const [currentTime, setCurrentTime] = useState('')
 
   useEffect(() => {
-    const t = window.setTimeout(() => navigate('/landing'), 2400)
-    return () => window.clearTimeout(t)
-  }, [navigate])
+    // Dynamic local time formatter matching "MON, 6:14 PM"
+    const updateTime = () => {
+      const now = new Date()
+      const day = now.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase()
+      const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+      setCurrentTime(`${day}, ${timeStr}`)
+    }
+    updateTime()
+    const timer = setInterval(updateTime, 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  useEffect(() => {
+    // Smooth progress increment matching 2.4s total load
+    const interval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 100) {
+          clearInterval(interval)
+          return 100
+        }
+        return prev + 1
+      })
+    }, 20) // 100 steps * 20ms = 2s total duration
+    return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    if (progress === 100) {
+      const redirect = setTimeout(() => {
+        const targetPath = sessionStorage.getItem('redirect_after_splash') || '/landing'
+        sessionStorage.removeItem('redirect_after_splash')
+        navigate(targetPath)
+      }, 400) // slight delay for satisfying completion visual
+      return () => clearTimeout(redirect)
+    }
+  }, [progress, navigate])
 
   return (
-    <div className="relative min-h-screen overflow-hidden" style={{ background: 'var(--cetso-bg)' }}>
-      {/* Radial glow background */}
+    <div className="relative min-h-screen overflow-hidden flex items-center justify-center" style={{ background: 'var(--cetso-bg)' }}>
+      {/* Premium ambient glows */}
       <div
         className="absolute inset-0"
         style={{
           background: `
-            radial-gradient(ellipse 1000px 600px at 20% -10%, rgba(255,122,24,0.32), transparent 65%),
-            radial-gradient(ellipse 800px 500px at 82% 15%, rgba(255,178,74,0.18), transparent 60%),
-            radial-gradient(ellipse 600px 400px at 50% 95%, rgba(255,122,24,0.12), transparent 55%)
+            radial-gradient(ellipse 1000px 600px at 20% -10%, rgba(255,122,24,0.18), transparent 65%),
+            radial-gradient(ellipse 800px 500px at 80% 90%, rgba(255,122,24,0.08), transparent 60%)
           `,
         }}
       />
-      <div
-        className="absolute inset-0"
-        style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.10), rgba(0,0,0,0.60))' }}
-      />
 
-      {/* Animated blobs */}
-      <motion.div
-        aria-hidden="true"
-        className="absolute rounded-full blur-3xl"
-        style={{
-          width: 400,
-          height: 400,
-          left: '-80px',
-          top: '12%',
-          background: 'rgba(255,122,24,0.14)',
-        }}
-        animate={{ x: [0, 60, 0], y: [0, 20, 0] }}
-        transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-      />
-      <motion.div
-        aria-hidden="true"
-        className="absolute rounded-full blur-3xl"
-        style={{
-          width: 460,
-          height: 460,
-          right: '-100px',
-          top: '40%',
-          background: 'rgba(255,178,74,0.09)',
-        }}
-        animate={{ x: [0, -50, 0], y: [0, -15, 0] }}
-        transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
-      />
-
-      {/* Center content */}
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6">
+      <div className="relative z-10 w-full max-w-[560px] px-4">
+        {/* Main Cryptographic Terminal Widget */}
         <motion.div
-          initial={{ opacity: 0, y: 20, filter: 'blur(12px)' }}
-          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-          transition={{ duration: 0.7, ease: 'easeOut' }}
-          className="flex flex-col items-center gap-8"
-        >
-          <motion.div
-            initial={{ scale: 0.85, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.6, ease: [0.34, 1.56, 0.64, 1] }}
-          >
-            <img
-              src="/Copy of CET Logotype (White).png"
-              alt="CET Logotype"
-              className="h-28 w-auto object-contain drop-shadow-[0_4px_24px_rgba(255,255,255,0.12)]"
-            />
-          </motion.div>
-
-          <motion.div
-            className="text-center"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
-          >
-            <div
-              className="font-[var(--font-heading)] text-5xl tracking-wider sm:text-6xl"
-              style={{
-                background: 'linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.80) 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-                textShadow: 'none',
-                filter: 'drop-shadow(0 0 32px rgba(255,122,24,0.30))',
-              }}
-            >
-              CETSO ELECTIONS
-            </div>
-            <div
-              className="font-[var(--font-heading)] text-5xl tracking-wider sm:text-6xl"
-              style={{
-                background: 'linear-gradient(135deg, #ff7a18, #ffb24a)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-                filter: 'drop-shadow(0 0 24px rgba(255,122,24,0.45))',
-              }}
-            >
-              2026
-            </div>
-            <motion.div
-              className="mt-4 text-sm font-semibold tracking-widest uppercase text-[var(--cetso-text-2)]"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-            >
-              Lead Now. Vote with confidence.
-            </motion.div>
-          </motion.div>
-        </motion.div>
-      </div>
-
-      {/* Progress bar */}
-      <div className="absolute bottom-10 inset-x-0 flex items-center justify-center px-6">
-        <div
-          className="w-[200px] rounded-full p-[3px]"
+          initial={{ opacity: 0, scale: 0.94, y: 15 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+          className="relative rounded-[28px] border border-white/[0.06] bg-[#0c0d10] p-6 sm:p-8 overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.85)]"
           style={{
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.10)',
+            backgroundImage: 'radial-gradient(rgba(255,255,255,0.035) 1.5px, transparent 1.5px)',
+            backgroundSize: '16px 16px',
           }}
         >
-          <motion.div
-            className="h-1.5 rounded-full"
-            style={{
-              background: 'linear-gradient(90deg, #ff7a18, #ffb24a)',
-              boxShadow: '0 0 20px rgba(255,122,24,0.55)',
-            }}
-            initial={{ width: 16 }}
-            animate={{ width: '100%' }}
-            transition={{ duration: 2.0, ease: 'easeInOut' }}
-          />
-        </div>
+          {/* Subtle top glare highlight */}
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+          {/* Top Section */}
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 pb-6 border-b border-white/[0.05]">
+            {/* Left Column: Airport-ticket style route */}
+            <div className="flex-1">
+              <div className="flex items-start gap-2 font-['DotGothic16'] text-[40px] leading-none font-normal tracking-[0.06em] text-white">
+                <span>CET ELECTIONS</span>
+                <span className="text-xl text-[#ff9f1a] font-bold mt-1">2026</span>
+              </div>
+
+              <div className="mt-5 grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-white text-base font-bold tracking-tight">Voter Portal</div>
+                  <div className="text-white/40 text-[10px] font-bold tracking-widest mt-1 uppercase font-mono">
+                    {currentTime || 'MON, 12:00 AM'}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-white text-base font-bold tracking-tight">Secure Vault</div>
+                  <div className="text-white/40 text-[10px] font-bold tracking-widest mt-1 uppercase font-mono">
+                    TUE, 5:00 PM
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: High-tech ETA Display */}
+            <div className="w-full sm:w-[170px] shrink-0 bg-black/45 border border-white/[0.04] rounded-2xl p-4 flex flex-col justify-between gap-4">
+              <div>
+                <div className="flex items-center justify-between text-white font-extrabold text-sm tracking-wide">
+                  <span>POLLS OPEN</span>
+                  <div className="h-5 w-5 rounded-full bg-white/[0.06] border border-white/[0.08] flex items-center justify-center">
+                    <RefreshCw className="h-3 w-3 text-white/60 animate-spin" style={{ animationDuration: '4s' }} />
+                  </div>
+                </div>
+                <div className="text-white/30 text-[9px] font-bold tracking-widest uppercase mt-1">
+                  Official Server Time
+                </div>
+              </div>
+
+              <div className="text-[#ff9f1a] font-black text-[10px] tracking-[0.16em] uppercase select-none animate-pulse">
+                TUNNEL ACTIVE
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Section: Progress Bar / Slider */}
+          <div className="mt-6">
+            <div className="w-full bg-[#050608]/90 rounded-[20px] h-14 p-1.5 border border-white/[0.04] relative flex items-center justify-between overflow-hidden">
+              {/* Glowing Orange Progress Bar */}
+              <div
+                className="h-full rounded-[14px] bg-gradient-to-r from-[#ff5e00] to-[#ff9f1a] shadow-[0_0_24px_rgba(255,94,0,0.45)] flex items-center justify-end pr-1.5 transition-all duration-75 relative z-10"
+                style={{ width: `${Math.max(progress, 10)}%` }}
+              >
+                {/* Floating Secure Icon inside a glass circle */}
+                <div className="h-[38px] w-[38px] rounded-full border border-white/30 flex items-center justify-center bg-white/10 backdrop-blur-md text-white shadow-inner">
+                  <Shield className="h-4 w-4 stroke-[2.5]" />
+                </div>
+              </div>
+
+              {/* Dynamic Status / Countdown Text on the right */}
+              <div className="absolute right-5 font-mono text-white/35 text-[11px] font-bold tracking-[0.18em] select-none uppercase z-0">
+                {progress === 100 ? 'SECURED' : `BOOT: ${progress}%`}
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
       </div>
     </div>
   )

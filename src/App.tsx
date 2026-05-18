@@ -1,4 +1,5 @@
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import AppShell from './components/layout/AppShell'
 import AdminLayout from './components/layout/AdminLayout'
@@ -6,6 +7,7 @@ import AdminLayout from './components/layout/AdminLayout'
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
+import SplashPage from './pages/SplashPage'
 
 import StudentDashboardPage from './pages/student/StudentDashboardPage'
 import CandidateListPage from './pages/student/CandidateListPage'
@@ -22,8 +24,22 @@ import LiveVoteMonitoringPage from './pages/admin/LiveVoteMonitoringPage'
 import ResultsAnalyticsPage from './pages/admin/ResultsAnalyticsPage'
 import AuditLogsPage from './pages/admin/AuditLogsPage'
 
+let hasShownSplash = false
+
 function AnimatedRoutes() {
   const location = useLocation()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    const currentPath = window.location.pathname + window.location.search
+    if (currentPath !== '/' && !hasShownSplash) {
+      hasShownSplash = true
+      sessionStorage.setItem('redirect_after_splash', currentPath)
+      navigate('/')
+    } else {
+      hasShownSplash = true
+    }
+  }, [navigate])
 
   return (
     <AnimatePresence mode="wait">
@@ -35,7 +51,7 @@ function AnimatedRoutes() {
         transition={{ duration: 0.28, ease: 'easeOut' }}
       >
         <Routes location={location}>
-          <Route path="/" element={<LandingPage />} />
+          <Route path="/" element={<SplashPage />} />
           <Route path="/landing" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
