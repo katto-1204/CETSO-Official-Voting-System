@@ -1,11 +1,11 @@
 
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { type ReactNode, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { type ReactNode, useEffect, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, CalendarRange, Users, GraduationCap,
   Activity, BarChart3, ScrollText, LogOut, ShieldCheck,
-  Terminal, Wifi, Database, Cpu, User
+  Terminal, Wifi, Database, Cpu, User, AlertTriangle
 } from 'lucide-react'
 import { goeyToast } from 'goey-toast'
 
@@ -22,6 +22,7 @@ const navItems = [
 export default function AdminLayout({ children }: { children?: ReactNode }) {
   const { pathname } = useLocation()
   const navigate = useNavigate()
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
   const role = localStorage.getItem('cetso_role')
 
@@ -36,7 +37,11 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
     return null
   }
 
-  function handleLogout() {
+  function handleLogoutClick() {
+    setShowLogoutConfirm(true)
+  }
+
+  function handleLogoutConfirm() {
     localStorage.removeItem('cetso_session')
     localStorage.removeItem('cetso_role')
     localStorage.removeItem('cetso_student_id')
@@ -219,7 +224,7 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
         <div className="px-4 py-6 border-t border-[var(--cetso-border)] bg-[var(--cetso-surface-2)]/50">
           <button
             type="button"
-            onClick={handleLogout}
+            onClick={handleLogoutClick}
             className="w-full h-12 flex items-center justify-center gap-3 rounded-2xl bg-red-500/5 border border-red-500/10 hover:bg-red-500/10 transition-colors text-red-500 font-black uppercase tracking-widest text-[11px]"
           >
             <LogOut className="h-4 w-4" /> Exit Console
@@ -251,7 +256,7 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
 
             <button
               type="button"
-              onClick={handleLogout}
+              onClick={handleLogoutClick}
               className="grid h-10 w-10 place-items-center rounded-2xl bg-red-500/5 border border-red-500/10 text-red-500"
             >
               <LogOut className="h-4 w-4" />
@@ -327,6 +332,65 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
           })}
         </div>
       </nav>
+
+      {/* ── Logout Confirmation Modal ──────────────── */}
+      <AnimatePresence>
+        {showLogoutConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowLogoutConfirm(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            />
+
+            {/* Modal Body */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              transition={{ type: 'spring', duration: 0.4 }}
+              className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-[#0e0f14]/90 p-6 shadow-2xl backdrop-blur-2xl"
+            >
+              {/* Top accent light */}
+              <div className="absolute -top-24 left-1/2 h-40 w-40 -translate-x-1/2 rounded-full bg-red-500/20 blur-[40px] pointer-events-none" />
+
+              {/* Modal content */}
+              <div className="relative z-10 flex flex-col items-center text-center">
+                <div className="mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 animate-pulse">
+                  <AlertTriangle className="h-6 w-6" />
+                </div>
+
+                <h3 className="text-xl font-black italic uppercase tracking-tighter text-white">
+                  Exit <span className="text-red-500">Console</span>
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-[var(--cetso-text-3)] max-w-xs">
+                  Are you sure you want to exit the Administrative Console? Your secure session will be closed.
+                </p>
+
+                <div className="mt-6 flex w-full gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowLogoutConfirm(false)}
+                    className="flex-1 rounded-2xl border border-white/10 bg-white/5 py-3 text-xs font-black uppercase tracking-widest text-[var(--cetso-text-2)] transition-all hover:bg-white/10 hover:text-white active:scale-[0.98]"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleLogoutConfirm}
+                    className="flex-1 rounded-2xl bg-gradient-to-r from-red-600 to-red-500 py-3 text-xs font-black uppercase tracking-widest text-white shadow-[0_4px_20px_rgba(239,68,68,0.3)] transition-all hover:from-red-500 hover:to-red-400 active:scale-[0.98] border border-red-500/30"
+                  >
+                    Yes, Exit
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

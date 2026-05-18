@@ -735,30 +735,28 @@ export default function VotingPage() {
             </Button>
           </div>
         </div>
-      </Modal>
-
-      {/* Confirmation Modal (Lineup Style) */}
+      </Modal>      {/* Confirmation Modal (Lineup Style) */}
       <Modal isOpen={showConfirm} onClose={() => setShowConfirm(false)} title="Final Review" maxWidth="max-w-2xl">
-        <div className="space-y-6">
+        <div className="space-y-3 sm:space-y-4">
           <div className="text-center">
-            <h4 className="text-lg font-black text-white uppercase italic tracking-tighter">Your Selected Candidates</h4>
-            <p className="mt-1 text-sm text-[var(--cetso-text-2)]">Review your selections before finalizing your ballot.</p>
+            <h4 className="text-sm sm:text-base font-black text-white uppercase italic tracking-tighter">Your Selected Candidates</h4>
+            <p className="mt-0.5 text-xs text-[var(--cetso-text-2)]">Review your selections before finalizing your ballot.</p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+          <div className="grid grid-cols-2 gap-2 max-h-[220px] sm:max-h-[360px] overflow-y-auto pr-1 custom-scrollbar">
             {eligiblePositions.map((p) => {
               const candIds = selectionsByPosition[p.positionCode] ?? []
-            const candidates = candIds
-              .map((candId) => sourceCandidates.find(c => c.candidateId === candId) || null)
+              const candidates = candIds
+                .map((candId) => sourceCandidates.find(c => c.candidateId === candId) || null)
                 .filter((candidate): candidate is Candidate => Boolean(candidate))
               return (
-                <div key={p.positionCode} className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/10 transition-all hover:bg-white/[0.08]">
-                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/5 border border-white/10">
-                    <User className="h-5 w-5 text-white/40" />
+                <div key={p.positionCode} className="flex items-center gap-2 p-2 rounded-xl bg-white/5 border border-white/10 transition-all hover:bg-white/[0.08] min-w-0">
+                  <div className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-white/5 border border-white/10">
+                    <User className="h-3.5 w-3.5 text-white/40" />
                   </div>
-                  <div className="min-w-0">
-                    <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)] truncate">{p.title}</div>
-                    <div className="text-sm font-black text-[var(--cetso-orange)] truncate">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-[var(--cetso-text-3)] truncate leading-tight">{p.title}</div>
+                    <div className="text-[11px] sm:text-xs font-black text-[var(--cetso-orange)] truncate leading-normal">
                       {candidates.length ? candidates.map((candidate) => candidate.fullName).join(', ') : (candIds.includes(`ABSTAIN_${p.positionCode}`) || candIds.some(id => id.startsWith('ABSTAIN')) ? 'Abstain' : 'No selection')}
                     </div>
                   </div>
@@ -767,22 +765,40 @@ export default function VotingPage() {
             })}
           </div>
 
-          <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-center">
-            <p className="text-xs font-bold text-red-200">
+          <div className="p-2 sm:p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-center">
+            <p className="text-[10px] sm:text-xs font-bold text-red-200">
               ACTION IS PERMANENT. SUBMITTING WILL LOCK YOUR VOTE.
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Button variant="secondary" size="lg" className="flex-1" onClick={() => setShowConfirm(false)} disabled={submitting}>
-              Edit Selections
+          <div className="flex flex-row items-center justify-between gap-2 w-full mt-2">
+            <Button
+              variant="secondary"
+              className="flex-1 h-9 sm:h-10 text-[10px] sm:text-xs font-bold px-1.5 py-0 whitespace-nowrap"
+              onClick={() => setShowConfirm(false)}
+              disabled={submitting}
+            >
+              <span className="hidden sm:inline">Edit Selections</span>
+              <span className="sm:hidden">Edit</span>
             </Button>
-            <Button variant="danger" size="lg" className="flex-1" onClick={handleClearBallot} disabled={!canClearBallot}>
-              <RotateCcw className="h-4 w-4" />
-              Clear Ballot
+            <Button
+              variant="danger"
+              className="flex-1 h-9 sm:h-10 text-[10px] sm:text-xs font-bold px-1.5 py-0 flex items-center justify-center gap-1 bg-red-500/10 hover:bg-red-500/20 text-red-200 border border-red-500/20 whitespace-nowrap"
+              onClick={handleClearBallot}
+              disabled={!canClearBallot}
+            >
+              <RotateCcw className="h-3 w-3 shrink-0" />
+              <span className="hidden sm:inline">Clear Ballot</span>
+              <span className="sm:hidden">Clear</span>
             </Button>
-            <Button variant="primary" size="lg" className="flex-1" onClick={handleFinalSubmit} loading={submitting}>
-              Confirm & Submit
+            <Button
+              variant="primary"
+              className="flex-1 h-9 sm:h-10 text-[10px] sm:text-xs font-bold px-1.5 py-0 bg-[var(--cetso-orange)] hover:bg-[var(--cetso-orange)]/90 text-white whitespace-nowrap"
+              onClick={handleFinalSubmit}
+              loading={submitting}
+            >
+              <span className="hidden sm:inline">Confirm & Submit</span>
+              <span className="sm:hidden">Confirm</span>
             </Button>
           </div>
         </div>
@@ -847,43 +863,41 @@ export default function VotingPage() {
 
       {/* Notice banner */}
       <div
-        className="flex items-start gap-3 rounded-[28px] p-4"
+        className="flex items-center gap-2.5 rounded-2xl p-2 px-3"
         style={{
-          background: 'rgba(255,122,24,0.08)',
-          border: '1px solid rgba(255,122,24,0.24)',
-          backdropFilter: 'blur(12px)',
+          background: 'rgba(255,122,24,0.05)',
+          border: '1px solid rgba(255,122,24,0.16)',
+          backdropFilter: 'blur(8px)',
         }}
       >
         <div
-          className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl"
-          style={{ background: 'rgba(255,122,24,0.14)', border: '1px solid rgba(255,122,24,0.28)' }}
+          className="grid h-6 w-6 shrink-0 place-items-center rounded-lg"
+          style={{ background: 'rgba(255,122,24,0.1)', border: '1px solid rgba(255,122,24,0.2)' }}
         >
-          <LockKeyhole className="h-4 w-4 text-[var(--cetso-orange)]" />
+          <LockKeyhole className="h-3 w-3 text-[var(--cetso-orange)]" />
         </div>
-        <div>
-          <div className="text-[10px] font-bold uppercase tracking-widest text-[rgba(255,178,74,0.85)]">System Status: Secure</div>
-          <div className="mt-0.5 text-sm font-bold text-white">
-            Encrypted Ballot Protocol Active
-          </div>
-          <div className="mt-0.5 text-xs font-medium text-[var(--cetso-text-2)]">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px]">
+          <span className="font-bold text-white">Secure Session Active</span>
+          <span className="text-white/20">|</span>
+          <span className="font-medium text-[var(--cetso-text-2)]">
             {ctx.programCode} • {ctx.yearLevel}{ctx.yearLevel === 1 ? 'st' : ctx.yearLevel === 2 ? 'nd' : ctx.yearLevel === 3 ? 'rd' : 'th'} Year Voter
-          </div>
+          </span>
         </div>
       </div>
 
       {/* Progress tracker */}
-      <GlassCard className="p-5">
+      <GlassCard className="p-3 md:p-5">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)]">Ballot Progress</div>
+            <div className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)]">Ballot Progress</div>
             <div
               style={{
                 fontFamily: 'var(--font-h1)',
-                fontSize: 'clamp(22px, 3.5vw, 38px)',
+                fontSize: 'clamp(18px, 3vw, 30px)',
                 lineHeight: 0.95,
                 letterSpacing: '0.01em',
                 color: 'var(--cetso-text)',
-                marginTop: 6,
+                marginTop: 4,
               }}
             >
               {selectedCount}<span className="text-[var(--cetso-text-3)] text-[0.6em] mx-1">/</span>{requiredSelectionCount}
@@ -896,16 +910,16 @@ export default function VotingPage() {
               size="sm"
               disabled={!canClearBallot}
               onClick={handleClearBallot}
-              className="bg-red-500/10"
+              className="bg-red-500/10 h-7 px-2.5 text-[10px] flex items-center gap-1.5"
             >
-              <RotateCcw className="h-4 w-4" />
+              <RotateCcw className="h-3 w-3" />
               Clear
             </Button>
           </div>
         </div>
 
         {/* Progress bar */}
-        <div className="mt-4 h-2 w-full rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+        <div className="mt-2.5 h-1.5 w-full rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
           <motion.div
             className="h-full rounded-full"
             style={{ background: 'linear-gradient(90deg, #ff7a18, #ffb24a)', boxShadow: '0 0 12px rgba(255,122,24,0.30)' }}
@@ -916,7 +930,7 @@ export default function VotingPage() {
         </div>
 
         {/* Position dots */}
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-3 grid grid-cols-10 gap-1 md:flex md:flex-wrap md:gap-2">
           {eligiblePositions.map((p, idx) => {
             const positionSelections = selectionsByPosition[p.positionCode] ?? []
             const selected =
@@ -931,7 +945,7 @@ export default function VotingPage() {
                 type="button"
                 onClick={() => setActiveIdx(idx)}
                 title={p.title}
-                className="group relative flex h-9 w-9 items-center justify-center rounded-xl text-[10px] font-black transition-all duration-150"
+                className="group relative flex h-7 w-7 md:h-10 md:w-10 items-center justify-center rounded-md md:rounded-lg text-[9px] md:text-[11px] font-black transition-all duration-150"
                 style={active ? {
                   background: 'rgba(255,122,24,0.18)',
                   border: '1.5px solid rgba(255,122,24,0.60)',
@@ -949,7 +963,7 @@ export default function VotingPage() {
               >
                 {idx + 1}
                 {selected && !active && (
-                  <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-green-500 border-2 border-[rgb(10,10,15)]" />
+                  <div className="absolute -top-0.5 -right-0.5 h-2 w-2 md:h-3 md:w-3 rounded-full bg-green-500 border border-[rgb(10,10,15)] md:border-2" />
                 )}
               </button>
             )
@@ -1097,13 +1111,13 @@ export default function VotingPage() {
             })}
           </div>
 
-          <div className="relative mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative mt-8 flex flex-row gap-3 items-center justify-between">
             <Button
               variant="secondary"
               size="lg"
               disabled={activeIdx === 0}
               onClick={() => setActiveIdx((i) => Math.max(0, i - 1))}
-              className="w-full sm:w-auto bg-white/5 hover:bg-white/10 border border-white/10"
+              className="flex-1 sm:flex-none bg-white/5 hover:bg-white/10 border border-white/10"
             >
               <ChevronLeft className="h-4 w-4" />
               Previous
@@ -1113,7 +1127,7 @@ export default function VotingPage() {
               size="lg"
               disabled={activeIdx >= eligiblePositions.length - 1}
               onClick={() => setActiveIdx((i) => Math.min(eligiblePositions.length - 1, i + 1))}
-              className="w-full sm:w-auto bg-white/5 hover:bg-white/10 border border-white/10"
+              className="flex-1 sm:flex-none bg-white/5 hover:bg-white/10 border border-white/10"
             >
               Next
               <ChevronRight className="h-4 w-4" />

@@ -190,7 +190,7 @@ export default function ReceiptPage() {
 
     // Calculate height
     const itemHeight = 70;
-    const contentHeight = 250 + 100 + 60 + (selectedCandidates.length * itemHeight) + 100 + 350;
+    const contentHeight = 250 + 100 + 60 + (selectedCandidates.length * itemHeight) + 100 + 350 + 70;
     const paperHeight = contentHeight;
     const canvasWidth = paperWidth + (padding * 2);
     const canvasHeight = paperHeight + (padding * 2);
@@ -275,7 +275,7 @@ export default function ReceiptPage() {
     currentY += 30;
     ctx.fillText('Student Organization', centerX, currentY);
     currentY += 30;
-    ctx.fillText('cetso.official@gmail.com', centerX, currentY);
+    ctx.fillText('CETSO ELECTIONS 2026', centerX, currentY);
 
     currentY += 70;
 
@@ -295,7 +295,13 @@ export default function ReceiptPage() {
     const dateFormatted = `${dateStr.replace(/ /g, ' / ')} ${timeStr}`;
     ctx.fillText(dateFormatted, leftX, currentY);
 
-    currentY += 50;
+    currentY += 30;
+    ctx.fillText(`STUDENT ID: ${receipt.studentId}`, leftX, currentY);
+
+    currentY += 30;
+    ctx.fillText(`TRACK NO. : ${trackingNumber}`, leftX, currentY);
+
+    currentY += 45;
 
     // --- COLUMNS ---
     ctx.textAlign = 'left';
@@ -427,53 +433,58 @@ export default function ReceiptPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8 pb-20">
+    <div className="mx-auto max-w-5xl space-y-6 pb-20">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col justify-between gap-6 md:flex-row md:items-end"
+        className="flex flex-row items-center justify-between gap-2 border-b border-white/5 pb-4"
       >
-        <div>
-          <div className="mb-2 flex items-center gap-3">
-            <div className="h-2 w-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.8)]" />
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-green-500">
-              Success: Vote Submitted
-            </span>
-          </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate('/student/dashboard')}
+            className="grid h-10 w-10 place-items-center rounded-xl bg-white/5 text-[var(--cetso-text)] transition-all hover:bg-white/10 active:scale-95 border border-white/10 shrink-0"
+            aria-label="Back to Dashboard"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
           <h1
-            className="italic uppercase tracking-tighter"
+            className="italic uppercase tracking-tighter whitespace-nowrap"
             style={{
               fontFamily: 'var(--font-h1)',
-              fontSize: 'clamp(28px, 5vw, 64px)',
-              lineHeight: 0.8,
+              fontSize: 'clamp(18px, 4.5vw, 44px)',
+              lineHeight: 1,
               color: 'var(--cetso-text)',
             }}
           >
-            VOTING<br />
-            <span className="text-orange-500">RECEIPT</span>
+            VOTING <span className="text-orange-500">RECEIPT</span>
           </h1>
         </div>
 
-        <div className="flex flex-wrap gap-3">
-          <Button
-            variant="secondary"
-            size="lg"
-            className="h-14 bg-white/5 px-8"
-            onClick={() => navigate('/student/dashboard')}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            onClick={saveAsImage}
+            disabled={busy}
+            className="h-10 px-3 flex items-center justify-center gap-1.5 rounded-xl bg-white/5 text-[var(--cetso-text)] transition-all hover:bg-white/10 active:scale-95 border border-white/10 text-xs font-black italic uppercase tracking-tighter"
           >
-            <ArrowLeft className="h-5 w-5" />
-            <span className="text-[13px] italic uppercase tracking-tighter">BACK</span>
-          </Button>
-          <Button
-            variant="primary"
-            size="lg"
-            className="h-14 px-8 shadow-orange-500/20"
+            {busy ? (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" />
+            ) : (
+              <ImageDown className="h-4 w-4 text-[var(--cetso-orange)] shrink-0" />
+            )}
+            <span>IMAGE</span>
+          </button>
+          <button
             onClick={downloadPDF}
-            loading={busy}
+            disabled={busy}
+            className="h-10 px-3 flex items-center justify-center gap-1.5 rounded-xl bg-[var(--cetso-orange)] text-white transition-all hover:bg-[#ff8c2e] active:scale-95 border border-transparent text-xs font-black italic uppercase tracking-tighter shadow-lg shadow-orange-500/20"
           >
-            <Download className="h-5 w-5" />
-            <span className="text-[13px] italic uppercase tracking-tighter">DOWNLOAD PDF</span>
-          </Button>
+            {busy ? (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            ) : (
+              <Download className="h-4 w-4 shrink-0" />
+            )}
+            <span>PDF</span>
+          </button>
         </div>
       </motion.div>
 
@@ -484,7 +495,7 @@ export default function ReceiptPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="relative overflow-hidden rounded-[28px] border border-slate-300 bg-[#fffaf3] p-6 text-slate-950 shadow-2xl md:p-10"
+            className="relative overflow-hidden rounded-[24px] border border-slate-300 bg-[#fffaf3] p-4 text-slate-950 shadow-2xl md:p-8"
           >
             <div className="absolute inset-x-0 top-0 h-2 bg-orange-500" />
             <div className="pointer-events-none absolute inset-0 opacity-[0.08]">
@@ -497,92 +508,95 @@ export default function ReceiptPage() {
               />
             </div>
 
-            <div className="relative z-10 mb-8 flex flex-col justify-between gap-8 border-b border-dashed border-slate-300 pb-8 md:flex-row">
-              <div className="flex items-center gap-6">
-                <div className="grid h-20 w-20 shrink-0 place-items-center rounded-2xl bg-orange-500">
-                  <ShieldCheck className="h-10 w-10 text-white" />
+            <div className="relative z-10 mb-6 flex flex-col justify-between gap-4 border-b border-dashed border-slate-300 pb-6 md:flex-row md:mb-8 md:pb-8 md:gap-8">
+              <div className="flex items-center gap-4 md:gap-6">
+                <div className="grid h-14 w-14 md:h-20 md:w-20 shrink-0 place-items-center rounded-2xl bg-orange-500">
+                  <ShieldCheck className="h-7 w-7 md:h-10 md:w-10 text-white" />
                 </div>
                 <div>
-                  <div className="mb-1 text-[10px] font-black uppercase tracking-[0.4em] text-orange-600">
+                  <div className="mb-0.5 text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] md:tracking-[0.4em] text-orange-600">
                     Official Voting Receipt
                   </div>
-                  <h2 className="text-3xl font-black uppercase tracking-tight text-slate-950">
+                  <h2 className="text-xl md:text-3xl font-black uppercase tracking-tight text-slate-950">
                     CETSO Receipt
                   </h2>
-                  <div className="mt-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">
+                  <div className="mt-1 text-[8px] md:text-[9px] font-black uppercase tracking-[0.15em] md:tracking-[0.2em] text-slate-500 leading-tight">
                     College of Engineering and Technology Student Organization
                   </div>
                 </div>
               </div>
 
-              <div className="text-left md:text-right">
-                <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">
-                  Election Year
+              <div className="text-left md:text-right grid grid-cols-2 gap-4 md:block md:space-y-4">
+                <div>
+                  <div className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-slate-500">
+                    Election Year
+                  </div>
+                  <div className="mt-0.5 text-base md:text-xl font-black leading-none text-slate-950">
+                    {receipt.electionYear}
+                  </div>
                 </div>
-                <div className="mt-1 text-xl font-black leading-none text-slate-950">
-                  {receipt.electionYear}
-                </div>
-                <div className="mt-4 text-[9px] font-black uppercase tracking-widest text-slate-500">
-                  Date & Time
-                </div>
-                <div className="mt-1 font-mono text-sm font-black text-orange-600">
-                  {dateStr} - {timeStr}
+                <div>
+                  <div className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-slate-500">
+                    Date & Time
+                  </div>
+                  <div className="mt-0.5 font-mono text-xs md:text-sm font-black text-orange-600">
+                    {dateStr} - {timeStr}
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="relative z-10 mb-8 grid gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:grid-cols-2">
+            <div className="relative z-10 mb-6 grid gap-2 rounded-2xl border border-slate-200 bg-white p-3 md:p-5 shadow-sm grid-cols-1 md:grid-cols-2">
               {[
                 ['Student Name', receipt.studentName],
                 ['Student ID Number', receipt.studentId],
                 ['Tracking Number', trackingNumber],
                 ['Program / Year', `${receipt.programCode} - Year ${receipt.yearLevel}`],
               ].map(([label, value]) => (
-                <div key={label} className="min-w-0 rounded-xl border border-slate-100 bg-slate-50 p-4">
-                  <div className="mb-1 text-[9px] font-black uppercase tracking-[0.25em] text-slate-500">
+                <div key={label} className="min-w-0 rounded-xl border border-slate-100 bg-slate-50 p-2.5 md:p-4">
+                  <div className="mb-0.5 text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em] md:tracking-[0.25em] text-slate-500">
                     {label}
                   </div>
-                  <div className="break-words font-mono text-sm font-black text-slate-950">
+                  <div className="break-words font-mono text-xs md:text-sm font-black text-slate-950">
                     {value}
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="relative z-10 mb-8">
-              <div className="mb-5 flex items-center gap-4 text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">
+            <div className="relative z-10 mb-6">
+              <div className="mb-4 flex items-center gap-4 text-[9px] md:text-[10px] font-black uppercase tracking-[0.25em] md:tracking-[0.3em] text-slate-500">
                 Ballot Summary
                 <div className="h-px flex-1 bg-slate-200" />
               </div>
 
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                 {selectedCandidates.map(({ candidate, positionTitle }) => (
                   <div
                     key={candidate.candidateId}
-                    className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                    className="rounded-xl border border-slate-200 bg-white p-2.5 md:p-4 shadow-sm flex items-center justify-between gap-3"
                   >
-                    <div className="mb-1 truncate text-[8px] font-black uppercase tracking-widest text-orange-600">
-                      {positionTitle}
-                    </div>
-                    <div className="text-[12px] font-black uppercase leading-tight tracking-tight text-slate-950">
-                      {candidate.fullName}
-                    </div>
-                    <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2">
-                      <div className="text-[8px] font-black uppercase tracking-widest text-slate-400">
-                        Confirmed
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-0.5 truncate text-[8px] font-black uppercase tracking-widest text-orange-600">
+                        {positionTitle}
                       </div>
-                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      <div className="truncate text-[11px] md:text-[12px] font-black uppercase leading-tight tracking-tight text-slate-950">
+                        {candidate.fullName}
+                      </div>
+                    </div>
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-50 border border-green-200">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="relative z-10 flex flex-col items-center gap-8 border-t border-dashed border-slate-300 pt-8 md:flex-row">
-              <div id="receipt-qr" className="rounded-2xl border border-slate-200 bg-white p-4">
+            <div className="relative z-10 flex flex-col items-center gap-6 border-t border-dashed border-slate-300 pt-6 md:flex-row md:gap-8 md:pt-8">
+              <div id="receipt-qr" className="rounded-2xl border border-slate-200 bg-white p-2.5 shrink-0 animate-fade-in">
                 <QRCodeSVG
                   value={qrPayload}
-                  size={148}
+                  size={120}
                   fgColor="#000000"
                   bgColor="#ffffff"
                   level="H"
@@ -590,37 +604,37 @@ export default function ReceiptPage() {
                 />
               </div>
 
-              <div className="min-w-0 flex-1 space-y-5">
+              <div className="w-full min-w-0 flex-1 space-y-4">
                 <div>
-                  <div className="mb-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-500">
+                  <div className="mb-1 text-[8px] md:text-[9px] font-black uppercase tracking-[0.25em] md:tracking-[0.3em] text-slate-500">
                     QR Code / Tracking Number
                   </div>
-                  <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 font-mono text-sm font-black tracking-wider text-orange-600">
+                  <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 font-mono text-xs md:text-sm font-black tracking-wider text-orange-600">
                     <span className="break-all">{trackingNumber}</span>
-                    <QrCode className="h-5 w-5 shrink-0 text-slate-300" />
+                    <QrCode className="h-4 w-4 shrink-0 text-slate-300" />
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <div className="mb-1 text-[9px] font-black uppercase tracking-[0.3em] text-slate-500">
+                    <div className="mb-0.5 text-[8px] md:text-[9px] font-black uppercase tracking-[0.25em] md:tracking-[0.3em] text-slate-500">
                       Authenticated Student
                     </div>
-                    <div className="text-sm font-black uppercase tracking-tight text-slate-950">
+                    <div className="text-xs md:text-sm font-black uppercase tracking-tight text-slate-950">
                       {receipt.studentName}
                     </div>
-                    <div className="mt-1 font-mono text-xs font-black text-slate-500">
+                    <div className="mt-0.5 font-mono text-[10px] md:text-xs font-black text-slate-500">
                       ID NO. {receipt.studentId}
                     </div>
                   </div>
-                  <div className="w-fit rounded-full border border-green-500/30 bg-green-50 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-green-700">
+                  <div className="w-fit rounded-full border border-green-500/30 bg-green-50 px-2.5 py-0.5 text-[8px] md:text-[9px] font-black uppercase tracking-widest text-green-700">
                     Recorded
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="relative z-10 mt-8 text-center text-[8px] font-black uppercase tracking-[0.35em] text-slate-400">
+            <div className="relative z-10 mt-6 text-center text-[8px] font-black uppercase tracking-[0.35em] text-slate-400">
               CETSO Official Voting System - Receipt proves voting participation only
             </div>
           </motion.div>

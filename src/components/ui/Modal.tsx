@@ -64,9 +64,9 @@ export default function Modal({
           >
             {/* Header */}
             {(title || showClose) && (
-              <div className="flex items-center justify-between border-b border-[var(--cetso-modal-header-border)] px-8 py-6">
+              <div className="flex items-center justify-between border-b border-[var(--cetso-modal-header-border)] px-4 py-4 sm:px-8 sm:py-6">
                 {title ? (
-                  <h3 className="text-xl font-black text-[var(--cetso-modal-text)] uppercase tracking-wider">{title}</h3>
+                  <h3 className="text-base sm:text-xl font-black text-[var(--cetso-modal-text)] uppercase tracking-wider">{title}</h3>
                 ) : <div />}
                 
                 {showClose && (
@@ -81,7 +81,7 @@ export default function Modal({
             )}
 
             {/* Body */}
-            <div className="max-h-[80vh] overflow-y-auto px-8 py-8 custom-scrollbar">
+            <div className="max-h-[80vh] overflow-y-auto px-4 py-4 sm:px-8 sm:py-8 custom-scrollbar">
               {children}
             </div>
           </motion.div>

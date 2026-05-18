@@ -1,7 +1,8 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { useEffect } from 'react'
-import { LayoutDashboard, Users, Vote, FileCheck, UserCircle, LogOut } from 'lucide-react'
-import Footer from './Footer'
+import { useEffect, useState } from 'react'
+import { LayoutDashboard, Users, Vote, FileCheck, UserCircle, LogOut, AlertTriangle } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+
 import { goeyToast } from 'goey-toast'
 
 const navItems = [
@@ -20,6 +21,7 @@ function isActive(pathname: string, to: string) {
 export default function AppShell() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
   const role = localStorage.getItem('cetso_role')
   const studentId = localStorage.getItem('cetso_student_id')
@@ -39,7 +41,11 @@ export default function AppShell() {
   const programCode = localStorage.getItem('cetso_program_code') ?? ''
   const initials = studentName.split(' ').slice(0, 2).map((p: string) => p[0]).join('').toUpperCase()
 
-  function handleLogout() {
+  function handleLogoutClick() {
+    setShowLogoutConfirm(true)
+  }
+
+  function handleLogoutConfirm() {
     localStorage.removeItem('cetso_session')
     localStorage.removeItem('cetso_role')
     localStorage.removeItem('cetso_student_id')
@@ -185,7 +191,7 @@ export default function AppShell() {
 
           <button
             type="button"
-            onClick={handleLogout}
+            onClick={handleLogoutClick}
             className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all"
             style={{
               color: 'var(--cetso-text-2)',
@@ -249,7 +255,7 @@ export default function AppShell() {
               </div>
               <button
                 type="button"
-                onClick={handleLogout}
+                onClick={handleLogoutClick}
                 className="grid h-9 w-9 place-items-center rounded-xl transition"
                 style={{
                   background: 'var(--cetso-badge-bg)',
@@ -266,8 +272,6 @@ export default function AppShell() {
         {/* Page content */}
         <main className="flex-1 px-3 py-4 pb-24 sm:px-4 sm:py-6 lg:px-8 lg:pb-0">
           <Outlet />
-
-          <Footer variant="compact" />
         </main>
       </div>
 
@@ -302,6 +306,65 @@ export default function AppShell() {
           })}
         </div>
       </nav>
+
+      {/* ── Logout Confirmation Modal ──────────────── */}
+      <AnimatePresence>
+        {showLogoutConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowLogoutConfirm(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            />
+
+            {/* Modal Body */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              transition={{ type: 'spring', duration: 0.4 }}
+              className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-[#0e0f14]/90 p-6 shadow-2xl backdrop-blur-2xl"
+            >
+              {/* Top accent light */}
+              <div className="absolute -top-24 left-1/2 h-40 w-40 -translate-x-1/2 rounded-full bg-red-500/20 blur-[40px] pointer-events-none" />
+
+              {/* Modal content */}
+              <div className="relative z-10 flex flex-col items-center text-center">
+                <div className="mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 animate-pulse">
+                  <AlertTriangle className="h-6 w-6" />
+                </div>
+
+                <h3 className="text-xl font-black italic uppercase tracking-tighter text-white">
+                  Confirm <span className="text-red-500">Logout</span>
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-[var(--cetso-text-3)] max-w-xs">
+                  Are you sure you want to log out of your secure CET student session? Any unsaved voting progress will be lost.
+                </p>
+
+                <div className="mt-6 flex w-full gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowLogoutConfirm(false)}
+                    className="flex-1 rounded-2xl border border-white/10 bg-white/5 py-3 text-xs font-black uppercase tracking-widest text-[var(--cetso-text-2)] transition-all hover:bg-white/10 hover:text-white active:scale-[0.98]"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleLogoutConfirm}
+                    className="flex-1 rounded-2xl bg-gradient-to-r from-red-600 to-red-500 py-3 text-xs font-black uppercase tracking-widest text-white shadow-[0_4px_20px_rgba(239,68,68,0.3)] transition-all hover:from-red-500 hover:to-red-400 active:scale-[0.98] border border-red-500/30"
+                  >
+                    Yes, Logout
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

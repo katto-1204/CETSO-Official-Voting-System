@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowLeft, RefreshCw, ShieldCheck, UserCircle2 } from 'lucide-react'
+import { ArrowLeft, RefreshCw, IdCard, GraduationCap, Mail, BookOpen, CheckCircle2 } from 'lucide-react'
 import Button from '../../components/ui/Button'
 import GlassCard from '../../components/ui/GlassCard'
 import { getStudentContext } from '../../lib/studentContext'
@@ -23,6 +23,36 @@ export default function ProfileSettingsPage() {
   const [profile, setProfile] = useState<StudentRecord | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [refreshing, setRefreshing] = useState(false)
+
+  const handleRefresh = async () => {
+    if (!ctx?.studentId || refreshing) return
+    setRefreshing(true)
+    try {
+      const rpc = await supabase.rpc('get_student_by_id', { p_student_id: ctx.studentId })
+      const rpcData = rpc.data as StudentRow[] | StudentRow | null
+      const data = Array.isArray(rpcData) ? rpcData[0] ?? null : rpcData
+
+      if (rpc.error) throw rpc.error
+      if (!data) throw new Error('Student profile was not found.')
+
+      const nextProfile = mapDbStudent(data)
+      setProfile(nextProfile)
+      setMockSession({
+        role: 'student',
+        studentId: nextProfile.studentId,
+        studentName: nextProfile.fullName,
+        programCode: nextProfile.programCode,
+        yearLevel: nextProfile.yearLevel,
+      })
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setTimeout(() => {
+        setRefreshing(false)
+      }, 600)
+    }
+  }
 
   useEffect(() => {
     let active = true
@@ -141,137 +171,150 @@ export default function ProfileSettingsPage() {
   const emailValue = profile?.email || 'Not available in student registry'
 
   return (
-    <div className="space-y-5">
+    <div className="mx-auto max-w-4xl pb-12">
+      {/* Sleek Floating Header */}
       <motion.div
-        initial={{ opacity: 0, y: 14 }}
+        initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-[32px] p-6 border border-[var(--cetso-card-border-default)] bg-[var(--cetso-card-bg-default)] shadow-[var(--cetso-card-shadow-default)]"
-        style={{
-          backdropFilter: 'blur(20px)',
-        }}
+        className="flex items-center justify-between gap-4 border-b border-white/5 pb-5 mb-6"
       >
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{ background: 'radial-gradient(ellipse 500px 280px at 0% 0%, rgba(255,122,24,0.16), transparent 65%)' }}
-        />
-        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <div
-              className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl text-xl font-black"
+        <div className="flex items-center gap-3.5">
+          <button
+            onClick={() => navigate('/student/dashboard')}
+            className="grid h-11 w-11 place-items-center rounded-2xl bg-white/5 text-[var(--cetso-text)] transition-all hover:bg-white/10 active:scale-95 border border-white/10 hover:border-white/20 shadow-lg hover:shadow-white/5 shrink-0"
+            aria-label="Back to Dashboard"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <div>
+            <h1
+              className="italic uppercase tracking-tighter text-2xl md:text-3.5xl"
               style={{
-                background: 'linear-gradient(135deg, rgba(255,122,24,0.22), rgba(255,178,74,0.12))',
-                border: '1px solid rgba(255,122,24,0.38)',
-                color: 'var(--cetso-orange)',
-                boxShadow: '0 0 28px rgba(255,122,24,0.18)',
+                fontFamily: 'var(--font-h1)',
+                lineHeight: 1,
+                color: 'var(--cetso-text)',
               }}
             >
-              {initials}
-            </div>
-            <div>
-              <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)]">Profile Settings</div>
-              <div className="mt-1 text-2xl font-black text-[var(--cetso-text)]">{activeStudent.fullName}</div>
-              <div className="mt-0.5 text-xs font-semibold text-[var(--cetso-text-2)]">
-                {activeStudent.studentId} - {activeStudent.programCode} - Year {activeStudent.yearLevel}
-              </div>
-            </div>
-          </div>
-
-          <div
-            className="self-start sm:self-auto flex items-center gap-2 rounded-2xl px-4 py-3"
-            style={{ background: 'rgba(255,122,24,0.08)', border: '1px solid rgba(255,122,24,0.25)' }}
-          >
-            <ShieldCheck className="h-4 w-4 text-[var(--cetso-orange)] shrink-0" />
-            <div>
-              <div className="text-[10px] font-bold uppercase tracking-widest text-[rgba(255,178,74,0.90)]">Live Database Sync</div>
-              <div className="mt-0.5 text-[11px] font-medium text-[var(--cetso-text-2)]">Student registry record</div>
-            </div>
+              MY <span className="text-[var(--cetso-orange)]">PROFILE</span>
+            </h1>
+            <p className="text-[9px] font-black uppercase tracking-[0.22em] text-white/40 mt-1">
+              Verified Student Credentials
+            </p>
           </div>
         </div>
       </motion.div>
 
-      <div className="grid grid-cols-12 gap-4">
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.06 }}
-          className="col-span-12 lg:col-span-4"
-        >
-          <GlassCard className="p-6 h-full">
-            <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)]">Profile Photo</div>
-            <div className="mt-5 flex flex-col items-center gap-4">
-              <div
-                className="grid h-28 w-28 place-items-center rounded-3xl text-4xl font-black"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(255,122,24,0.22), rgba(255,178,74,0.14))',
-                  border: '2px solid rgba(255,122,24,0.35)',
-                  color: 'var(--cetso-orange)',
-                  boxShadow: '0 0 40px rgba(255,122,24,0.20)',
-                }}
+      {/* Main Reference 1 & Reference 2 Styled Profile Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.08 }}
+      >
+        <GlassCard className="overflow-hidden p-0 relative border-white/10 hover:border-white/15 transition-all duration-300 shadow-[0_20px_50px_rgba(0,0,0,0.3)]">
+          {/* Cover Header Banner */}
+          <div className="relative h-40 sm:h-48 md:h-56 overflow-hidden">
+            {/* Rich Cyberpunk Mesh & Gradient backdrop */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-amber-600 via-[var(--cetso-orange)] to-black" />
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:14px_14px]" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0d] via-transparent to-transparent" />
+          </div>
+
+          {/* Overlapping Avatar & Pill Button Container */}
+          <div className="relative flex items-center justify-between px-6 sm:px-10 h-16 sm:h-20">
+            {/* Circular Overlapping Profile Avatar */}
+            <div className="absolute left-6 sm:left-10 -top-12 sm:-top-16 h-24 w-24 sm:h-32 sm:w-32 rounded-full border-4 border-[#0e0f14] bg-[#121318] flex items-center justify-center shadow-[0_15px_30px_rgba(0,0,0,0.6)] z-15 overflow-hidden group">
+              <div className="relative h-full w-full flex items-center justify-center bg-gradient-to-br from-neutral-900 to-black">
+                <span className="text-2xl sm:text-4.5xl font-black tracking-tighter text-[var(--cetso-orange)] italic drop-shadow-[0_0_12px_rgba(255,122,24,0.5)]">
+                  {initials}
+                </span>
+                {/* HUD inside vector ring */}
+                <div className="absolute inset-2 rounded-full border border-[var(--cetso-orange)]/15 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Empty space matching left overlap */}
+            <div className="w-24 sm:w-32" />
+
+            {/* Custom cyber badge */}
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-[var(--cetso-orange)]/60">
+                CET STUDENT
+              </span>
+            </div>
+          </div>
+
+          {/* Biography & Student Info Block */}
+          <div className="px-6 sm:px-10 pb-6 sm:pb-8">
+            {/* Full Name & Verified Badge */}
+            <div className="flex items-center gap-2 mt-4">
+              <h2 className="text-2xl sm:text-3.5xl font-black italic uppercase tracking-tighter text-[var(--cetso-text)]">
+                {activeStudent.fullName}
+              </h2>
+              <div className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500 text-white shadow-[0_0_8px_rgba(59,130,246,0.5)]">
+                <CheckCircle2 className="h-3.5 w-3.5 fill-current text-blue-500 stroke-[3px] text-white" />
+              </div>
+            </div>
+
+            {/* Handle/ID Label */}
+            <p className="text-xs sm:text-sm font-semibold tracking-wider text-[var(--cetso-orange)]/80 mt-1 font-mono uppercase">
+              @{activeStudent.studentId.toLowerCase()}_{activeStudent.programCode.toLowerCase()}
+            </p>
+
+            {/* Bio quote paragraph */}
+            <p className="text-xs sm:text-sm font-medium text-[var(--cetso-text-2)] leading-relaxed mt-4 max-w-2xl">
+              Official registered voter of the College of Engineering and Technology.
+            </p>
+
+            {/* Title with icon-only Refresh data */}
+            <div className="flex items-center justify-between border-t border-white/5 pt-6 mt-6 mb-4">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--cetso-orange)]">
+                Student Registry Details
+              </h3>
+              
+              {/* Icon Only Refresh Data Button */}
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="grid h-8 w-8 place-items-center rounded-lg bg-white/5 border border-white/10 text-white/70 hover:text-[var(--cetso-orange)] hover:border-[var(--cetso-orange)]/40 hover:bg-[rgba(255,122,24,0.05)] transition-all duration-300 active:scale-95 disabled:opacity-50"
+                title="Sync Registry Records"
               >
-                <UserCircle2 className="h-14 w-14" />
+                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin text-[var(--cetso-orange)]' : 'transition-transform duration-500 hover:rotate-180'}`} />
+              </button>
+            </div>
+
+            {/* Chips flow layout instead of bulk Bento boxes */}
+            <div className="flex flex-wrap gap-2.5 mt-2">
+              {/* Chip 1: Student ID */}
+              <div className="group inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/5 bg-white/[0.01] hover:border-[var(--cetso-orange)]/30 hover:bg-white/[0.03] transition-all duration-300">
+                <IdCard className="h-4 w-4 text-[var(--cetso-orange)] shrink-0" />
+                <span className="text-[10px] font-black text-[var(--cetso-text-3)] uppercase tracking-wider">ID</span>
+                <span className="font-mono text-xs font-black text-white">{activeStudent.studentId}</span>
               </div>
 
-              <div className="text-center">
-                <div className="text-sm font-bold text-[var(--cetso-text)]">{activeStudent.fullName}</div>
-                <div className="mt-0.5 text-xs font-medium text-[var(--cetso-text-2)]">{activeStudent.programCode}</div>
+              {/* Chip 2: Program */}
+              <div className="group inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/5 bg-white/[0.01] hover:border-[var(--cetso-orange)]/30 hover:bg-white/[0.03] transition-all duration-300">
+                <BookOpen className="h-4 w-4 text-[var(--cetso-orange)] shrink-0" />
+                <span className="text-[10px] font-black text-[var(--cetso-text-3)] uppercase tracking-wider">Program</span>
+                <span className="text-xs font-black text-white italic">{activeStudent.programCode}</span>
+              </div>
+
+              {/* Chip 3: Year Level */}
+              <div className="group inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/5 bg-white/[0.01] hover:border-[var(--cetso-orange)]/30 hover:bg-white/[0.03] transition-all duration-300">
+                <GraduationCap className="h-4 w-4 text-[var(--cetso-orange)] shrink-0" />
+                <span className="text-[10px] font-black text-[var(--cetso-text-3)] uppercase tracking-wider">Year Level</span>
+                <span className="text-xs font-black text-white">Year {activeStudent.yearLevel}</span>
+              </div>
+
+              {/* Chip 4: Email Address */}
+              <div className="group inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/5 bg-white/[0.01] hover:border-[var(--cetso-orange)]/30 hover:bg-white/[0.03] transition-all duration-300 max-w-full">
+                <Mail className="h-4 w-4 text-[var(--cetso-orange)] shrink-0" />
+                <span className="text-[10px] font-black text-[var(--cetso-text-3)] uppercase tracking-wider shrink-0">Email</span>
+                <span className="font-mono text-xs font-black text-white/90 truncate">{emailValue}</span>
               </div>
             </div>
-
-            <div className="mt-6 rounded-2xl border border-[var(--cetso-card-border-inset)] bg-[var(--cetso-card-bg-inset)] p-4 text-sm text-[var(--cetso-text-2)]">
-              The profile photo area follows the student registry record.
-            </div>
-          </GlassCard>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.10 }}
-          className="col-span-12 lg:col-span-8"
-        >
-          <GlassCard className="p-6 h-full">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)]">Account Details</div>
-                <div className="mt-1.5 text-xl font-black text-[var(--cetso-text)]">Synced from the database</div>
-                <p className="mt-1 text-sm font-medium text-[var(--cetso-text-2)]">This view now reads the latest student row from Supabase.</p>
-              </div>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => window.location.reload()}
-              >
-                <RefreshCw className="h-4 w-4" />
-                Refresh
-              </Button>
-            </div>
-
-            <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {[
-                { label: 'Student ID', value: activeStudent.studentId },
-                { label: 'Full Name', value: activeStudent.fullName },
-                { label: 'Email', value: emailValue },
-                { label: 'Program', value: activeStudent.programCode },
-                { label: 'Year Level', value: `Year ${activeStudent.yearLevel}` },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-2xl p-4 border border-[var(--cetso-card-border-inset)] bg-[var(--cetso-card-bg-inset)]"
-                >
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--cetso-text-3)]">{item.label}</div>
-                  <div className="mt-1 break-words text-sm font-bold text-[var(--cetso-text)]">{item.value}</div>
-                </div>
-              ))}
-            </div>
-          </GlassCard>
-        </motion.div>
-      </div>
-
-      <div>
-        <Button variant="ghost" size="lg" onClick={() => navigate('/student/dashboard')}>
-          <ArrowLeft className="h-4 w-4" /> Back to Dashboard
-        </Button>
-      </div>
+          </div>
+        </GlassCard>
+      </motion.div>
     </div>
   )
 }

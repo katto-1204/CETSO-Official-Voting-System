@@ -188,14 +188,9 @@ export default function StudentDashboardPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-          <div className="text-right hidden sm:block">
+          <div className="text-right">
             <div className="text-[10px] font-black uppercase tracking-widest text-[var(--cetso-text-3)]">Current Time</div>
             <div className="text-sm font-black text-[var(--cetso-text)] italic">{time.toLocaleTimeString()}</div>
-          </div>
-          <div className="h-10 w-[1px] bg-[var(--cetso-border-2)] hidden sm:block" />
-          <div className="flex items-center gap-3 rounded-2xl border border-[var(--cetso-border)] bg-[var(--cetso-card-bg-inset)] px-3 py-2 sm:px-4">
-            <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--cetso-text-2)]">System: Online</span>
           </div>
         </div>
       </div>
@@ -320,7 +315,7 @@ export default function StudentDashboardPage() {
                </div>
              ) : null}
 
-             <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
+             <div className="flex flex-row gap-3 sm:gap-4">
                 {!submitted ? (
                   <Button 
                     variant={isVotingOpen ? "primary" : "secondary"}

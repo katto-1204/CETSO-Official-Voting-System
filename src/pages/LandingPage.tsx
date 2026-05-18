@@ -2,7 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowRight, Zap } from 'lucide-react'
-import Footer from '../components/layout/Footer'
+
 
 const ModelViewer = (props: React.HTMLAttributes<HTMLElement> & {
   src?: string
@@ -248,8 +248,6 @@ export default function LandingPage() {
           </Link>
         </motion.div>
       </main>
-      
-      <Footer variant="full" />
     </div>
   )
 }
