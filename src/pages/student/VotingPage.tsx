@@ -380,7 +380,7 @@ export default function VotingPage() {
       )
       
       await runTransaction(async () => {
-        if (await hasVoteSubmission(ctx.studentId)) {
+        if (await hasVoteSubmission(ctx.authUserId ?? ctx.studentId)) {
           throw new Error('Your vote was already submitted.')
         }
 
@@ -396,7 +396,7 @@ export default function VotingPage() {
           student_id: ctx.studentId,
           receipt_id: submission.receipt.verificationCode,
           program_code: ctx.programCode,
-          auth_user_id: ctx.studentId,
+          auth_user_id: ctx.authUserId,
           google_email: ctx.email,
           selections,
         }

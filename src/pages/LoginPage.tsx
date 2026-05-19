@@ -53,6 +53,10 @@ export default function LoginPage() {
           navigate(result.alreadyVoted ? '/student/receipt' : '/student/dashboard', { replace: true })
           return
         }
+        if (result.reason === 'PROFILE_REQUIRED') {
+          navigate('/student/complete-profile', { replace: true })
+          return
+        }
         if (result.reason === 'INVALID_EMAIL') {
           setLoginError(HCDC_EMAIL_ERROR)
         }

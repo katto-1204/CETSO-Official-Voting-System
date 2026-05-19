@@ -2,6 +2,7 @@ import { getMockSession } from './mockSession'
 import type { ProgramCode, YearLevel } from './studentTypes'
 
 export type StudentContext = {
+  authUserId: string | null
   studentId: string
   studentName: string
   email: string | null
@@ -17,6 +18,7 @@ export function getStudentContext(): StudentContext | null {
   }
   return {
     studentId: session.studentId,
+    authUserId: session.authUserId ?? null,
     studentName: session.studentName,
     email: session.email ?? null,
     programCode: session.programCode,

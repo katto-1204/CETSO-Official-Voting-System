@@ -8,6 +8,7 @@ import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
 import SplashPage from './pages/SplashPage'
 import AuthCallbackPage from './pages/AuthCallbackPage'
+import CompleteProfilePage from './pages/student/CompleteProfilePage'
 
 import StudentDashboardPage from './pages/student/StudentDashboardPage'
 import CandidateListPage from './pages/student/CandidateListPage'
@@ -58,6 +59,7 @@ function AnimatedRoutes() {
           <Route path="/landing" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
+          <Route path="/student/complete-profile" element={<CompleteProfilePage />} />
           <Route path="/register" element={<Navigate to="/login" replace />} />
 
           {/* Student */}

@@ -245,7 +245,7 @@ export default function VoteConfirmationPage() {
 
                                          try {
                                             await runTransaction(async () => {
-                                               if (await hasVoteSubmission(ctx.studentId)) {
+                                               if (await hasVoteSubmission(ctx.authUserId ?? ctx.studentId)) {
                                                   throw new Error('IDENTITY CONFLICT: DATA ALREADY RECORDED.')
                                                }
 
@@ -261,7 +261,7 @@ export default function VoteConfirmationPage() {
                                                   student_id: ctx.studentId,
                                                   receipt_id: submission.receipt.verificationCode,
                                                   program_code: ctx.programCode,
-                                                  auth_user_id: ctx.studentId,
+                                                  auth_user_id: ctx.authUserId,
                                                   google_email: ctx.email,
                                                   selections: selections!,
                                                }

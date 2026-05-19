@@ -2,6 +2,7 @@ import { parseProgramCode, type ProgramCode, type YearLevel } from './studentTyp
 
 export type MockSession = {
   role: 'student' | 'admin'
+  authUserId?: string | null
   studentId: string | null
   studentName: string | null
   email?: string | null
@@ -11,6 +12,7 @@ export type MockSession = {
 
 const KEYS = {
   role: 'cetso_role',
+  authUserId: 'cetso_auth_user_id',
   studentId: 'cetso_student_id',
   studentName: 'cetso_student_name',
   email: 'cetso_student_email',
@@ -20,6 +22,7 @@ const KEYS = {
 
 export function getMockSession(): MockSession {
   const role = (localStorage.getItem(KEYS.role) as MockSession['role'] | null) ?? 'student'
+  const authUserId = localStorage.getItem(KEYS.authUserId)
   const studentId = localStorage.getItem(KEYS.studentId)
   const studentName = localStorage.getItem(KEYS.studentName)
   const email = localStorage.getItem(KEYS.email)
@@ -29,6 +32,7 @@ export function getMockSession(): MockSession {
 
   return {
     role,
+    authUserId: authUserId ?? null,
     studentId: studentId ?? null,
     studentName: studentName ?? null,
     email: email ?? null,
@@ -39,6 +43,9 @@ export function getMockSession(): MockSession {
 
 export function setMockSession(session: MockSession) {
   localStorage.setItem(KEYS.role, session.role)
+  if (session.authUserId) localStorage.setItem(KEYS.authUserId, session.authUserId)
+  else localStorage.removeItem(KEYS.authUserId)
+
   if (session.studentId) localStorage.setItem(KEYS.studentId, session.studentId)
   else localStorage.removeItem(KEYS.studentId)
 

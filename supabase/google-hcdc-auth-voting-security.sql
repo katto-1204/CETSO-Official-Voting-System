@@ -34,6 +34,32 @@ CREATE UNIQUE INDEX IF NOT EXISTS votes_google_email_unique
   ON public.votes(LOWER(google_email))
   WHERE google_email IS NOT NULL;
 
+-- If an earlier Google login stored the auth UUID as students.student_id,
+-- completing the profile may update that student_id to the real number.
+-- Keep existing votes attached during that correction.
+DO $$
+DECLARE
+  fk_name text;
+BEGIN
+  SELECT conname INTO fk_name
+  FROM pg_constraint
+  WHERE conrelid = 'public.votes'::regclass
+    AND confrelid = 'public.students'::regclass
+    AND contype = 'f'
+  LIMIT 1;
+
+  IF fk_name IS NOT NULL THEN
+    EXECUTE format('ALTER TABLE public.votes DROP CONSTRAINT %I', fk_name);
+  END IF;
+
+  ALTER TABLE public.votes
+    ADD CONSTRAINT votes_student_id_fkey
+    FOREIGN KEY (student_id)
+    REFERENCES public.students(student_id)
+    ON UPDATE CASCADE
+    ON DELETE CASCADE;
+END $$;
+
 -- 3. Admin checker used by RLS.
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS boolean
@@ -161,7 +187,6 @@ CREATE POLICY "Google HCDC users can insert own vote"
   TO authenticated
   WITH CHECK (
     auth_user_id = auth.uid()
-    AND student_id = auth.uid()::text
     AND LOWER(COALESCE(google_email, '')) LIKE '%@hcdc.edu.ph'
   );
 

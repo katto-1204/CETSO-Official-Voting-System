@@ -38,6 +38,10 @@ export default function AppShell() {
       .then((result) => {
         if (!active) return
         if (!result.ok) {
+          if (result.reason === 'PROFILE_REQUIRED') {
+            navigate('/student/complete-profile', { replace: true })
+            return
+          }
           if (result.reason === 'INVALID_EMAIL') {
             sessionStorage.setItem('cetso_login_error', HCDC_EMAIL_ERROR)
             goeyToast.error(HCDC_EMAIL_ERROR)
