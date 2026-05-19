@@ -73,10 +73,13 @@ export default function AppShell() {
     setShowLogoutConfirm(true)
   }
 
-  async function handleLogoutConfirm() {
-    await supabase.auth.signOut()
+  function handleLogoutConfirm() {
+    setShowLogoutConfirm(false)
     clearMockSession()
-    navigate('/')
+    navigate('/login', { replace: true })
+    void supabase.auth.signOut().catch((error) => {
+      console.error('Supabase sign-out failed:', error)
+    })
   }
 
   return (

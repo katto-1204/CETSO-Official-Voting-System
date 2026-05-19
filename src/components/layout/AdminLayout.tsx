@@ -8,6 +8,8 @@ import {
   Terminal, Wifi, Database, Cpu, User, AlertTriangle
 } from 'lucide-react'
 import { goeyToast } from 'goey-toast'
+import { supabase } from '../../lib/supabase'
+import { clearMockSession } from '../../lib/mockSession'
 
 const navItems = [
   { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -42,11 +44,12 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
   }
 
   function handleLogoutConfirm() {
-    localStorage.removeItem('cetso_session')
-    localStorage.removeItem('cetso_role')
-    localStorage.removeItem('cetso_student_id')
-    localStorage.removeItem('cetso_student_name')
-    navigate('/')
+    setShowLogoutConfirm(false)
+    clearMockSession()
+    navigate('/login', { replace: true })
+    void supabase.auth.signOut().catch((error) => {
+      console.error('Supabase sign-out failed:', error)
+    })
   }
 
   return (
