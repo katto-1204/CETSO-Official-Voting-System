@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import type { ChangeEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { UploadCloud, GraduationCap, Plus, CheckCircle2, Search, X, UserCheck, UserX, Trash2, Loader2 } from 'lucide-react'
+import { UploadCloud, GraduationCap, Plus, CheckCircle2, Search, X, UserCheck, UserX, Trash2, Loader2, Clock3 } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import GlassCard from '../../components/ui/GlassCard'
 import Button from '../../components/ui/Button'
@@ -16,24 +16,83 @@ const PROGRAM_COLORS: Record<string, string> = { BSIT: 'rgba(255,122,24,0.14)', 
 const PROGRAM_BORDERS: Record<string, string> = { BSIT: 'rgba(255,122,24,0.30)', BLIS: 'rgba(167,139,250,0.30)', BSCpE: 'rgba(45,212,191,0.30)', BSECE: 'rgba(96,165,250,0.30)' }
 const PROGRAM_TEXT: Record<string, string> = { BSIT: '#ff7a18', BLIS: '#a78bfa', BSCpE: '#2dd4bf', BSECE: '#60a5fa' }
 
-type VoteFilter = 'all' | 'voted' | 'not-voted'
+type VoteFilter = 'all' | 'voted' | 'not-voted' | 'pending'
+type VoteStatus = Exclude<VoteFilter, 'all'>
 
 type AdminStudent = {
   studentId: string
   email: string
+  authUserId: string
+  googleEmail: string
   fullName: string
   programCode: ProgramCode
   yearLevel: YearLevel
+}
+
+type VoteRecord = {
+  studentId: string
+  authUserId: string
+  googleEmail: string
 }
 
 function mapDbStudent(row: any): AdminStudent {
   return {
     studentId: row.student_id,
     email: row.email ?? '',
+    authUserId: row.auth_user_id ?? '',
+    googleEmail: row.google_email ?? '',
     fullName: row.full_name,
     programCode: row.program_code,
     yearLevel: row.year_level,
   }
+}
+
+function mapDbVote(row: any): VoteRecord {
+  return {
+    studentId: row.student_id ?? '',
+    authUserId: row.auth_user_id ?? '',
+    googleEmail: row.google_email ?? '',
+  }
+}
+
+function normalizeLookup(value: string) {
+  return value.trim().toLowerCase()
+}
+
+function hasCompleteVotingProfile(student: AdminStudent) {
+  return Boolean(
+    isValidStudentId(student.studentId) &&
+    student.fullName.trim() &&
+    student.programCode &&
+    student.yearLevel
+  )
+}
+
+function getVoteStatus(student: AdminStudent, votedStudentIds: Set<string>, votedAuthUserIds: Set<string>, votedEmails: Set<string>): VoteStatus {
+  const studentId = normalizeLookup(student.studentId)
+  const authUserId = normalizeLookup(student.authUserId)
+  const googleEmail = normalizeLookup(student.googleEmail)
+  const email = normalizeLookup(student.email)
+
+  if (
+    votedStudentIds.has(studentId) ||
+    (authUserId && votedStudentIds.has(authUserId)) ||
+    (googleEmail && votedStudentIds.has(googleEmail)) ||
+    (email && votedStudentIds.has(email)) ||
+    (authUserId && votedAuthUserIds.has(authUserId)) ||
+    (googleEmail && votedEmails.has(googleEmail)) ||
+    (email && votedEmails.has(email))
+  ) {
+    return 'voted'
+  }
+
+  return hasCompleteVotingProfile(student) ? 'not-voted' : 'pending'
+}
+
+const VOTE_STATUS_LABELS: Record<VoteStatus, string> = {
+  voted: 'Voted',
+  'not-voted': 'Not Voted',
+  pending: 'Pending',
 }
 
 export default function StudentManagementPage() {
@@ -42,6 +101,8 @@ export default function StudentManagementPage() {
   const [message, setMessage] = useState<string | null>(null)
   const [students, setStudents] = useState<AdminStudent[]>([])
   const [votedStudentIds, setVotedStudentIds] = useState<Set<string>>(() => new Set())
+  const [votedAuthUserIds, setVotedAuthUserIds] = useState<Set<string>>(() => new Set())
+  const [votedEmails, setVotedEmails] = useState<Set<string>>(() => new Set())
   const [loadingStudents, setLoadingStudents] = useState(true)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<{
@@ -92,19 +153,28 @@ export default function StudentManagementPage() {
 
     const result1 = await supabase
       .from('students')
-      .select('student_id, email, full_name, program_code, year_level')
+      .select('student_id, email, auth_user_id, google_email, full_name, program_code, year_level')
       .order('student_id', { ascending: true })
     studentRows = result1.data
     studentError = result1.error
 
-    if (studentError?.code === '42703') {
+    if (studentError?.code === '42703' || studentError?.code === 'PGRST204') {
       // email column doesn't exist — query without it
       const result2 = await supabase
         .from('students')
-        .select('student_id, full_name, program_code, year_level')
+        .select('student_id, email, full_name, program_code, year_level')
         .order('student_id', { ascending: true })
       studentRows = result2.data
       studentError = result2.error
+    }
+
+    if (studentError?.code === '42703' || studentError?.code === 'PGRST204') {
+      const result3 = await supabase
+        .from('students')
+        .select('student_id, full_name, program_code, year_level')
+        .order('student_id', { ascending: true })
+      studentRows = result3.data
+      studentError = result3.error
     }
 
     if (studentError) {
@@ -117,15 +187,33 @@ export default function StudentManagementPage() {
       return
     }
 
-    const { data: voteRows, error: voteError } = await supabase
+    let voteRows: any[] | null = null
+    let voteError: any = null
+
+    const voteResult1 = await supabase
       .from('votes')
-      .select('student_id')
+      .select('student_id, auth_user_id, google_email')
+    voteRows = voteResult1.data
+    voteError = voteResult1.error
+
+    if (voteError?.code === '42703' || voteError?.code === 'PGRST204') {
+      const voteResult2 = await supabase
+        .from('votes')
+        .select('student_id')
+      voteRows = voteResult2.data
+      voteError = voteResult2.error
+    }
 
     if (voteError) {
       console.error('Error loading votes:', voteError)
       setVotedStudentIds(new Set())
+      setVotedAuthUserIds(new Set())
+      setVotedEmails(new Set())
     } else {
-      setVotedStudentIds(new Set((voteRows ?? []).map((row) => row.student_id)))
+      const votes = (voteRows ?? []).map(mapDbVote)
+      setVotedStudentIds(new Set(votes.map((vote) => normalizeLookup(vote.studentId)).filter(Boolean)))
+      setVotedAuthUserIds(new Set(votes.map((vote) => normalizeLookup(vote.authUserId)).filter(Boolean)))
+      setVotedEmails(new Set(votes.map((vote) => normalizeLookup(vote.googleEmail)).filter(Boolean)))
     }
 
     setStudents((studentRows ?? []).map(mapDbStudent))
@@ -141,18 +229,29 @@ export default function StudentManagementPage() {
     return students.filter((s) => {
       const matchQuery = !q || s.studentId.toLowerCase().includes(q) || s.fullName.toLowerCase().includes(q) || s.email.toLowerCase().includes(q)
       const matchProgram = programFilter === 'all' || s.programCode === programFilter
-      const voted = votedStudentIds.has(s.studentId)
-      const matchVote = voteFilter === 'all' || (voteFilter === 'voted' && voted) || (voteFilter === 'not-voted' && !voted)
+      const status = getVoteStatus(s, votedStudentIds, votedAuthUserIds, votedEmails)
+      const matchVote = voteFilter === 'all' || voteFilter === status
       return matchQuery && matchProgram && matchVote
     })
-  }, [students, searchQuery, programFilter, voteFilter, votedStudentIds])
+  }, [students, searchQuery, programFilter, voteFilter, votedStudentIds, votedAuthUserIds, votedEmails])
 
-  const votedCount = useMemo(() => students.filter((s) => votedStudentIds.has(s.studentId)).length, [students, votedStudentIds])
-  const notVotedCount = students.length - votedCount
+  const statusCounts = useMemo(() => {
+    return students.reduce(
+      (counts, student) => {
+        counts[getVoteStatus(student, votedStudentIds, votedAuthUserIds, votedEmails)] += 1
+        return counts
+      },
+      { voted: 0, 'not-voted': 0, pending: 0 } as Record<VoteStatus, number>
+    )
+  }, [students, votedStudentIds, votedAuthUserIds, votedEmails])
+  const votedCount = statusCounts.voted
+  const notVotedCount = statusCounts['not-voted']
+  const pendingCount = statusCounts.pending
   const statusFilters: Array<{ value: VoteFilter; label: string; count: number; color: string }> = [
     { value: 'all', label: 'All', count: students.length, color: 'var(--cetso-orange)' },
     { value: 'voted', label: 'Voted', count: votedCount, color: '#22c55e' },
-    { value: 'not-voted', label: 'Not Voted', count: notVotedCount, color: '#f59e0b' },
+    { value: 'not-voted', label: 'Not Voted', count: notVotedCount, color: '#ef4444' },
+    { value: 'pending', label: 'Pending', count: pendingCount, color: '#f59e0b' },
   ]
 
   function normalizeProgram(value: unknown): ProgramCode | null {
@@ -319,7 +418,7 @@ export default function StudentManagementPage() {
         throw new Error(`Row ${index + 2} has invalid student ID "${studentId}" (must be 8 numbers and start with "598").`)
       }
 
-      return { studentId, email, fullName, programCode, yearLevel }
+      return { studentId, email, authUserId: '', googleEmail: '', fullName, programCode, yearLevel }
     })
   }
 
@@ -467,7 +566,18 @@ export default function StudentManagementPage() {
     setStudents((current) => current.filter((item) => item.studentId !== student.studentId))
     setVotedStudentIds((current) => {
       const next = new Set(current)
-      next.delete(student.studentId)
+      next.delete(normalizeLookup(student.studentId))
+      return next
+    })
+    setVotedAuthUserIds((current) => {
+      const next = new Set(current)
+      next.delete(normalizeLookup(student.authUserId))
+      return next
+    })
+    setVotedEmails((current) => {
+      const next = new Set(current)
+      next.delete(normalizeLookup(student.googleEmail))
+      next.delete(normalizeLookup(student.email))
       return next
     })
     setMessage('Student deleted.')
@@ -626,9 +736,10 @@ export default function StudentManagementPage() {
           {/* Stats row */}
           <div className="mt-4 flex flex-wrap gap-3">
             {[
-              { label: 'Total', value: students.length, color: 'var(--cetso-orange)' },
+              { label: 'All', value: students.length, color: 'var(--cetso-orange)' },
               { label: 'Voted', value: votedCount, color: '#22c55e' },
-              { label: 'Not Voted', value: notVotedCount, color: '#f59e0b' },
+              { label: 'Not Voted', value: notVotedCount, color: '#ef4444' },
+              { label: 'Pending', value: pendingCount, color: '#f59e0b' },
             ].map((s) => (
               <div key={s.label} className="rounded-xl px-3 py-2" style={{ background: 'var(--cetso-input-bg)', border: '1px solid var(--cetso-border)' }}>
                 <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>{s.label}</div>
@@ -761,8 +872,8 @@ export default function StudentManagementPage() {
           </motion.div>
 
           {/* Right: Students table with filters */}
-          <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.10 }} className="lg:col-span-8">
-            <GlassCard className="p-5">
+          <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.10 }} className="min-w-0 max-w-full lg:col-span-8">
+            <GlassCard className="min-w-0 max-w-full p-4 sm:p-5">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>Roster</div>
@@ -771,7 +882,7 @@ export default function StudentManagementPage() {
               </div>
 
               {/* Search & Filters */}
-              <div className="grid grid-cols-1 gap-3 mb-4 sm:grid-cols-[minmax(0,1fr)_180px_180px]">
+              <div className="grid grid-cols-1 gap-3 mb-4 sm:grid-cols-[minmax(0,1fr)_180px_180px] xl:grid-cols-[minmax(0,1fr)_180px_200px]">
                 <div className="relative">
                   <TextField name="search" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search ID, email, or name..." />
                   {searchQuery ? (
@@ -796,6 +907,7 @@ export default function StudentManagementPage() {
                   <option value="all">All Vote Status</option>
                   <option value="voted">Voted</option>
                   <option value="not-voted">Not Voted</option>
+                  <option value="pending">Pending</option>
                 </select>
               </div>
 
@@ -826,24 +938,47 @@ export default function StudentManagementPage() {
               </div>
 
               {/* Table */}
-              <div className="overflow-x-auto rounded-2xl" style={{ border: '1px solid var(--cetso-border)' }}>
-                <table className="w-full border-collapse min-w-[680px]">
+              <div className="w-full max-w-full overflow-x-auto overflow-y-visible rounded-2xl custom-scrollbar" style={{ border: '1px solid var(--cetso-border)' }}>
+                <table className="w-full min-w-[1000px] border-collapse">
                   <thead>
                     <tr style={{ background: 'var(--cetso-input-bg)' }}>
-                      {['Student ID', 'Full Name', 'Email', 'Program', 'Year', 'Vote Status', 'Actions'].map((h) => (
-                        <th key={h} className="p-3 text-left text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>{h}</th>
-                      ))}
+                      <th className="w-[120px] p-3 text-left text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>Student ID</th>
+                      <th className="min-w-[220px] p-3 text-left text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>Full Name</th>
+                      <th className="min-w-[240px] p-3 text-left text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>Email</th>
+                      <th className="w-[100px] p-3 text-left text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>Program</th>
+                      <th className="w-[80px] p-3 text-left text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>Year</th>
+                      <th className="w-[140px] p-3 text-left text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>Vote Status</th>
+                      <th className="w-[130px] min-w-[130px] p-3 text-left text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredStudents.map((s, i) => {
                       const inits = s.fullName.split(' ').slice(0, 2).map((p) => p[0]).join('')
-                      const voted = votedStudentIds.has(s.studentId)
+                      const status = getVoteStatus(s, votedStudentIds, votedAuthUserIds, votedEmails)
+                      const badgeStyle =
+                        status === 'voted'
+                          ? {
+                              background: 'var(--cetso-success-bg)',
+                              border: '1px solid var(--cetso-success-border)',
+                              color: 'var(--cetso-success-text)',
+                            }
+                          : status === 'pending'
+                            ? {
+                                background: 'rgba(245,158,11,0.10)',
+                                border: '1px solid rgba(245,158,11,0.28)',
+                                color: '#f59e0b',
+                              }
+                            : {
+                                background: 'rgba(239,68,68,0.10)',
+                                border: '1px solid rgba(239,68,68,0.28)',
+                                color: '#f87171',
+                              }
+                      const StatusIcon = status === 'voted' ? UserCheck : status === 'pending' ? Clock3 : UserX
                       return (
                         <motion.tr key={s.studentId} initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: 0.05 + i * 0.02 }}
                           style={{ borderTop: '1px solid var(--cetso-border)' }}
-                          className="transition hover:bg-black/5 dark:hover:bg-white/5"
+                          className="group/student-row transition hover:bg-black/5 focus-within:bg-black/5 dark:hover:bg-white/5 dark:focus-within:bg-white/5"
                         >
                           <td className="p-3 font-mono text-xs font-bold" style={{ color: 'var(--cetso-text)' }}>{s.studentId}</td>
                           <td className="p-3">
@@ -863,26 +998,25 @@ export default function StudentManagementPage() {
                           <td className="p-3 text-sm font-semibold" style={{ color: 'var(--cetso-text-2)' }}>{s.yearLevel}</td>
                           <td className="p-3">
                             <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold"
-                              style={voted ? {
-                                background: 'var(--cetso-success-bg)', border: '1px solid var(--cetso-success-border)', color: 'var(--cetso-success-text)',
-                              } : {
-                                background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.28)', color: '#f59e0b',
-                              }}
+                              style={badgeStyle}
                             >
-                              {voted ? <UserCheck className="h-3 w-3" /> : <UserX className="h-3 w-3" />}
-                              {voted ? 'Voted' : 'Pending'}
+                              <StatusIcon className="h-3 w-3" />
+                              {VOTE_STATUS_LABELS[status]}
                             </span>
                           </td>
                           <td className="p-3">
-                            <Button
-                              variant="danger"
-                              size="sm"
-                              onClick={() => deleteStudent(s)}
-                              loading={deletingId === s.studentId}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                              Delete
-                            </Button>
+                            <div className="opacity-100 transition-opacity duration-150 sm:opacity-0 sm:group-hover/student-row:opacity-100 sm:group-focus-within/student-row:opacity-100">
+                              <Button
+                                variant="danger"
+                                size="sm"
+                                className="whitespace-nowrap"
+                                onClick={() => deleteStudent(s)}
+                                loading={deletingId === s.studentId}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                Delete
+                              </Button>
+                            </div>
                           </td>
                         </motion.tr>
                       )

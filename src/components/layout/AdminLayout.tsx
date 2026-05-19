@@ -53,7 +53,7 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen relative overflow-hidden" style={{ background: 'var(--cetso-bg)' }}>
+    <div className="flex min-h-screen relative overflow-x-hidden" style={{ background: 'var(--cetso-bg)' }}>
 
       {/* Background Cyberpunk decoration */}
       <div className="fixed inset-0 pointer-events-none opacity-[0.02]">
@@ -84,7 +84,7 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
 
         {/* Logo Section */}
         <div className="px-6 py-6 relative">
-          <Link to="/" className="flex items-center gap-3 group/logo">
+          <div className="flex items-center gap-3">
             <img
               src="/Copy of CET Logotype (White).png"
               alt="CET Logotype"
@@ -99,7 +99,7 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
                 Admin Dashboard
               </div>
             </div>
-          </Link>
+          </div>
         </div>
 
         {/* System Health / Admin Info */}
@@ -236,7 +236,7 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
       </aside>
 
       {/* ── Main content ──────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto overflow-x-hidden">
 
         {/* Mobile Header */}
         <header
@@ -247,13 +247,13 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
             backdropFilter: 'blur(32px)',
           }}
         >
-          <Link to="/" className="flex items-center">
+          <div className="flex items-center">
             <img
               src="/Copy of CET Logotype (White).png"
               alt="CET Logotype"
               className="h-12 w-auto object-contain drop-shadow-[0_2px_8px_rgba(255,255,255,0.08)]"
             />
-          </Link>
+          </div>
 
           <div className="flex items-center gap-2">
 
@@ -299,7 +299,7 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
         </div>
 
         {/* Page content */}
-        <main className="flex-1 px-4 py-8 pb-24 lg:px-12 lg:py-10 max-w-[1600px] mx-auto w-full">
+        <main className="flex-1 min-w-0 w-full max-w-[1600px] px-4 py-8 pb-24 lg:px-12 lg:py-10 mx-auto overflow-x-hidden">
           {children ?? <Outlet />}
         </main>
       </div>

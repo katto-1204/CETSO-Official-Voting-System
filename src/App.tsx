@@ -1,5 +1,4 @@
-import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
-import { useEffect } from 'react'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import AppShell from './components/layout/AppShell'
 import AdminLayout from './components/layout/AdminLayout'
@@ -25,25 +24,8 @@ import LiveVoteMonitoringPage from './pages/admin/LiveVoteMonitoringPage'
 import ResultsAnalyticsPage from './pages/admin/ResultsAnalyticsPage'
 import AuditLogsPage from './pages/admin/AuditLogsPage'
 
-let hasShownSplash = false
-
 function AnimatedRoutes() {
   const location = useLocation()
-  const navigate = useNavigate()
-
-  useEffect(() => {
-    const currentPath = window.location.pathname + window.location.search
-    if (window.location.pathname === '/auth/callback') {
-      hasShownSplash = true
-      return
-    }
-    if (currentPath !== '/' && !hasShownSplash) {
-      hasShownSplash = true
-      navigate('/')
-    } else {
-      hasShownSplash = true
-    }
-  }, [navigate])
 
   return (
     <AnimatePresence mode="wait">

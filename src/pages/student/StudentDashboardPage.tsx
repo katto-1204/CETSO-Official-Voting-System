@@ -210,7 +210,7 @@ export default function StudentDashboardPage() {
         <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[var(--cetso-border)] to-transparent" />
         <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[var(--cetso-border)] to-transparent" />
 
-        <div className="relative flex flex-col items-stretch gap-6 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
+        <div className="relative flex flex-col items-stretch gap-6 lg:flex-row lg:items-center lg:gap-8">
           <div className="flex min-w-0 flex-col items-center gap-4 sm:flex-row sm:gap-6">
             <div className="relative">
               <div
@@ -247,16 +247,6 @@ export default function StudentDashboardPage() {
             </div>
           </div>
 
-          <div className="grid w-full grid-cols-2 gap-3 lg:w-auto lg:gap-4">
-             <div className="rounded-2xl border border-[var(--cetso-card-border-default)] bg-[var(--cetso-card-bg-default)] p-3 text-center sm:rounded-3xl sm:p-4 animate-fade-up">
-                <div className="text-[9px] font-black uppercase tracking-widest text-[var(--cetso-text-3)] mb-1">Status</div>
-                <div className="text-sm font-black text-[var(--cetso-text)] uppercase italic">Active</div>
-             </div>
-             <div className="rounded-2xl border border-[var(--cetso-card-border-default)] bg-[var(--cetso-card-bg-default)] p-3 text-center sm:rounded-3xl sm:p-4 animate-fade-up">
-                <div className="text-[9px] font-black uppercase tracking-widest text-[var(--cetso-text-3)] mb-1">Session</div>
-                <div className="text-sm font-black text-green-500 uppercase italic">Active</div>
-             </div>
-          </div>
         </div>
       </motion.div>
 

@@ -89,6 +89,7 @@ function StatCard({
 export default function AdminDashboardPage() {
   const [totalVoters, setTotalVoters] = useState(0)
   const [submissions, setSubmissions] = useState<Array<{ programCode: string; selections: VoteSelection[] }>>([])
+  const [currentTime, setCurrentTime] = useState(() => new Date())
 
   useEffect(() => {
     supabase.from('students').select('student_id', { count: 'exact', head: true }).then(({ count, error }) => {
@@ -107,6 +108,20 @@ export default function AdminDashboardPage() {
       })))
     })
   }, [])
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date())
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [])
+
+  const formattedTime = currentTime.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  })
 
   const stats = useMemo(() => {
     const votesSubmitted = submissions.length
@@ -171,7 +186,7 @@ export default function AdminDashboardPage() {
            <GlassCard className="px-5 py-3 flex items-center gap-4">
               <div className="text-right">
                  <div className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>System Time</div>
-                 <div className="text-xs font-mono" style={{ color: 'var(--cetso-text-2)' }}>12:44:02 UTC</div>
+                 <div className="text-xs font-mono" style={{ color: 'var(--cetso-text-2)' }}>{formattedTime}</div>
               </div>
               <div className="h-8 w-px bg-current opacity-10" />
               <div className="text-right">

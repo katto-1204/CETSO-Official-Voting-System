@@ -100,7 +100,7 @@ export default function AppShell() {
       >
         {/* Logo area */}
         <div className="px-5 py-5 flex items-center" style={{ borderBottom: '1px solid var(--cetso-border)' }}>
-          <Link to="/" className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5">
             <img
               src="/Copy of CET Logotype (White).png"
               alt="CET Logotype"
@@ -114,7 +114,7 @@ export default function AppShell() {
                 Student Portal
               </div>
             </div>
-          </Link>
+          </div>
         </div>
 
         {/* Student profile chip */}
@@ -250,13 +250,13 @@ export default function AppShell() {
           }}
         >
           {/* Mobile: logo */}
-          <Link to="/" className="flex items-center lg:hidden">
+          <div className="flex items-center lg:hidden">
             <img
               src="/Copy of CET Logotype (White).png"
               alt="CET Logotype"
               className="h-11 w-auto object-contain drop-shadow-[0_2px_8px_rgba(255,255,255,0.08)]"
             />
-          </Link>
+          </div>
 
           {/* Desktop: page breadcrumb area */}
           <div className="hidden lg:block">
