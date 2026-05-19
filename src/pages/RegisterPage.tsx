@@ -6,7 +6,7 @@ import Button from '../components/ui/Button'
 import GlassCard from '../components/ui/GlassCard'
 import TextField from '../components/ui/TextField'
 import Modal from '../components/ui/Modal'
-import { generatePassword, isValidStudentId } from '../lib/studentTypes'
+import { CET_PROGRAM_CODES, generatePassword, isCETProgramCode, isValidStudentId } from '../lib/studentTypes'
 import type { ProgramCode, YearLevel } from '../lib/studentTypes'
 import { setMockSession } from '../lib/mockSession'
 import { supabase } from '../lib/supabase'
@@ -84,6 +84,12 @@ export default function RegisterPage() {
       setLoading(true)
       const autoPassword = generatePassword(studentId.trim(), fullName.trim())
       const normalizedEmail = normalizeHcdcEmail(studentEmail)
+
+      if (!isCETProgramCode(programCode)) {
+        setError('Only CET programs can register for this election.')
+        setLoading(false)
+        return
+      }
 
       try {
         await runTransaction(async () => {
@@ -429,7 +435,7 @@ export default function RegisterPage() {
                             color: 'var(--cetso-text)',
                           }}
                         >
-                          {(['BSIT', 'BLIS', 'BSCpE', 'BSECE'] as ProgramCode[]).map((p) => (
+                          {CET_PROGRAM_CODES.map((p) => (
                             <option key={p} value={p}>{p}</option>
                           ))}
                         </select>

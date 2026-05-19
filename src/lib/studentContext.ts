@@ -4,6 +4,7 @@ import type { ProgramCode, YearLevel } from './studentTypes'
 export type StudentContext = {
   studentId: string
   studentName: string
+  email: string | null
   programCode: ProgramCode
   yearLevel: YearLevel
 }
@@ -17,6 +18,7 @@ export function getStudentContext(): StudentContext | null {
   return {
     studentId: session.studentId,
     studentName: session.studentName,
+    email: session.email ?? null,
     programCode: session.programCode,
     yearLevel: session.yearLevel,
   }

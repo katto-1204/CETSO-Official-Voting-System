@@ -6,8 +6,8 @@ import AdminLayout from './components/layout/AdminLayout'
 
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
-import RegisterPage from './pages/RegisterPage'
 import SplashPage from './pages/SplashPage'
+import AuthCallbackPage from './pages/AuthCallbackPage'
 
 import StudentDashboardPage from './pages/student/StudentDashboardPage'
 import CandidateListPage from './pages/student/CandidateListPage'
@@ -32,6 +32,10 @@ function AnimatedRoutes() {
 
   useEffect(() => {
     const currentPath = window.location.pathname + window.location.search
+    if (window.location.pathname === '/auth/callback') {
+      hasShownSplash = true
+      return
+    }
     if (currentPath !== '/' && !hasShownSplash) {
       hasShownSplash = true
       navigate('/')
@@ -53,7 +57,8 @@ function AnimatedRoutes() {
           <Route path="/" element={<SplashPage />} />
           <Route path="/landing" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/auth/callback" element={<AuthCallbackPage />} />
+          <Route path="/register" element={<Navigate to="/login" replace />} />
 
           {/* Student */}
           <Route element={<AppShell />}>

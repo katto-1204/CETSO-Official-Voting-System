@@ -4,6 +4,9 @@ import { LayoutDashboard, Users, Vote, FileCheck, UserCircle, LogOut, AlertTrian
 import { motion, AnimatePresence } from 'framer-motion'
 
 import { goeyToast } from 'goey-toast'
+import { supabase } from '../../lib/supabase'
+import { clearMockSession } from '../../lib/mockSession'
+import { ensureHcdcGoogleSession, HCDC_EMAIL_ERROR } from '../../lib/hcdcGoogleAuth'
 
 const navItems = [
   { to: '/student/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -22,18 +25,43 @@ export default function AppShell() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [authChecked, setAuthChecked] = useState(false)
 
   const role = localStorage.getItem('cetso_role')
   const studentId = localStorage.getItem('cetso_student_id')
 
   useEffect(() => {
-    if (role !== 'student' || !studentId) {
-      goeyToast.error('Access Denied: Student clearance required.')
-      navigate('/login', { replace: true })
-    }
-  }, [role, studentId, navigate])
+    let active = true
+    setAuthChecked(false)
 
-  if (role !== 'student' || !studentId) {
+    ensureHcdcGoogleSession()
+      .then((result) => {
+        if (!active) return
+        if (!result.ok) {
+          if (result.reason === 'INVALID_EMAIL') {
+            sessionStorage.setItem('cetso_login_error', HCDC_EMAIL_ERROR)
+            goeyToast.error(HCDC_EMAIL_ERROR)
+          } else {
+            goeyToast.error('Access Denied: HCDC Google login required.')
+          }
+          navigate('/login', { replace: true })
+          return
+        }
+        setAuthChecked(true)
+      })
+      .catch((error) => {
+        if (!active) return
+        console.error('Student auth check failed:', error)
+        goeyToast.error('Access Denied: HCDC Google login required.')
+        navigate('/login', { replace: true })
+      })
+
+    return () => {
+      active = false
+    }
+  }, [pathname, navigate])
+
+  if (!authChecked || role !== 'student' || !studentId) {
     return null
   }
 
@@ -45,13 +73,9 @@ export default function AppShell() {
     setShowLogoutConfirm(true)
   }
 
-  function handleLogoutConfirm() {
-    localStorage.removeItem('cetso_session')
-    localStorage.removeItem('cetso_role')
-    localStorage.removeItem('cetso_student_id')
-    localStorage.removeItem('cetso_student_name')
-    localStorage.removeItem('cetso_program_code')
-    localStorage.removeItem('cetso_year_level')
+  async function handleLogoutConfirm() {
+    await supabase.auth.signOut()
+    clearMockSession()
     navigate('/')
   }
 

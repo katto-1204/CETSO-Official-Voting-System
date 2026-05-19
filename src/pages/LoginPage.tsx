@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Eye, EyeOff, LogIn, ShieldCheck, ArrowLeft, Terminal, ShieldAlert } from 'lucide-react'
+import { Eye, EyeOff, LogIn, ShieldCheck, ArrowLeft, Terminal, ShieldAlert, Mail } from 'lucide-react'
 import Button from '../components/ui/Button'
 import TextField from '../components/ui/TextField'
 import GlassCard from '../components/ui/GlassCard'
@@ -9,8 +9,8 @@ import Modal from '../components/ui/Modal'
 import { setMockSession } from '../lib/mockSession'
 import { supabase } from '../lib/supabase'
 import { goeyToast } from 'goey-toast'
-import { generatePassword, isValidStudentId, normalizeProgramCode } from '../lib/studentTypes'
 import { useTransaction } from '../lib/TransactionContext'
+import { ensureHcdcGoogleSession, HCDC_EMAIL_ERROR, signInWithHcdcGoogle } from '../lib/hcdcGoogleAuth'
 
 const ADMIN_USERNAME = '598ADMIN'
 
@@ -21,16 +21,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
+  const [showAdminLogin, setShowAdminLogin] = useState(false)
+  const [loginError, setLoginError] = useState('')
   const [invalidCredentialsOpen, setInvalidCredentialsOpen] = useState(false)
-  const [studentNotFoundOpen, setStudentNotFoundOpen] = useState(false)
 
   function handleStudentIdChange(e: React.ChangeEvent<HTMLInputElement>) {
     const normalized = e.target.value.toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, ADMIN_USERNAME.length)
-
-    if (/^\d*$/.test(normalized)) {
-      setStudentId(normalized.slice(0, 8))
-      return
-    }
 
     if (ADMIN_USERNAME.startsWith(normalized)) {
       setStudentId(normalized)
@@ -42,18 +39,53 @@ export default function LoginPage() {
     [studentId]
   )
 
+  useEffect(() => {
+    const error = sessionStorage.getItem('cetso_login_error')
+    if (error) {
+      sessionStorage.removeItem('cetso_login_error')
+      setLoginError(error)
+      goeyToast.error(error)
+    }
+
+    ensureHcdcGoogleSession()
+      .then((result) => {
+        if (result.ok) {
+          navigate(result.alreadyVoted ? '/student/receipt' : '/student/dashboard', { replace: true })
+          return
+        }
+        if (result.reason === 'INVALID_EMAIL') {
+          setLoginError(HCDC_EMAIL_ERROR)
+        }
+      })
+      .catch((err) => {
+        console.error('Google session check failed:', err)
+      })
+  }, [navigate])
+
+  async function handleGoogleLogin() {
+    setLoginError('')
+    setGoogleLoading(true)
+    try {
+      await signInWithHcdcGoogle()
+    } catch (error: any) {
+      setLoginError(error.message || 'Could not start Google login.')
+      goeyToast.error(error.message || 'Could not start Google login.')
+      setGoogleLoading(false)
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
-    const identity = studentId.trim()
+    const identity = studentId.trim().toUpperCase()
 
     if (!identity || !password.trim()) {
-      goeyToast.error('Identity and clearance level required.')
+      goeyToast.error('Admin username and password required.')
       return
     }
 
-    if (!isAdminMode && !isValidStudentId(identity)) {
-      goeyToast.error('Invalid ID sequence. Student IDs must be 8 numbers and begin with 598.')
+    if (!isAdminMode) {
+      goeyToast.error('Use Google login for students. Manual login is only for administrators.')
       return
     }
 
@@ -61,37 +93,6 @@ export default function LoginPage() {
 
     try {
       await runTransaction(async () => {
-        if (!isAdminMode) {
-          const { data, error: studentLookupError } = await supabase
-            .rpc('get_student_by_id', { p_student_id: identity })
-            .maybeSingle()
-          const foundStudent = data as any
-
-          if (!foundStudent) {
-            if (studentLookupError) console.error('Error looking up student:', studentLookupError)
-            setStudentNotFoundOpen(true)
-            return
-          }
-
-          const expectedPassword = generatePassword(identity, foundStudent.full_name)
-          if (password.trim().toUpperCase() !== expectedPassword.toUpperCase()) {
-            setInvalidCredentialsOpen(true)
-            return
-          }
-
-          setMockSession({
-            role: 'student',
-            studentId: identity,
-            studentName: foundStudent.full_name,
-            programCode: normalizeProgramCode(foundStudent.program_code),
-            yearLevel: foundStudent.year_level || 1
-          })
-
-          goeyToast.success('Welcome back, Voter.')
-          navigate('/student/dashboard')
-          return
-        }
-
         const email = `${identity}@admin.cetso.edu`
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
@@ -122,7 +123,7 @@ export default function LoginPage() {
 
         goeyToast.success('Welcome back, Administrator.')
         navigate('/admin/dashboard')
-      }, `AUTHENTICATING ${isAdminMode ? 'ADMINISTRATOR' : 'VOTER'}`)
+      }, 'AUTHENTICATING ADMINISTRATOR')
     } catch (err: any) {
       goeyToast.error(err.message || 'Authentication error')
     } finally {
@@ -147,7 +148,7 @@ export default function LoginPage() {
           </div>
           <div>
             <p className="text-sm font-semibold leading-relaxed text-white/70">
-              The ID number exists, but the password does not match the registered student record.
+              The admin username or password does not match a registered administrator account.
             </p>
             <p className="mt-3 text-[11px] font-medium uppercase leading-relaxed tracking-widest text-white/35">
               Please verify your credentials and try again.
@@ -156,43 +157,6 @@ export default function LoginPage() {
           <Button variant="primary" size="lg" className="w-full" onClick={() => setInvalidCredentialsOpen(false)}>
             TRY AGAIN
           </Button>
-        </div>
-      </Modal>
-
-      <Modal
-        isOpen={studentNotFoundOpen}
-        onClose={() => setStudentNotFoundOpen(false)}
-        title="Student Not Found"
-        maxWidth="max-w-md"
-      >
-        <div className="space-y-6 text-center">
-          <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl border border-orange-500/20 bg-orange-500/10">
-            <ShieldAlert className="h-8 w-8 text-orange-400" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold leading-relaxed text-white/70">
-              No registered student record was found for{' '}
-              <span className="font-mono font-black text-white">{studentId.trim() || 'N/A'}</span>.
-            </p>
-            <p className="mt-3 text-[11px] font-medium uppercase leading-relaxed tracking-widest text-white/35">
-              Register first before logging in to the voting system.
-            </p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Button variant="secondary" size="lg" onClick={() => setStudentNotFoundOpen(false)}>
-              TRY AGAIN
-            </Button>
-            <Button
-              variant="primary"
-              size="lg"
-              onClick={() => {
-                setStudentNotFoundOpen(false)
-                navigate('/register')
-              }}
-            >
-              REGISTER
-            </Button>
-          </div>
         </div>
       </Modal>
 
@@ -242,7 +206,7 @@ export default function LoginPage() {
         <GlassCard className="p-8 relative overflow-hidden group">
           {/* Decorative Corner */}
           <div className="absolute top-0 right-0 p-4 opacity-10">
-            {isAdminMode ? (
+            {showAdminLogin ? (
               <ShieldCheck className="h-16 w-16 text-blue-500" />
             ) : (
               <ShieldAlert className="h-16 w-16 text-[var(--cetso-orange)]" />
@@ -250,7 +214,7 @@ export default function LoginPage() {
           </div>
 
           <div
-            className={`absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent ${isAdminMode ? 'via-blue-500' : 'via-[var(--cetso-orange)]'} to-transparent opacity-50`}
+            className={`absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent ${showAdminLogin ? 'via-blue-500' : 'via-[var(--cetso-orange)]'} to-transparent opacity-50`}
           />
 
           {/* Header */}
@@ -270,7 +234,7 @@ export default function LoginPage() {
 
             <AnimatePresence mode="wait">
               <motion.h1
-                key={isAdminMode ? 'admin-title' : 'voter-title'}
+                key={showAdminLogin ? 'admin-title' : 'voter-title'}
                 initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 6 }}
@@ -283,8 +247,8 @@ export default function LoginPage() {
                   color: 'var(--cetso-text)',
                 }}
               >
-                {isAdminMode ? 'ADMIN' : 'STUDENT'}<br />
-                <span className={isAdminMode ? 'text-blue-500' : 'text-[var(--cetso-orange)]'}>
+                {showAdminLogin ? 'ADMIN' : 'STUDENT'}<br />
+                <span className={showAdminLogin ? 'text-blue-500' : 'text-[var(--cetso-orange)]'}>
                   LOGIN
                 </span>
               </motion.h1>
@@ -295,18 +259,57 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {loginError ? (
+            <div className="mb-5 rounded-2xl border border-red-500/25 bg-red-500/10 p-4 text-center text-xs font-bold uppercase leading-relaxed tracking-wider text-red-200">
+              {loginError}
+            </div>
+          ) : null}
+
+          {!showAdminLogin ? (
+            <div className="space-y-5">
+              <Button
+                type="button"
+                variant="primary"
+                size="lg"
+                className="w-full relative overflow-hidden group/btn"
+                loading={googleLoading}
+                onClick={handleGoogleLogin}
+              >
+                <div className="flex items-center justify-center gap-3">
+                  <Mail className="h-5 w-5" />
+                  <span className="italic tracking-tighter">Continue with HCDC Google Email</span>
+                </div>
+                <motion.div
+                  className="absolute inset-0 bg-white/10"
+                  initial={{ x: '-100%' }}
+                  whileHover={{ x: '100%' }}
+                  transition={{ duration: 0.6 }}
+                />
+              </Button>
+
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-center">
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/35">
+                  Student access
+                </div>
+                <div className="mt-2 text-xs font-semibold leading-relaxed text-white/60">
+                  Use your official <span className="font-black text-white">@hcdc.edu.ph</span> Google account. Student ID and masterlist checks are disabled for now.
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {/* Admin Form */}
+          <form onSubmit={handleSubmit} className={`space-y-6 ${showAdminLogin ? '' : 'hidden'}`}>
             <TextField
-              label={isAdminMode ? 'Admin Username' : 'Student ID'}
+              label="Admin Username"
               name="studentId"
               type="text"
               inputMode="text"
-              pattern="(598[0-9]{5}|598ADMIN)"
+              pattern="598ADMIN"
               maxLength={8}
               value={studentId}
               onChange={handleStudentIdChange}
-              placeholder={isAdminMode ? ADMIN_USERNAME : '598XXXXX'}
+              placeholder={ADMIN_USERNAME}
               autoComplete="username"
             />
 
@@ -334,12 +337,12 @@ export default function LoginPage() {
               type="submit"
               variant="primary"
               size="lg"
-              className={`w-full relative overflow-hidden group/btn ${isAdminMode ? 'bg-blue-600 hover:bg-blue-500 shadow-blue-500/20' : ''}`}
+              className="w-full relative overflow-hidden group/btn bg-blue-600 hover:bg-blue-500 shadow-blue-500/20"
               loading={loading}
             >
               <div className="flex items-center justify-center gap-3">
                 <LogIn className="h-5 w-5" />
-                <span className="italic tracking-tighter">{isAdminMode ? 'ADMIN LOGIN' : 'LOG IN'}</span>
+                <span className="italic tracking-tighter">ADMIN LOGIN</span>
               </div>
 
               {/* Button shimmer */}
@@ -368,19 +371,23 @@ export default function LoginPage() {
               </Button>
             </Link>
 
-            {!isAdminMode && (
-              <div className="text-center mt-2">
-                <span className="text-[11px] font-medium text-white/40">New student? </span>
-                <Link to="/register" className="text-[11px] font-bold text-[var(--cetso-orange)] hover:underline">
-                  Create an account
-                </Link>
-              </div>
-            )}
+            <button
+              type="button"
+              onClick={() => {
+                setShowAdminLogin((current) => !current)
+                setLoginError('')
+                setStudentId('')
+                setPassword('')
+              }}
+              className="w-full rounded-xl border border-white/5 bg-white/[0.03] px-3 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-white/35 transition hover:bg-white/[0.06] hover:text-white/70"
+            >
+              {showAdminLogin ? 'Use Student Google Login' : 'Admin Login'}
+            </button>
           </div>
 
           {/* Dynamic Tooltip */}
           <AnimatePresence mode="wait">
-            {isAdminMode && (
+            {showAdminLogin && (
               <motion.div
                 key="admin-tip"
                 initial={{ opacity: 0, y: 10 }}

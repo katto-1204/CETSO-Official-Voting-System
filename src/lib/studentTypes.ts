@@ -1,12 +1,23 @@
 export type ProgramCode = 'BSIT' | 'BLIS' | 'BSCpE' | 'BSECE'
 export type YearLevel = 1 | 2 | 3 | 4
 
-export function normalizeProgramCode(value: unknown): ProgramCode {
+export const CET_PROGRAM_CODES: ProgramCode[] = ['BSIT', 'BLIS', 'BSCpE', 'BSECE']
+
+export function parseProgramCode(value: unknown): ProgramCode | null {
   const normalized = String(value ?? '').trim().toUpperCase()
-  if (normalized === 'BSCPE' || normalized === 'BSCpE'.toUpperCase()) return 'BSCpE'
+  if (normalized === 'BSIT') return 'BSIT'
+  if (normalized === 'BSCPE') return 'BSCpE'
   if (normalized === 'BLIS') return 'BLIS'
   if (normalized === 'BSECE') return 'BSECE'
-  return 'BSIT'
+  return null
+}
+
+export function isCETProgramCode(value: unknown): value is ProgramCode {
+  return parseProgramCode(value) !== null
+}
+
+export function normalizeProgramCode(value: unknown): ProgramCode {
+  return parseProgramCode(value) ?? 'BSIT'
 }
 
 export type StudentRecord = {

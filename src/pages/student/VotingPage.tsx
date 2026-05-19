@@ -392,12 +392,25 @@ export default function VotingPage() {
           selections,
         })
 
-        const { error: voteError } = await supabase.from('votes').insert({
+        const votePayload = {
           student_id: ctx.studentId,
           receipt_id: submission.receipt.verificationCode,
           program_code: ctx.programCode,
+          auth_user_id: ctx.studentId,
+          google_email: ctx.email,
           selections,
-        })
+        }
+
+        let { error: voteError } = await supabase.from('votes').insert(votePayload)
+        if (voteError?.code === 'PGRST204') {
+          const retry = await supabase.from('votes').insert({
+            student_id: ctx.studentId,
+            receipt_id: submission.receipt.verificationCode,
+            program_code: ctx.programCode,
+            selections,
+          })
+          voteError = retry.error
+        }
 
         if (voteError) {
           console.error('[votes] insert failed:', JSON.stringify(voteError))

@@ -34,6 +34,8 @@ type VoteSubmissionRow = {
   created_at: string
   student_full_name?: string | null
   year_level?: number | null
+  email?: string | null
+  google_email?: string | null
 }
 
 type StudentLookupRow = {
@@ -80,7 +82,7 @@ function mapVoteSubmissionRow(row: VoteSubmissionRow): VoteSubmission {
   const selections = Array.isArray(row.selections) ? (row.selections as VoteSelection[]) : []
   const submittedAt = row.created_at
   const yearLevel = (row.year_level ?? 1) as YearLevel
-  const studentName = row.student_full_name ?? row.student_id
+  const studentName = row.student_full_name ?? row.email ?? row.google_email ?? row.student_id
 
   return {
     electionId: ELECTION.electionId,
@@ -102,11 +104,31 @@ function mapVoteSubmissionRow(row: VoteSubmissionRow): VoteSubmission {
 
 
 async function fetchVoteSubmissionRow(studentId: string): Promise<VoteSubmissionRow | null> {
-  const query = await supabase
+  const rpc = await supabase.rpc('get_vote_submission_by_student_id', {
+    p_student_id: studentId,
+  })
+
+  if (!rpc.error) {
+    const rpcRaw = rpc.data as VoteSubmissionRow[] | VoteSubmissionRow | null
+    const rpcRow = Array.isArray(rpcRaw) ? rpcRaw[0] ?? null : rpcRaw
+    if (rpcRow) return rpcRow
+  } else if (rpc.error.code !== '42883') {
+    console.error('Failed to fetch vote through receipt RPC:', rpc.error)
+  }
+
+  let query = await supabase
     .from('votes')
-    .select('student_id, receipt_id, program_code, selections, created_at')
+    .select('student_id, receipt_id, program_code, selections, created_at, google_email')
     .eq('student_id', studentId)
     .maybeSingle()
+
+  if (query.error?.code === 'PGRST204') {
+    query = await supabase
+      .from('votes')
+      .select('student_id, receipt_id, program_code, selections, created_at')
+      .eq('student_id', studentId)
+      .maybeSingle()
+  }
 
   if (query.error) {
     console.error('Failed to fetch vote from votes table:', query.error)
