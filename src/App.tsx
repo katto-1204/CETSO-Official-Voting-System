@@ -34,7 +34,6 @@ function AnimatedRoutes() {
     const currentPath = window.location.pathname + window.location.search
     if (currentPath !== '/' && !hasShownSplash) {
       hasShownSplash = true
-      sessionStorage.setItem('redirect_after_splash', currentPath)
       navigate('/')
     } else {
       hasShownSplash = true

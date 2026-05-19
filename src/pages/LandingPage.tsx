@@ -212,7 +212,6 @@ export default function LandingPage() {
               className="group flex-shrink-0 flex items-center gap-1.5 sm:gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 sm:px-4 py-1.5 sm:py-2 backdrop-blur-sm cursor-default select-none transition-all duration-300 hover:border-[#ff7a18]/60 hover:bg-[#ff7a18]/[0.08] hover:shadow-[0_0_14px_rgba(255,122,24,0.2)]"
               style={{ fontFamily: INTER }}
             >
-              <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#ff7a18] group-hover:scale-125 transition-transform duration-300" />
               <span className="text-[10px] sm:text-[11px] font-bold text-[#ff9f43] uppercase tracking-widest whitespace-nowrap">
                 {p.code}
               </span>

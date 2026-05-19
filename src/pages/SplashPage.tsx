@@ -7,6 +7,7 @@ export default function SplashPage() {
   const navigate = useNavigate()
   const [progress, setProgress] = useState(0)
   const [currentTime, setCurrentTime] = useState('')
+  const [showRedirectFallback, setShowRedirectFallback] = useState(false)
 
   useEffect(() => {
     // Dynamic local time formatter matching "MON, 6:14 PM"
@@ -37,12 +38,9 @@ export default function SplashPage() {
 
   useEffect(() => {
     if (progress === 100) {
-      const redirect = setTimeout(() => {
-        const targetPath = sessionStorage.getItem('redirect_after_splash') || '/landing'
-        sessionStorage.removeItem('redirect_after_splash')
-        navigate(targetPath)
-      }, 400) // slight delay for satisfying completion visual
-      return () => clearTimeout(redirect)
+      navigate('/landing', { replace: true })
+      const fallback = setTimeout(() => setShowRedirectFallback(true), 1200)
+      return () => clearTimeout(fallback)
     }
   }, [progress, navigate])
 
@@ -139,8 +137,20 @@ export default function SplashPage() {
               </div>
             </div>
           </div>
+
         </motion.div>
 
+        {showRedirectFallback ? (
+          <div className="mt-5 flex justify-center">
+            <button
+              type="button"
+              onClick={() => navigate('/landing', { replace: true })}
+              className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#ffbd5a] underline decoration-[#ff9f1a]/50 underline-offset-4 transition-colors duration-200 hover:text-white"
+            >
+              click here to redirect
+            </button>
+          </div>
+        ) : null}
       </div>
     </div>
   )
