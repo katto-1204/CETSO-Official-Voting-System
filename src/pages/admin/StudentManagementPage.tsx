@@ -948,7 +948,16 @@ export default function StudentManagementPage() {
                       <th className="w-[100px] p-3 text-left text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>Program</th>
                       <th className="w-[80px] p-3 text-left text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>Year</th>
                       <th className="w-[140px] p-3 text-left text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>Vote Status</th>
-                      <th className="w-[130px] min-w-[130px] p-3 text-left text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>Actions</th>
+                      <th
+                        className="sticky right-0 z-10 w-[130px] min-w-[130px] p-3 text-left text-[10px] font-bold uppercase tracking-widest"
+                        style={{
+                          color: 'var(--cetso-text-3)',
+                          background: 'var(--cetso-input-bg)',
+                          boxShadow: '-12px 0 18px rgba(0,0,0,0.18)',
+                        }}
+                      >
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -978,7 +987,7 @@ export default function StudentManagementPage() {
                         <motion.tr key={s.studentId} initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: 0.05 + i * 0.02 }}
                           style={{ borderTop: '1px solid var(--cetso-border)' }}
-                          className="group/student-row transition hover:bg-black/5 focus-within:bg-black/5 dark:hover:bg-white/5 dark:focus-within:bg-white/5"
+                          className="group transition hover:bg-black/5 focus-within:bg-black/5 dark:hover:bg-white/5 dark:focus-within:bg-white/5"
                         >
                           <td className="p-3 font-mono text-xs font-bold" style={{ color: 'var(--cetso-text)' }}>{s.studentId}</td>
                           <td className="p-3">
@@ -1004,8 +1013,14 @@ export default function StudentManagementPage() {
                               {VOTE_STATUS_LABELS[status]}
                             </span>
                           </td>
-                          <td className="p-3">
-                            <div className="opacity-100 transition-opacity duration-150 sm:opacity-0 sm:group-hover/student-row:opacity-100 sm:group-focus-within/student-row:opacity-100">
+                          <td
+                            className="sticky right-0 z-[1] p-3"
+                            style={{
+                              background: 'var(--cetso-surface-1)',
+                              boxShadow: '-12px 0 18px rgba(0,0,0,0.18)',
+                            }}
+                          >
+                            <div className="opacity-100 transition-opacity duration-150 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
                               <Button
                                 variant="danger"
                                 size="sm"
