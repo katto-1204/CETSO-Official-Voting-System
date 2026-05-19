@@ -20,6 +20,10 @@ const tooltipStyle = {
   boxShadow: 'var(--cetso-card-shadow)',
 }
 
+function isAbstainSelection(selection: VoteSelection) {
+  return selection.candidateId === 'ABSTAIN' || selection.candidateId.startsWith('ABSTAIN_')
+}
+
 export default function ResultsAnalyticsPage() {
   const [submissions, setSubmissions] = useState<Array<{ programCode: string; selections: VoteSelection[] }>>([])
   const [activeTab, setActiveTab] = useState<'overview' | 'leaderboards'>('overview')
@@ -57,10 +61,13 @@ export default function ResultsAnalyticsPage() {
 
     const byPosition = POSITIONS.map((pos) => {
       let votes = 0
+      let abstains = 0
       for (const sub of submissions) {
-        if (sub.selections.some((sel) => sel.positionCode === pos.positionCode)) votes++
+        const positionSelections = sub.selections.filter((sel) => sel.positionCode === pos.positionCode)
+        if (positionSelections.length > 0) votes++
+        if (positionSelections.some(isAbstainSelection)) abstains++
       }
-      return { positionCode: pos.positionCode, title: pos.title, votes }
+      return { positionCode: pos.positionCode, title: pos.title, votes, abstains }
     }).sort((a, b) => b.votes - a.votes)
 
     return { submissions, byProgram, byPosition }
@@ -91,6 +98,7 @@ export default function ResultsAnalyticsPage() {
   }, [allCandidates, activePositionCode, submissions])
 
   const topBreakdown = data.byPosition.slice(0, 8)
+  const activePositionStats = data.byPosition.find((pos) => pos.positionCode === activePositionCode)
 
   return (
     <div className="space-y-5">
@@ -320,7 +328,17 @@ export default function ResultsAnalyticsPage() {
                               color: 'rgba(255,178,74,0.95)',
                             }}
                           >
-                            {p.votes}
+                            {p.votes} votes
+                          </div>
+                          <div
+                            className="shrink-0 rounded-lg px-2 py-0.5 text-[11px] font-black"
+                            style={{
+                              background: 'rgba(255,255,255,0.06)',
+                              border: '1px solid rgba(255,255,255,0.10)',
+                              color: 'var(--cetso-text-2)',
+                            }}
+                          >
+                            {p.abstains} abstain{p.abstains === 1 ? '' : 's'}
                           </div>
                         </div>
                         <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: 'var(--cetso-surface-3)' }}>
@@ -355,6 +373,11 @@ export default function ResultsAnalyticsPage() {
               <p className="text-sm font-medium text-[var(--cetso-text-2)] mt-0.5">
                 Real-time position-by-position voting standings and visual leaderboards.
               </p>
+              {activePositionStats ? (
+                <div className="mt-2 text-xs font-black uppercase tracking-wider text-[var(--cetso-text-3)]">
+                  {activePositionStats.title}: {activePositionStats.abstains} abstain{activePositionStats.abstains === 1 ? '' : 's'}
+                </div>
+              ) : null}
             </div>
           </div>
 
@@ -555,10 +578,12 @@ export default function ResultsAnalyticsPage() {
                           )}
                         </div>
 
-                        {totalPositionVotes > 0 && (
+                        {(totalPositionVotes > 0 || (activePositionStats?.abstains ?? 0) > 0) && (
                           <div className="mt-5 pt-4 border-t border-white/5 flex items-center justify-between text-[10px] font-bold text-white/40 uppercase">
                             <span>Total Standings votes</span>
-                            <span className="text-white/80">{totalPositionVotes} votes cast</span>
+                            <span className="text-white/80">
+                              {totalPositionVotes} candidate votes | {activePositionStats?.abstains ?? 0} abstains
+                            </span>
                           </div>
                         )}
                       </GlassCard>

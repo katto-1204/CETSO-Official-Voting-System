@@ -310,7 +310,7 @@ export default function StudentManagementPage() {
         )
       }
       if (!isValidStudentId(studentId)) {
-        throw new Error(`Row ${index + 2} has invalid student ID "${studentId}" (must start with "598").`)
+        throw new Error(`Row ${index + 2} has invalid student ID "${studentId}" (must be 8 numbers and start with "598").`)
       }
 
       return { studentId, email, fullName, programCode, yearLevel }
@@ -392,7 +392,7 @@ export default function StudentManagementPage() {
     setManualError(null)
     const email = manualEmail.trim() ? normalizeHcdcEmail(manualEmail) : ''
     if (!manualId.trim() || !manualName.trim()) { setManualError('Student ID and name are required.'); return }
-    if (!isValidStudentId(manualId.trim())) { setManualError('Student ID must start with "598".'); return }
+    if (!isValidStudentId(manualId.trim())) { setManualError('Student ID must be 8 numbers and start with "598".'); return }
     if (email && !isValidHcdcEmail(email)) { setManualError('Use a valid HCDC email (firstname.lastname@hcdc.edu.ph) or leave blank.'); return }
 
     const studentData: Record<string, unknown> = {

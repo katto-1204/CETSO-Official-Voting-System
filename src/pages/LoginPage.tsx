@@ -12,6 +12,8 @@ import { goeyToast } from 'goey-toast'
 import { generatePassword, isValidStudentId, normalizeProgramCode } from '../lib/studentTypes'
 import { useTransaction } from '../lib/TransactionContext'
 
+const ADMIN_USERNAME = '598ADMIN'
+
 export default function LoginPage() {
   const navigate = useNavigate()
   const { runTransaction } = useTransaction()
@@ -22,9 +24,21 @@ export default function LoginPage() {
   const [invalidCredentialsOpen, setInvalidCredentialsOpen] = useState(false)
   const [studentNotFoundOpen, setStudentNotFoundOpen] = useState(false)
 
-  // Auto-detect admin: any ID starting with "598ADMIN" (case-insensitive) triggers admin mode
+  function handleStudentIdChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const normalized = e.target.value.toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, ADMIN_USERNAME.length)
+
+    if (/^\d*$/.test(normalized)) {
+      setStudentId(normalized.slice(0, 8))
+      return
+    }
+
+    if (ADMIN_USERNAME.startsWith(normalized)) {
+      setStudentId(normalized)
+    }
+  }
+
   const isAdminMode = useMemo(
-    () => studentId.trim().toUpperCase().startsWith('598ADMIN'),
+    () => studentId.trim().toUpperCase() === ADMIN_USERNAME,
     [studentId]
   )
 
@@ -39,7 +53,7 @@ export default function LoginPage() {
     }
 
     if (!isAdminMode && !isValidStudentId(identity)) {
-      goeyToast.error('Invalid ID sequence. Student IDs must begin with 598.')
+      goeyToast.error('Invalid ID sequence. Student IDs must be 8 numbers and begin with 598.')
       return
     }
 
@@ -286,9 +300,13 @@ export default function LoginPage() {
             <TextField
               label={isAdminMode ? 'Admin Username' : 'Student ID'}
               name="studentId"
+              type="text"
+              inputMode="text"
+              pattern="(598[0-9]{5}|598ADMIN)"
+              maxLength={8}
               value={studentId}
-              onChange={(e) => setStudentId(e.target.value)}
-              placeholder={isAdminMode ? '598ADMIN...' : '598XXXXX'}
+              onChange={handleStudentIdChange}
+              placeholder={isAdminMode ? ADMIN_USERNAME : '598XXXXX'}
               autoComplete="username"
             />
 

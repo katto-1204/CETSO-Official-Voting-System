@@ -18,7 +18,7 @@ export type StudentRecord = {
 }
 
 export function isValidStudentId(studentId: string): boolean {
-  return studentId.startsWith('598') && studentId.length > 3
+  return /^598\d{5}$/.test(studentId)
 }
 
 export function generatePassword(studentId: string, fullName: string): string {

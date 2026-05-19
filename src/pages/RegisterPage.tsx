@@ -44,7 +44,7 @@ export default function RegisterPage() {
     if (step === 1) {
       if (!studentId.trim()) { setError('Student ID is required.'); return }
       if (!isValidStudentId(studentId.trim())) {
-        setError('Student ID must start with "598".')
+        setError('Student ID must be 8 numbers and start with "598".')
         return
       }
       
