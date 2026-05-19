@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Eye, EyeOff, LogIn, ShieldCheck, ArrowLeft, Terminal, ShieldAlert, Mail } from 'lucide-react'
+import { Copy, ExternalLink, Eye, EyeOff, LogIn, ShieldCheck, ArrowLeft, Terminal, ShieldAlert, Mail } from 'lucide-react'
 import Button from '../components/ui/Button'
 import TextField from '../components/ui/TextField'
 import GlassCard from '../components/ui/GlassCard'
@@ -10,7 +10,13 @@ import { setMockSession } from '../lib/mockSession'
 import { supabase } from '../lib/supabase'
 import { goeyToast } from 'goey-toast'
 import { useTransaction } from '../lib/TransactionContext'
-import { ensureHcdcGoogleSession, HCDC_EMAIL_ERROR, signInWithHcdcGoogle } from '../lib/hcdcGoogleAuth'
+import {
+  ensureHcdcGoogleSession,
+  getInAppBrowserInfo,
+  HCDC_EMAIL_ERROR,
+  signInWithHcdcGoogle,
+  type InAppBrowserInfo,
+} from '../lib/hcdcGoogleAuth'
 
 const ADMIN_USERNAME = '598ADMIN'
 
@@ -25,6 +31,8 @@ export default function LoginPage() {
   const [showAdminLogin, setShowAdminLogin] = useState(false)
   const [loginError, setLoginError] = useState('')
   const [invalidCredentialsOpen, setInvalidCredentialsOpen] = useState(false)
+  const [browserWarningOpen, setBrowserWarningOpen] = useState(false)
+  const [inAppBrowser, setInAppBrowser] = useState<InAppBrowserInfo>({ blocked: false, name: 'Browser' })
 
   function handleStudentIdChange(e: React.ChangeEvent<HTMLInputElement>) {
     const normalized = e.target.value.toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, ADMIN_USERNAME.length)
@@ -40,6 +48,12 @@ export default function LoginPage() {
   )
 
   useEffect(() => {
+    const browserInfo = getInAppBrowserInfo()
+    setInAppBrowser(browserInfo)
+    if (browserInfo.blocked) {
+      setBrowserWarningOpen(true)
+    }
+
     const error = sessionStorage.getItem('cetso_login_error')
     if (error) {
       sessionStorage.removeItem('cetso_login_error')
@@ -66,8 +80,39 @@ export default function LoginPage() {
       })
   }, [navigate])
 
+  async function copyCurrentLink() {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(window.location.href)
+      } else {
+        const input = document.createElement('input')
+        input.value = window.location.href
+        document.body.appendChild(input)
+        input.select()
+        document.execCommand('copy')
+        input.remove()
+      }
+      goeyToast.success('Link copied. Open it in Chrome or Safari.')
+    } catch (error) {
+      console.error('Could not copy login link:', error)
+      goeyToast.error('Could not copy the link. Use the browser menu and choose Open in Browser.')
+    }
+  }
+
+  function openInBrowser() {
+    window.open(window.location.href, '_blank', 'noopener,noreferrer')
+    setBrowserWarningOpen(true)
+  }
+
   async function handleGoogleLogin() {
     setLoginError('')
+    const browserInfo = getInAppBrowserInfo()
+    setInAppBrowser(browserInfo)
+    if (browserInfo.blocked) {
+      setBrowserWarningOpen(true)
+      return
+    }
+
     setGoogleLoading(true)
     try {
       await signInWithHcdcGoogle()
@@ -161,6 +206,40 @@ export default function LoginPage() {
           <Button variant="primary" size="lg" className="w-full" onClick={() => setInvalidCredentialsOpen(false)}>
             TRY AGAIN
           </Button>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={browserWarningOpen}
+        onClose={() => setBrowserWarningOpen(false)}
+        title="Open in Browser"
+        maxWidth="max-w-md"
+      >
+        <div className="space-y-5 text-center">
+          <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl border border-[var(--cetso-orange)]/25 bg-[var(--cetso-orange)]/10">
+            <ShieldAlert className="h-8 w-8 text-[var(--cetso-orange)]" />
+          </div>
+          <div className="space-y-3">
+            <p className="text-sm font-bold leading-relaxed text-white/80">
+              Google login is blocked inside {inAppBrowser.name}. Please open this page in Chrome, Safari, or your default browser to continue.
+            </p>
+            <p className="text-xs font-semibold leading-relaxed text-white/55">
+              You are opening this inside {inAppBrowser.name}. Google blocks login here. Please tap the three dots or share icon, then choose Open in Browser.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Button variant="secondary" size="lg" className="w-full" onClick={copyCurrentLink}>
+              <Copy className="h-4 w-4" />
+              Copy Link
+            </Button>
+            <Button variant="primary" size="lg" className="w-full" onClick={openInBrowser}>
+              <ExternalLink className="h-4 w-4" />
+              Open in Browser
+            </Button>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left text-[11px] font-semibold leading-relaxed text-white/45">
+            If the page still opens in Messenger or Facebook, copy the link and paste it directly into Chrome, Safari, or your phone's default browser.
+          </div>
         </div>
       </Modal>
 
@@ -271,6 +350,27 @@ export default function LoginPage() {
 
           {!showAdminLogin ? (
             <div className="space-y-5">
+              {inAppBrowser.blocked ? (
+                <div className="rounded-2xl border border-[var(--cetso-orange)]/30 bg-[var(--cetso-orange)]/10 p-4 text-center">
+                  <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--cetso-orange)]">
+                    Browser required
+                  </div>
+                  <div className="mt-2 text-xs font-semibold leading-relaxed text-white/70">
+                    Google login is blocked inside {inAppBrowser.name}. Open this page in Chrome, Safari, or your default browser before continuing.
+                  </div>
+                  <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                    <Button variant="secondary" size="sm" className="w-full" onClick={copyCurrentLink}>
+                      <Copy className="h-3.5 w-3.5" />
+                      Copy Link
+                    </Button>
+                    <Button variant="primary" size="sm" className="w-full" onClick={openInBrowser}>
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      Open in Browser
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
+
               <Button
                 type="button"
                 variant="primary"

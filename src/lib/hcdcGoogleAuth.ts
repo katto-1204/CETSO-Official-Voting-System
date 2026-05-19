@@ -7,8 +7,50 @@ import { normalizeProgramCode, type ProgramCode, type YearLevel } from './studen
 export const HCDC_EMAIL_DOMAIN = '@hcdc.edu.ph'
 export const HCDC_EMAIL_ERROR = 'Only official HCDC emails are allowed to access the CETSO Voting System.'
 
+export type InAppBrowserInfo = {
+  blocked: boolean
+  name: string
+}
+
 export function isHcdcEmail(email: string | null | undefined) {
   return String(email ?? '').trim().toLowerCase().endsWith(HCDC_EMAIL_DOMAIN)
+}
+
+export function getInAppBrowserInfo(): InAppBrowserInfo {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+    return { blocked: false, name: 'Browser' }
+  }
+
+  const ua = navigator.userAgent || navigator.vendor || ''
+  const rules: Array<[RegExp, string]> = [
+    [/FB_IAB|FBAN|FBAV|Messenger|FB4A|FBIOS/i, 'Messenger or Facebook'],
+    [/Instagram/i, 'Instagram'],
+    [/Line/i, 'LINE'],
+    [/TikTok|BytedanceWebview|musical_ly/i, 'TikTok'],
+    [/Twitter|X-WebView/i, 'Twitter/X'],
+    [/MicroMessenger/i, 'WeChat'],
+    [/\bwv\b/i, 'Android WebView'],
+  ]
+
+  const matched = rules.find(([pattern]) => pattern.test(ua))
+  if (matched) return { blocked: true, name: matched[1] }
+
+  const isAndroidWebView =
+    /Android/i.test(ua) &&
+    /Version\/[\d.]+/i.test(ua) &&
+    /Chrome\/[\d.]+ Mobile/i.test(ua) &&
+    !/SamsungBrowser|EdgA|OPR|Firefox|DuckDuckGo/i.test(ua)
+
+  if (isAndroidWebView) return { blocked: true, name: 'Android WebView' }
+
+  const isIosWebView = /iPhone|iPad|iPod/i.test(ua) && !/Safari/i.test(ua)
+  if (isIosWebView) return { blocked: true, name: 'iOS in-app browser' }
+
+  return { blocked: false, name: 'Browser' }
+}
+
+export function isInAppBrowser() {
+  return getInAppBrowserInfo().blocked
 }
 
 export function getGoogleFullName(user: User) {
@@ -228,6 +270,10 @@ export async function saveGoogleStudentProfile(params: {
 }
 
 export async function signInWithHcdcGoogle() {
+  if (isInAppBrowser()) {
+    throw new Error('Google login is blocked inside this in-app browser. Open this page in Chrome, Safari, or your default browser to continue.')
+  }
+
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
