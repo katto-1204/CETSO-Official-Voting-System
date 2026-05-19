@@ -148,6 +148,12 @@ export default function StudentManagementPage() {
   }, [students, searchQuery, programFilter, voteFilter, votedStudentIds])
 
   const votedCount = useMemo(() => students.filter((s) => votedStudentIds.has(s.studentId)).length, [students, votedStudentIds])
+  const notVotedCount = students.length - votedCount
+  const statusFilters: Array<{ value: VoteFilter; label: string; count: number; color: string }> = [
+    { value: 'all', label: 'All', count: students.length, color: 'var(--cetso-orange)' },
+    { value: 'voted', label: 'Voted', count: votedCount, color: '#22c55e' },
+    { value: 'not-voted', label: 'Not Voted', count: notVotedCount, color: '#f59e0b' },
+  ]
 
   function normalizeProgram(value: unknown): ProgramCode | null {
     const raw = String(value ?? '').trim()
@@ -426,130 +432,6 @@ export default function StudentManagementPage() {
     setTimeout(() => setManualSuccess(false), 3000)
   }
 
-  const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(() => new Set())
-
-  async function executeDeleteSelectedStudents() {
-    const count = selectedStudentIds.size
-    if (count === 0) return
-
-    setDeletingId('bulk')
-    setMessage(null)
-    setUploadError(null)
-
-    const idsArray = Array.from(selectedStudentIds)
-
-    // Delete votes first to avoid foreign key or logical conflicts
-    const { error: voteError } = await supabase
-      .from('votes')
-      .delete()
-      .in('student_id', idsArray)
-
-    if (voteError) {
-      console.error('Error deleting votes:', voteError)
-      setUploadError(voteError.code === '42501'
-        ? 'Supabase blocked vote deletion. Run supabase/fix-live-database.sql.'
-        : 'Failed to delete associated vote records: ' + voteError.message)
-      setDeletingId(null)
-      return
-    }
-
-    const { error: studentError } = await supabase
-      .from('students')
-      .delete()
-      .in('student_id', idsArray)
-
-    if (studentError) {
-      console.error('Error deleting students:', studentError)
-      setUploadError(studentError.code === '42501'
-        ? 'Supabase blocked student deletion. Run supabase/fix-live-database.sql.'
-        : studentError.message)
-      setDeletingId(null)
-      return
-    }
-
-    // Update local state
-    setStudents((current) => current.filter((s) => !selectedStudentIds.has(s.studentId)))
-    setVotedStudentIds((current) => {
-      const next = new Set(current)
-      idsArray.forEach((id) => next.delete(id))
-      return next
-    })
-    setSelectedStudentIds(new Set())
-    setMessage(`Successfully deleted ${count} student(s).`)
-    setDeletingId(null)
-  }
-
-  function deleteSelectedStudents() {
-    const count = selectedStudentIds.size
-    if (count === 0) return
-    setDeleteConfirm({
-      isOpen: true,
-      type: 'bulk',
-      title: 'CONFIRM BULK DELETION',
-      message: `Are you absolutely sure you want to delete the ${count} selected student(s)? This will also purge their vote records. This action is irreversible.`,
-      confirmText: 'Purge Selected',
-      onConfirm: async () => {
-        await executeDeleteSelectedStudents()
-      }
-    })
-  }
-
-  async function executeDeleteAllStudents() {
-    setDeletingId('all')
-    setMessage(null)
-    setUploadError(null)
-
-    // Delete all votes
-    const { error: voteError } = await supabase
-      .from('votes')
-      .delete()
-      .neq('student_id', '')
-
-    if (voteError) {
-      console.error('Error deleting all votes:', voteError)
-      setUploadError(voteError.code === '42501'
-        ? 'Supabase blocked vote deletion. Run supabase/fix-live-database.sql.'
-        : 'Failed to clear vote table: ' + voteError.message)
-      setDeletingId(null)
-      return
-    }
-
-    // Delete all students
-    const { error: studentError } = await supabase
-      .from('students')
-      .delete()
-      .neq('student_id', '')
-
-    if (studentError) {
-      console.error('Error deleting all students:', studentError)
-      setUploadError(studentError.code === '42501'
-        ? 'Supabase blocked student deletion. Run supabase/fix-live-database.sql.'
-        : studentError.message)
-      setDeletingId(null)
-      return
-    }
-
-    setStudents([])
-    setVotedStudentIds(new Set())
-    setSelectedStudentIds(new Set())
-    setMessage('All students and vote records successfully wiped.')
-    setDeletingId(null)
-  }
-
-  function deleteAllStudents() {
-    setDeleteConfirm({
-      isOpen: true,
-      type: 'all',
-      title: 'CRITICAL: PURGE ALL STUDENTS',
-      message: 'WARNING: Are you absolutely sure you want to delete ALL students? This will wipe the entire student registry and all cast votes. This cannot be undone.',
-      confirmText: 'Wipe Roster & Votes',
-      doubleConfirmPhrase: 'DELETE ALL STUDENTS',
-      onConfirm: async () => {
-        await executeDeleteAllStudents()
-      }
-    })
-  }
-
   async function executeDeleteStudent(student: AdminStudent) {
     setDeletingId(student.studentId)
     setMessage(null)
@@ -746,7 +628,7 @@ export default function StudentManagementPage() {
             {[
               { label: 'Total', value: students.length, color: 'var(--cetso-orange)' },
               { label: 'Voted', value: votedCount, color: '#22c55e' },
-              { label: 'Pending', value: students.length - votedCount, color: '#f59e0b' },
+              { label: 'Not Voted', value: notVotedCount, color: '#f59e0b' },
             ].map((s) => (
               <div key={s.label} className="rounded-xl px-3 py-2" style={{ background: 'var(--cetso-input-bg)', border: '1px solid var(--cetso-border)' }}>
                 <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>{s.label}</div>
@@ -889,7 +771,7 @@ export default function StudentManagementPage() {
               </div>
 
               {/* Search & Filters */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+              <div className="grid grid-cols-1 gap-3 mb-4 sm:grid-cols-[minmax(0,1fr)_180px_180px]">
                 <div className="relative">
                   <TextField name="search" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search ID, email, or name..." />
                   {searchQuery ? (
@@ -911,95 +793,43 @@ export default function StudentManagementPage() {
                   className="rounded-2xl border px-4 py-3 text-sm focus:outline-none"
                   style={{ background: 'var(--cetso-input-bg)', border: '1px solid var(--cetso-border)', color: 'var(--cetso-text)' }}
                 >
-                  <option value="all">All Status</option>
+                  <option value="all">All Vote Status</option>
                   <option value="voted">Voted</option>
                   <option value="not-voted">Not Voted</option>
                 </select>
               </div>
 
-              {/* Bulk Actions Panel */}
-              <AnimatePresence>
-                {(selectedStudentIds.size > 0 || students.length > 0) && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="mb-4 overflow-hidden"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl border"
+              <div className="mb-4 flex flex-wrap gap-2">
+                {statusFilters.map((filter) => {
+                  const active = voteFilter === filter.value
+                  return (
+                    <button
+                      key={filter.value}
+                      type="button"
+                      onClick={() => setVoteFilter(filter.value)}
+                      className="rounded-2xl border px-3 py-2 text-left transition-all"
                       style={{
-                        background: 'rgba(239, 68, 68, 0.03)',
-                        borderColor: 'rgba(239, 68, 68, 0.12)'
+                        background: active ? 'rgba(255,122,24,0.12)' : 'var(--cetso-input-bg)',
+                        borderColor: active ? 'rgba(255,122,24,0.35)' : 'var(--cetso-border)',
+                        color: 'var(--cetso-text)',
                       }}
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-                        <span className="text-xs font-bold uppercase tracking-widest text-red-400">
-                          {selectedStudentIds.size > 0 
-                            ? `${selectedStudentIds.size} student(s) selected` 
-                            : 'Bulk Management System'}
-                        </span>
+                      <div className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>
+                        {filter.label}
                       </div>
-                      <div className="flex gap-2">
-                        {selectedStudentIds.size > 0 && (
-                          <>
-                            <Button 
-                              variant="secondary" 
-                              size="sm" 
-                              onClick={() => setSelectedStudentIds(new Set())}
-                            >
-                              Clear Selection
-                            </Button>
-                            <Button 
-                              variant="danger" 
-                              size="sm" 
-                              onClick={deleteSelectedStudents}
-                              loading={deletingId === 'bulk'}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                              Delete Selected
-                            </Button>
-                          </>
-                        )}
-                        {students.length > 0 && selectedStudentIds.size === 0 && (
-                          <Button 
-                            variant="danger" 
-                            size="sm" 
-                            className="border-dashed"
-                            onClick={deleteAllStudents}
-                            loading={deletingId === 'all'}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            Purge All Students ({students.length})
-                          </Button>
-                        )}
+                      <div className="text-lg font-black" style={{ color: filter.color }}>
+                        {filter.count}
                       </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                    </button>
+                  )
+                })}
+              </div>
 
               {/* Table */}
               <div className="overflow-x-auto rounded-2xl" style={{ border: '1px solid var(--cetso-border)' }}>
-                <table className="w-full border-collapse min-w-[720px]">
+                <table className="w-full border-collapse min-w-[680px]">
                   <thead>
                     <tr style={{ background: 'var(--cetso-input-bg)' }}>
-                      <th className="p-3 text-left w-10">
-                        <input
-                          type="checkbox"
-                          checked={filteredStudents.length > 0 && filteredStudents.every((s) => selectedStudentIds.has(s.studentId))}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedStudentIds(new Set([...selectedStudentIds, ...filteredStudents.map((s) => s.studentId)]))
-                            } else {
-                              const next = new Set(selectedStudentIds)
-                              filteredStudents.forEach((s) => next.delete(s.studentId))
-                              setSelectedStudentIds(next)
-                            }
-                          }}
-                          className="h-4 w-4 rounded border-white/15 bg-white/5 text-orange-500 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-orange-500"
-                        />
-                      </th>
                       {['Student ID', 'Full Name', 'Email', 'Program', 'Year', 'Vote Status', 'Actions'].map((h) => (
                         <th key={h} className="p-3 text-left text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--cetso-text-3)' }}>{h}</th>
                       ))}
@@ -1013,24 +843,8 @@ export default function StudentManagementPage() {
                         <motion.tr key={s.studentId} initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: 0.05 + i * 0.02 }}
                           style={{ borderTop: '1px solid var(--cetso-border)' }}
-                          className={`transition hover:bg-black/5 dark:hover:bg-white/5 ${selectedStudentIds.has(s.studentId) ? 'bg-orange-500/5 hover:bg-orange-500/10' : ''}`}
+                          className="transition hover:bg-black/5 dark:hover:bg-white/5"
                         >
-                          <td className="p-3 w-10">
-                            <input
-                              type="checkbox"
-                              checked={selectedStudentIds.has(s.studentId)}
-                              onChange={(e) => {
-                                const next = new Set(selectedStudentIds)
-                                if (e.target.checked) {
-                                  next.add(s.studentId)
-                                } else {
-                                  next.delete(s.studentId)
-                                }
-                                setSelectedStudentIds(next)
-                              }}
-                              className="h-4 w-4 rounded border-white/15 bg-white/5 text-orange-500 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-orange-500"
-                            />
-                          </td>
                           <td className="p-3 font-mono text-xs font-bold" style={{ color: 'var(--cetso-text)' }}>{s.studentId}</td>
                           <td className="p-3">
                             <div className="flex items-center gap-2.5">
