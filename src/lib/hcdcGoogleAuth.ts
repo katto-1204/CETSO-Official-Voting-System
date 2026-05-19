@@ -64,6 +64,15 @@ async function upsertUserProfile(user: User) {
 async function findGoogleProfile(user: User): Promise<GoogleStudentProfile | null> {
   const email = user.email?.trim().toLowerCase() ?? ''
 
+  const rpc = await supabase.rpc('get_student_by_id', { p_student_id: email })
+  if (!rpc.error) {
+    const rpcRaw = rpc.data as GoogleStudentProfile[] | GoogleStudentProfile | null
+    const rpcRow = Array.isArray(rpcRaw) ? rpcRaw[0] ?? null : rpcRaw
+    if (rpcRow) return rpcRow
+  } else if (rpc.error.code !== '42883') {
+    console.error('Google profile RPC lookup failed:', rpc.error)
+  }
+
   let query = await supabase
     .from('students')
     .select('student_id, auth_user_id, google_email, email, full_name, program_code, year_level')
@@ -80,6 +89,38 @@ async function findGoogleProfile(user: User): Promise<GoogleStudentProfile | nul
 
   if (query.error) throw query.error
   return (query.data as GoogleStudentProfile | null) ?? null
+}
+
+function isCompleteStudentProfile(profile: GoogleStudentProfile | null): profile is GoogleStudentProfile {
+  return Boolean(
+    profile &&
+    profile.student_id &&
+    !looksLikeUuid(profile.student_id) &&
+    profile.full_name &&
+    profile.program_code &&
+    profile.year_level
+  )
+}
+
+async function claimExistingProfile(user: User, profile: GoogleStudentProfile) {
+  const email = user.email?.trim().toLowerCase() ?? ''
+
+  if (profile.auth_user_id === user.id && (profile.google_email || profile.email)) return
+
+  const payload = {
+    auth_user_id: user.id,
+    google_email: email,
+    email: profile.email || email,
+  }
+
+  const { error } = await supabase
+    .from('students')
+    .update(payload)
+    .eq('student_id', profile.student_id)
+
+  if (error) {
+    console.error('Could not link existing student profile to Google account:', error)
+  }
 }
 
 function syncCompletedProfileSession(user: User, profile: GoogleStudentProfile) {
@@ -112,7 +153,7 @@ export async function ensureHcdcGoogleSession() {
   await upsertUserProfile(data.user)
   const profile = await findGoogleProfile(data.user)
 
-  if (!profile || looksLikeUuid(profile.student_id)) {
+  if (!isCompleteStudentProfile(profile)) {
     clearMockSession()
     const alreadyVoted = await hasVoteSubmission(data.user.id)
     return {
@@ -126,8 +167,9 @@ export async function ensureHcdcGoogleSession() {
     }
   }
 
+  await claimExistingProfile(data.user, profile)
   syncCompletedProfileSession(data.user, profile)
-  const alreadyVoted = await hasVoteSubmission(data.user.id)
+  const alreadyVoted = (await hasVoteSubmission(data.user.id)) || (await hasVoteSubmission(profile.student_id))
 
   return {
     ok: true as const,

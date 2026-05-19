@@ -166,7 +166,15 @@ DROP POLICY IF EXISTS "Google students can update own profile" ON public.student
 CREATE POLICY "Google students can update own profile"
   ON public.students FOR UPDATE
   TO authenticated
-  USING (auth_user_id = auth.uid() OR public.is_admin())
+  USING (
+    auth_user_id = auth.uid()
+    OR public.is_admin()
+    OR (
+      auth_user_id IS NULL
+      AND LOWER(COALESCE(google_email, email, '')) = LOWER(COALESCE(auth.jwt() ->> 'email', ''))
+      AND LOWER(COALESCE(auth.jwt() ->> 'email', '')) LIKE '%@hcdc.edu.ph'
+    )
+  )
   WITH CHECK (
     public.is_admin()
     OR (
@@ -179,7 +187,14 @@ DROP POLICY IF EXISTS "Google students can read own profile" ON public.students;
 CREATE POLICY "Google students can read own profile"
   ON public.students FOR SELECT
   TO authenticated
-  USING (auth_user_id = auth.uid() OR public.is_admin());
+  USING (
+    auth_user_id = auth.uid()
+    OR public.is_admin()
+    OR (
+      LOWER(COALESCE(google_email, email, '')) = LOWER(COALESCE(auth.jwt() ->> 'email', ''))
+      AND LOWER(COALESCE(auth.jwt() ->> 'email', '')) LIKE '%@hcdc.edu.ph'
+    )
+  );
 
 DROP POLICY IF EXISTS "Google HCDC users can insert own vote" ON public.votes;
 CREATE POLICY "Google HCDC users can insert own vote"
@@ -194,4 +209,9 @@ DROP POLICY IF EXISTS "Google users can read own vote" ON public.votes;
 CREATE POLICY "Google users can read own vote"
   ON public.votes FOR SELECT
   TO authenticated
-  USING (auth_user_id = auth.uid() OR student_id = auth.uid()::text OR public.is_admin());
+  USING (
+    auth_user_id = auth.uid()
+    OR student_id = auth.uid()::text
+    OR LOWER(COALESCE(google_email, '')) = LOWER(COALESCE(auth.jwt() ->> 'email', ''))
+    OR public.is_admin()
+  );
